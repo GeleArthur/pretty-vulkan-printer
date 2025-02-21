@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 3.28)
+﻿cmake_minimum_required(VERSION 3.28)
 project(vulken_tutorial VERSION 1.0 LANGUAGES CXX)
-
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
@@ -18,6 +17,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+set(GLFW_BUILD_WAYLAND FALSE) # Try out wayland later
+set(GLFW_BUILD_X11 TRUE)
 FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -37,3 +38,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         Vulkan::Vulkan
 )
 
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/.gitignore *)
