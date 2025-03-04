@@ -1,12 +1,13 @@
-﻿#include <exception>
+﻿#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include <exception>
 #include <iostream>
 #include <vulkan/vulkan.h>
-
-#define GLFW_INCLUDE_VULKAN
 #include <algorithm>
 #include <cstring>
+#include <map>
+#include <optional>
 #include <vector>
-#include <GLFW/glfw3.h>
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator,
@@ -33,13 +34,22 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+
+    bool isComplete()
+    {
+        return graphicsFamily.has_value();
+    }
+};
+
 class HelloTraingle
 {
 public:
     void run()
     {
         init_vulkan();
-        setup_debug_messanger();
         main_loop();
         clean_up();
     }
@@ -53,7 +63,109 @@ private:
 
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
         create_instance();
+        setup_debug_messanger();
+        pick_physics_device();
+        createLogicalDevice();
     }
+
+    void createLogicalDevice()
+    {
+        VkPhysicalDeviceFeatures deviceFeatures{};
+        QueueFamilyIndices indices = findQueueFamilies(m_physical_device);
+
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = indices.graphicsFamily.value();
+        queue_create_info.queueCount = 1;
+        float queuePriority = 1.0f;
+        queue_create_info.pQueuePriorities = &queuePriority;
+
+        VkDeviceCreateInfo create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+        create_info.pQueueCreateInfos = &queue_create_info;
+        create_info.queueCreateInfoCount = 1;
+        create_info.pEnabledFeatures = &deviceFeatures;
+        create_info.enabledExtensionCount = 0;
+
+        if (m_enable_validation_layers)
+        {
+            create_info.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            create_info.ppEnabledLayerNames = validationLayers.data();
+        }
+        else
+        {
+            create_info.enabledLayerCount = 0;
+        }
+
+        if (vkCreateDevice(m_physical_device, &create_info, nullptr, &device) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create logical device!");
+        }
+
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+    }
+
+    void pick_physics_device()
+    {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        if (deviceCount == 0)
+        {
+            throw std::runtime_error("No GPU with VULKAN");
+        }
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+        for (const auto& device : devices)
+        {
+            if (is_device_suitable(device))
+            {
+                m_physical_device = device;
+                break;
+            }
+        }
+
+        if (m_physical_device == VK_NULL_HANDLE)
+        {
+            throw std::runtime_error("No device found that works");
+        }
+    }
+
+    static bool is_device_suitable(VkPhysicalDevice device)
+    {
+        QueueFamilyIndices indices = findQueueFamilies(device);
+
+        return indices.isComplete();
+    }
+
+    static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+    {
+        QueueFamilyIndices indices{};
+
+        uint32_t queue_family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+        std::vector<VkQueueFamilyProperties> queue_familys(queue_family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_familys.data());
+
+        int i{};
+        for (const auto& queue_family : queue_familys)
+        {
+            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.graphicsFamily = i;
+            }
+            if (indices.isComplete())
+            {
+                break;
+            }
+            ++i;
+        }
+
+        return indices;
+    }
+
 
     void create_instance()
     {
@@ -208,6 +320,7 @@ private:
 
     void clean_up()
     {
+        vkDestroyDevice(device, nullptr);
         if (m_enable_validation_layers)
         {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -220,6 +333,9 @@ private:
 
     GLFWwindow* window{};
     VkInstance instance{};
+    VkPhysicalDevice m_physical_device{VK_NULL_HANDLE};
+    VkDevice device{};
+    VkQueue graphicsQueue{};
 
     const uint32_t WIDTH = 800;
     const uint32_t HEIGHT = 600;
@@ -228,7 +344,7 @@ private:
         "VK_LAYER_KHRONOS_validation"
     };
 
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkDebugUtilsMessengerEXT debugMessenger{};
 
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
@@ -239,9 +355,9 @@ private:
 
 int main()
 {
-    HelloTraingle app;
     try
     {
+        HelloTraingle app;
         app.run();
     }
     catch (const std::exception& e)
