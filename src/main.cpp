@@ -11,6 +11,7 @@
 #include <set>
 #include <algorithm>
 #include <limits>
+#include <fstream>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -414,6 +415,8 @@ private:
 
     void createGraphicsPipeline()
     {
+        auto vertShaderCode = readFile("resources/shader.vert.spv");
+        auto fragShaderCode = readFile("resources/shader.frag.spv");
     }
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -602,6 +605,25 @@ private:
         }
 
         return true;
+    }
+
+    static std::vector<char> readFile(const std::string& filename)
+    {
+        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open())
+        {
+            throw std::runtime_error("failed to open file!");
+        }
+
+        size_t fileSize = file.tellg();
+        std::vector<char> buffer(fileSize);
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+
+        file.close();
+        return buffer;
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
