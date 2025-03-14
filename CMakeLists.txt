@@ -54,5 +54,3 @@ foreach (shader ${resources_files})
             glslc ARGS
             ${shader} -o "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources/${file_name}.spv")
 endforeach ()
-
-
