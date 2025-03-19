@@ -3,6 +3,7 @@ project(vulken_tutorial VERSION 1.0 LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
+        src/stb_image.h
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
@@ -54,3 +55,7 @@ foreach (shader ${resources_files})
             glslc ARGS
             ${shader} -o "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources/${file_name}.spv")
 endforeach ()
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/textures" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/textures"
+)
