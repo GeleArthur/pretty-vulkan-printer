@@ -4,6 +4,7 @@ project(vulken_tutorial VERSION 1.0 LANGUAGES CXX)
 add_executable(${PROJECT_NAME}
         src/main.cpp
         src/stb_image.h
+        src/tiny_obj_loader.h
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
