@@ -29,6 +29,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../../src/Window.h"
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
@@ -162,10 +164,11 @@ class HelloTraingle
 public:
     void run()
     {
-        initWindow();
-        initVulkan();
-        mainLoop();
-        cleanup();
+        VulkanWindow::create_window(600, 800);
+        // initWindow();
+        // initVulkan();
+        // mainLoop();
+        // cleanup();
     }
 
 private:
