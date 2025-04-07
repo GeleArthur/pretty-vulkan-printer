@@ -7,13 +7,13 @@ if (NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
 endif ()
 
-set(GLM_ENABLE_CXX_20 ON)
 FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
         GIT_TAG release-1.0.2
         GIT_SHALLOW TRUE
 )
+set(GLM_ENABLE_CXX_20 ON)
 FetchContent_MakeAvailable(glm)
 target_compile_definitions(glm PUBLIC
         GLM_FORCE_XYZW_ONLY
@@ -80,7 +80,6 @@ FetchContent_Declare(
         URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.3.zip
 )
 FetchContent_MakeAvailable(assimp)
-
 
 add_library(${PROJECT_NAME} INTERFACE)
 

@@ -19,8 +19,6 @@ void VulkanWindow::create_window(const int width, const int height)
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(window_width, window_height, "Vulkan", nullptr, nullptr);
-    // glfwSetWindowUserPointer(window, this);
-    // glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
 void VulkanWindow::destroy_window()

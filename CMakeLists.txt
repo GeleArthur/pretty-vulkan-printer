@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(libraries)
+add_subdirectory(resources)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
@@ -20,25 +21,7 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
 
-#target_link_libraries(${PROJECT_NAME} PRIVATE
-#        glfw
-#        glm::glm-header-only
-#        imgui
-#        Vulkan::Vulkan
-#        VulkanMemoryAllocator
-#        spdlog::spdlog
-#        assimp::assimp
-#)
-
-
-#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders")
-#file(GLOB resources_files "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert")
-#foreach (shader ${resources_files})
-#    get_filename_component(file_name ${shader} NAME)
-#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND
-#            glslc ARGS
-#            ${shader} -o "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/${file_name}.spv")
-#endforeach ()
+include(shaders/compile_shaders.cmake)
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
 #        $<$<CXX_COMPILER_ID:MSVC>:/W4>
@@ -46,5 +29,3 @@ target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
 #)
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/.gitignore *)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources")

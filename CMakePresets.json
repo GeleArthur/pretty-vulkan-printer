@@ -1,0 +1,32 @@
+﻿{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 28,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "default",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "default",
+      "configuration": "Release"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "default",
+      "configuration": "RelWithDebInfo"
+    }
+  ]
+}
