@@ -13,10 +13,19 @@ add_subdirectory(resources)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
-        src/Window.cpp
-        src/Window.h
+        src/App.cpp
+        src/App.h
+        src/DestructorQueue.cpp
+        src/DestructorQueue.h
+        src/Instance/VulkanInstance.cpp
+        src/Instance/VulkanInstance.h
+        src/instance/VulkanWindow.cpp
+        src/instance/VulkanWindow.h
+        src/Instance/InstanceContext.h
         src/stb_image.h
         src/tiny_obj_loader.h
+        src/VulkanExternalFunctions.h
+        src/main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)

@@ -1,12 +1,16 @@
-﻿#include "Window.h"
-#include <GLFW/glfw3.h>
+﻿#include "VulkanWindow.h"
+
+#include <stdexcept>
 
 // I don't know if this is a good idea.
 // Lets find out
-
-static int window_width;
-static int window_height;
-static GLFWwindow* window;
+namespace
+{
+int window_width;
+int window_height;
+GLFWwindow* window;
+VkSurfaceKHR surface;
+} // namespace
 
 void VulkanWindow::create_window(const int width, const int height)
 {
@@ -19,6 +23,13 @@ void VulkanWindow::create_window(const int width, const int height)
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(window_width, window_height, "Vulkan", nullptr, nullptr);
+}
+void VulkanWindow::create_surface(VkInstance instance)
+{
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+    {
+        throw std::runtime_error("no window surface :(");
+    }
 }
 
 void VulkanWindow::destroy_window()

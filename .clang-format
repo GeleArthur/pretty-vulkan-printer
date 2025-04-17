@@ -1,5 +1,4 @@
-﻿---
-Language: Cpp
+﻿Language: Cpp
 BasedOnStyle: LLVM
 Standard: c++20
 BreakTemplateDeclarations: Yes
@@ -10,12 +9,12 @@ TabWidth: 4
 IndentWidth: 4
 UseTab: Never
 AllowShortEnumsOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: true
-AllowShortFunctionsOnASingleLine: None
-AllowShortLambdasOnASingleLine: None
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Inline
 AllowShortBlocksOnASingleLine: Always
-AllowShortIfStatementsOnASingleLine: WithoutElse
-AllowShortLoopsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
 IndentRequiresClause: true
 IncludeCategories:
   # Headers in <> with .h extension.
@@ -29,3 +28,10 @@ IncludeCategories:
     Priority: 30
 PointerAlignment: Left
 QualifierAlignment: Leave
+BinPackArguments: false
+BinPackParameters: false
+AllowAllConstructorInitializersOnNextLine: false
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakAssignment: 1000
+AlignAfterOpenBracket: Align
+BreakBeforeBinaryOperators: None
