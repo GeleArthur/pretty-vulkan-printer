@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 #include <deque>
-#include <forward_list>
 #include <functional>
+
+// I love this thing
 
 class DestructorQueue final
 {

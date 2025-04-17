@@ -7,7 +7,8 @@ void DestructorQueue::add_to_queue(const std::function<void()>& function)
 
 void DestructorQueue::destroy_and_clear()
 {
-    for (auto iter = m_destruction_functions.rbegin(); iter != m_destruction_functions.rend(); ++iter)
+    for (auto iter = m_destruction_functions.rbegin(); iter != m_destruction_functions.rend();
+         ++iter)
         (*iter)();
 
     m_destruction_functions.clear();

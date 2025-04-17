@@ -33,5 +33,8 @@ BinPackParameters: false
 AllowAllConstructorInitializersOnNextLine: false
 PenaltyBreakBeforeFirstCallParameter: 0
 PenaltyBreakAssignment: 1000
-AlignAfterOpenBracket: Align
+#AlignAfterOpenBracket: Align
 BreakBeforeBinaryOperators: None
+AllowAllArgumentsOnNextLine: false
+AlignAfterOpenBracket: AlwaysBreak
+

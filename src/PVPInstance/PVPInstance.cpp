@@ -1,4 +1,4 @@
-﻿#include "VulkanInstance.h"
+﻿#include "PVPInstance.h"
 
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
@@ -11,10 +11,11 @@
 
 #include "../VulkanExternalFunctions.h"
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                    VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
-                                                    void* pUserData)
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
+    void* pUserData)
 {
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
@@ -68,9 +69,10 @@ bool static using_valid_extensions(const std::vector<std::string>& extensions_re
 
     for (const std::string& extension_found : extensions_required)
     {
-        if (std::ranges::find_if(extensions_available,
-                                 [&extension_found](const VkExtensionProperties& extension)
-                                 { return extension.extensionName == extension_found; }) == extensions_available.end())
+        if (std::ranges::find_if(
+                extensions_available,
+                [&extension_found](const VkExtensionProperties& extension)
+                { return extension.extensionName == extension_found; }) == extensions_available.end())
         {
             std::cerr << "Can't find: " << extension_found << '\n';
             return false;
@@ -80,13 +82,16 @@ bool static using_valid_extensions(const std::vector<std::string>& extensions_re
     return true;
 }
 
-VulkanInstance::VulkanInstance(const int width,
-                               const int height,
-                               const std::string& app_view,
-                               const std::vector<std::string>& extensions_extra,
-                               const std::vector<std::string>& layers_extra)
+PVPInstance::PVPInstance(
+    const int width,
+    const int height,
+    const std::string& app_view,
+    bool debug,
+    const std::vector<std::string>& extensions_extra,
+    const std::vector<std::string>& layers_extra)
 {
     glfwInit();
+    m_destructing.add_to_queue([&] { glfwTerminate(); });
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
@@ -132,6 +137,7 @@ VulkanInstance::VulkanInstance(const int width,
     create_info.enabledExtensionCount = static_cast<uint32_t>(extensions_to_activate.size());
     create_info.ppEnabledExtensionNames = extensions_to_activate.data();
 
+    // Setup debug
     VkDebugUtilsMessengerCreateInfoEXT debug_info{};
     if (is_using_debugging(extensions_extra, layers_extra))
     {
@@ -139,26 +145,33 @@ VulkanInstance::VulkanInstance(const int width,
         create_info.pNext = &debug_info;
     }
 
+    // Create instance
     if (vkCreateInstance(&create_info, nullptr, &m_instance) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create vkInstance");
     }
     m_destructing.add_to_queue([&] { vkDestroyInstance(m_instance, nullptr); });
 
-    m_extention_functions = std::make_unique<VulkanExtraFunctionCaller>(m_instance);
+    VulkanInstanceExtensions::register_instance(m_instance);
 
+    // Setup debug part 2
     if (is_using_debugging(extensions_extra, layers_extra))
     {
         static VkDebugUtilsMessengerEXT debug_messenger{};
-        if (m_extention_functions->vkCreateDebugUtilsMessengerEXT(m_instance, &debug_info, nullptr, &debug_messenger) !=
-            VK_SUCCESS)
+        if (VulkanInstanceExtensions::vkCreateDebugUtilsMessengerEXT(
+                m_instance,
+                &debug_info,
+                nullptr,
+                &debug_messenger) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create DebugUtilsMessengerEXT");
         }
         m_destructing.add_to_queue(
-            [this] { m_extention_functions->vkDestroyDebugUtilsMessengerEXT(m_instance, debug_messenger, nullptr); });
+            [this]
+            { VulkanInstanceExtensions::vkDestroyDebugUtilsMessengerEXT(m_instance, debug_messenger, nullptr); });
     }
 
+    // Create surface
     if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
     {
         throw std::runtime_error("no window surface :(");

@@ -1,6 +1,7 @@
-﻿#ifndef APP_H
-#define APP_H
-#include "Instance/VulkanInstance.h"
+﻿#pragma once
+#include <PVPPhysicalDevice/PVPPhysicalDevice.h>
+
+#include "PVPInstance/PVPInstance.h"
 
 class App
 {
@@ -8,8 +9,7 @@ class App
     void run();
 
   private:
-    InstanceContext m_instance_context{};
+    PVPInstance* m_pvp_instance{};
+    PVPPhysicalDevice* m_pvp_physical_device{};
     DestructorQueue m_destructor_queue;
 };
-
-#endif // APP_H

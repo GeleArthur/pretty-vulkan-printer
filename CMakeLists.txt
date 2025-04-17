@@ -17,16 +17,21 @@ add_executable(${PROJECT_NAME}
         src/App.h
         src/DestructorQueue.cpp
         src/DestructorQueue.h
-        src/Instance/VulkanInstance.cpp
-        src/Instance/VulkanInstance.h
-        src/instance/VulkanWindow.cpp
-        src/instance/VulkanWindow.h
-        src/Instance/InstanceContext.h
+        src/PVPInstance/PVPInstance.cpp
+        src/PVPInstance/PVPInstance.h
+        src/VulkanExternalFunctions.h
+
         src/stb_image.h
         src/tiny_obj_loader.h
-        src/VulkanExternalFunctions.h
-        src/main.cpp
+        src/PVPPhysicalDevice/PVPPhysicalDevice.cpp
+        src/PVPPhysicalDevice/PVPPhysicalDevice.h
+        src/PVPSwapChain/PVPSwapChain.cpp
+        src/PVPSwapChain/PVPSwapChain.h
+        src/PVPPhysicalDevice/PVPDeviceBuilder.cpp
+        src/PVPPhysicalDevice/PVPDeviceBuilder.h
 )
+
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 
 target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
 
