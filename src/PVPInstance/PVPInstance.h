@@ -6,10 +6,12 @@
 
 #include <DestructorQueue.h>
 
-class PVPInstance
+namespace pvp
+{
+class Instance
 {
   public:
-    explicit PVPInstance(
+    explicit Instance(
         int width,
         int height,
         const std::string& app_view,
@@ -28,3 +30,4 @@ class PVPInstance
 
     DestructorQueue m_destructing;
 };
+} // namespace pvp

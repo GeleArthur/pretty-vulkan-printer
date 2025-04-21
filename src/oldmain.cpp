@@ -239,6 +239,7 @@ class HelloTraingle
 
         pickPhysicalDevice();
         createLogicalDevice();
+
         createSwapChain();
         createImageViews();
         createRenderPass();

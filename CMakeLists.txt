@@ -25,10 +25,34 @@ add_executable(${PROJECT_NAME}
         src/tiny_obj_loader.h
         src/PVPPhysicalDevice/PVPPhysicalDevice.cpp
         src/PVPPhysicalDevice/PVPPhysicalDevice.h
-        src/PVPSwapChain/PVPSwapChain.cpp
-        src/PVPSwapChain/PVPSwapChain.h
+        src/PVPSwapchain/Swapchain.cpp
+        src/PVPSwapchain/Swapchain.h
         src/PVPPhysicalDevice/PVPDeviceBuilder.cpp
         src/PVPPhysicalDevice/PVPDeviceBuilder.h
+        src/PVPInstance/PVPInstanceBuilder.cpp
+        src/PVPInstance/PVPInstanceBuilder.h
+        src/PVPRenderPass/RenderPassBuilder.cpp
+        src/PVPRenderPass/RenderPassBuilder.h
+        src/PVPGraphicsPipeline/GraphicsPipelineBuilder.cpp
+        src/PVPGraphicsPipeline/GraphicsPipelineBuilder.h
+        src/Context.h
+        src/PVPGraphicsPipeline/ShaderLoader.cpp
+        src/PVPGraphicsPipeline/ShaderLoader.h
+        src/PVPGraphicsPipeline/PipelineLayoutBuilder.cpp
+        src/PVPGraphicsPipeline/PipelineLayoutBuilder.h
+        src/PVPGraphicsPipeline/PVPVertex.cpp
+        src/PVPGraphicsPipeline/PVPVertex.h
+        src/PVPGraphicsPipeline/DescriptorSetLayoutBuilder.cpp
+        src/PVPGraphicsPipeline/DescriptorSetLayoutBuilder.h
+        src/PVPSwapchain/FrameBuffers.cpp
+        src/PVPSwapchain/FrameBuffers.h
+        src/PVPVMAAllocator/VmaAllocator.cpp
+        src/PVPVMAAllocator/VmaAllocator.cpp
+        src/PVPVMAAllocator/VmaAllocator.h
+        src/Image.cpp
+        src/Image.h
+        src/Buffer.cpp
+        src/Buffer.h
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)

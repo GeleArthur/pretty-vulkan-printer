@@ -1,19 +1,9 @@
 ﻿#include "PVPPhysicalDevice.h"
 #include <PVPInstance/PVPInstance.h>
-#include <PVPSwapchain/PVPSwapchain.h>
+#include <PVPSwapchain/Swapchain.h>
 
 #include <set>
 #include <stdexcept>
-
-struct QueueFamilyIndices
-{
-    uint32_t graphics_family{};
-    uint32_t transfer_family{};
-    uint32_t compute_family{};
-    uint32_t present_family{};
-
-    bool success{};
-};
 
 const QueueFamilyIndices& get_queue_family_indices(const VkPhysicalDevice physical_device, const VkSurfaceKHR surface)
 {
@@ -107,7 +97,7 @@ VkPhysicalDevice get_best_device(
             continue;
 
         // Does it have a swapchain?
-        if (!PVPSwapchain::does_device_support_swapchain(device, surface))
+        if (!pvp::Swapchain::does_device_support_swapchain(device, surface))
         {
             continue;
         }
@@ -139,7 +129,7 @@ VkPhysicalDevice get_best_device(
     return best_device;
 }
 
-PVPPhysicalDevice::PVPPhysicalDevice(PVPInstance* pvp_instance, const std::vector<std::string>& device_extensions)
+pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<std::string>& device_extensions)
     : m_instance{pvp_instance}
 {
     const VkInstance instance = m_instance->get_instance();
@@ -205,5 +195,31 @@ PVPPhysicalDevice::PVPPhysicalDevice(PVPInstance* pvp_instance, const std::vecto
 
     vkGetDeviceQueue(m_device, queue_indices.graphics_family, 0, &m_graphics_queue);
     vkGetDeviceQueue(m_device, queue_indices.compute_family, 0, &m_compute_queue);
+    vkGetDeviceQueue(m_device, queue_indices.transfer_family, 0, &m_transfer_queue);
     vkGetDeviceQueue(m_device, queue_indices.present_family, 0, &m_present_queue);
+}
+
+VkDevice pvp::PhysicalDevice::get_device()
+{
+    return m_device;
+}
+VkPhysicalDevice pvp::PhysicalDevice::get_physical_device()
+{
+    return m_physical_device;
+}
+VkQueue pvp::PhysicalDevice::get_graphics_queue()
+{
+    return m_graphics_queue;
+}
+VkQueue pvp::PhysicalDevice::get_compute_queue()
+{
+    return m_compute_queue;
+}
+VkQueue pvp::PhysicalDevice::get_transfer_queue()
+{
+    return m_transfer_queue;
+}
+VkQueue pvp::PhysicalDevice::get_present_queue()
+{
+    return m_present_queue;
 }

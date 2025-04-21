@@ -82,7 +82,7 @@ bool static using_valid_extensions(const std::vector<std::string>& extensions_re
     return true;
 }
 
-PVPInstance::PVPInstance(
+pvp::Instance::Instance(
     const int width,
     const int height,
     const std::string& app_view,

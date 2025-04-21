@@ -3,9 +3,9 @@
 include(FetchContent)
 
 include(FindVulkan REQUIRED)
-if (NOT VULKAN_FOUND)
+if(NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
-endif ()
+endif()
 
 FetchContent_Declare(
         glm
@@ -34,12 +34,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-
-FetchContent_Declare(
-        vma
-        URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.2.1.zip
-)
-FetchContent_MakeAvailable(vma)
+#set(VMA_ENABLE_INSTALL ON)
+#FetchContent_Declare(
+#        vma
+#        URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.2.1.zip
+#)
+#FetchContent_MakeAvailable(vma)
 
 
 FetchContent_Declare(
@@ -90,5 +90,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         spdlog
         assimp
         Vulkan::Vulkan
-        VulkanMemoryAllocator
+        #        GPUOpen::VulkanMemoryAllocator
 )
