@@ -1,0 +1,24 @@
+﻿#pragma once
+#include <Context.h>
+#include <PVPPhysicalDevice/PVPPhysicalDevice.h>
+namespace pvp
+{
+    class CommandBuffer
+    {
+        public:
+        explicit CommandBuffer(PhysicalDevice& physical);
+        ~CommandBuffer();
+
+        [[nodiscard]] VkCommandBuffer get_graphics_command_buffer() const;
+
+        [[nodiscard]] VkCommandBuffer begin_single_use_transfer_command() const;
+        void                          end_single_use_transfer_command(VkCommandBuffer command_buffer) const;
+
+        private:
+        VkDevice        m_device {};
+        QueueFamily     m_transfer_family {};
+        VkCommandPool   m_single_use_transfer_command_pool {};
+        VkCommandBuffer m_graphics_command_buffer;
+        VkCommandPool   m_reset_graphics_command_pool {};
+    };
+} // namespace pvp

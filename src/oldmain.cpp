@@ -32,17 +32,17 @@
 #include "PVPInstance/VulkanWindow.h"
 #include "assimp/Importer.hpp"
 
-uint32_t const WIDTH = 800;
-uint32_t const HEIGHT = 600;
+uint32_t const                 WIDTH = 800;
+uint32_t const                 HEIGHT = 600;
 
-std::string const MODEL_PATH = "textures/viking_room.obj";
-std::string const TEXTURE_PATH = "textures/viking_room.png";
+std::string const              MODEL_PATH = "textures/viking_room.obj";
+std::string const              TEXTURE_PATH = "textures/viking_room.png";
 
-int const MAX_FRAMES_IN_FLIGHT = 2;
+int const                      MAX_FRAMES_IN_FLIGHT = 2;
 
-std::vector<char const*> const validationLayers = {"VK_LAYER_KHRONOS_validation"};
+std::vector<char const*> const validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
-std::vector<char const*> const deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+std::vector<char const*> const deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -51,10 +51,10 @@ const bool enableValidationLayers = true;
 #endif
 
 VkResult CreateDebugUtilsMessengerEXT(
-    VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator,
-    VkDebugUtilsMessengerEXT* pDebugMessenger)
+VkInstance                                instance,
+const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+const VkAllocationCallbacks*              pAllocator,
+VkDebugUtilsMessengerEXT*                 pDebugMessenger)
 {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr)
@@ -65,7 +65,9 @@ VkResult CreateDebugUtilsMessengerEXT(
 }
 
 void DestroyDebugUtilsMessengerEXT(
-    VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, VkAllocationCallbacks const* pAllocator)
+VkInstance                   instance,
+VkDebugUtilsMessengerEXT     debugMessenger,
+VkAllocationCallbacks const* pAllocator)
 {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr)
@@ -79,25 +81,28 @@ struct QueueFamilyIndices
     std::optional<uint32_t> graphicsAndComputeFamily;
     std::optional<uint32_t> presentFamily;
 
-    bool isComplete() { return graphicsAndComputeFamily.has_value() && presentFamily.has_value(); }
+    bool                    isComplete()
+    {
+        return graphicsAndComputeFamily.has_value() && presentFamily.has_value();
+    }
 };
 
 struct SwapChainSupportDetails
 {
-    VkSurfaceCapabilitiesKHR capabilities;
+    VkSurfaceCapabilitiesKHR        capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
+    std::vector<VkPresentModeKHR>   presentModes;
 };
 
 struct Vertex
 {
-    glm::vec3 pos;
-    glm::vec3 color;
-    glm::vec2 uv;
+    glm::vec3                              pos;
+    glm::vec3                              color;
+    glm::vec2                              uv;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
-        VkVertexInputBindingDescription bindingDescription{};
+        VkVertexInputBindingDescription bindingDescription {};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -107,7 +112,7 @@ struct Vertex
 
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -127,20 +132,23 @@ struct Vertex
         return attributeDescriptions;
     }
 
-    bool operator==(Vertex const& other) const { return pos == other.pos && color == other.color && uv == other.uv; }
+    bool operator==(Vertex const& other) const
+    {
+        return pos == other.pos && color == other.color && uv == other.uv;
+    }
 };
 
 namespace std
 {
-template<>
-struct hash<Vertex>
-{
-    auto operator()(Vertex const& vertex) const noexcept -> size_t
+    template <>
+    struct hash<Vertex>
     {
-        return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-               (hash<glm::vec2>()(vertex.uv) << 1);
-    }
-};
+        auto operator()(Vertex const& vertex) const noexcept -> size_t
+        {
+            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+            (hash<glm::vec2>()(vertex.uv) << 1);
+        }
+    };
 } // namespace std
 
 struct UniformBufferObject
@@ -152,7 +160,7 @@ struct UniformBufferObject
 
 class HelloTraingle
 {
-  public:
+    public:
     void run()
     {
         VulkanWindow::create_window(800, 600);
@@ -162,70 +170,70 @@ class HelloTraingle
         cleanup();
     }
 
-  private:
-    VkInstance instance{};
-    VkDebugUtilsMessengerEXT debugMessenger{};
-    GLFWwindow* window{};
-    VkSurfaceKHR surface{};
+    private:
+    VkInstance                   instance {};
+    VkDebugUtilsMessengerEXT     debugMessenger {};
+    GLFWwindow*                  window {};
+    VkSurfaceKHR                 surface {};
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device{};
+    VkPhysicalDevice             physicalDevice = VK_NULL_HANDLE;
+    VkDevice                     device {};
 
-    VkQueue graphicsQueue{};
-    VkQueue computeQueue{};
-    VkQueue presentQueue{};
+    VkQueue                      graphicsQueue {};
+    VkQueue                      computeQueue {};
+    VkQueue                      presentQueue {};
 
-    VkSwapchainKHR swapChain{};
-    std::vector<VkImage> swapChainImages{};
-    VkFormat swapChainImageFormat{};
-    VkExtent2D swapChainExtent{};
-    std::vector<VkImageView> swapChainImageViews{};
-    std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkSwapchainKHR               swapChain {};
+    std::vector<VkImage>         swapChainImages {};
+    VkFormat                     swapChainImageFormat {};
+    VkExtent2D                   swapChainExtent {};
+    std::vector<VkImageView>     swapChainImageViews {};
+    std::vector<VkFramebuffer>   swapChainFramebuffers;
 
-    VkRenderPass renderPass{};
-    VkDescriptorSetLayout descriptorSetLayout{};
-    VkPipelineLayout pipelineLayout{};
-    VkPipeline graphicsPipeline{};
+    VkRenderPass                 renderPass {};
+    VkDescriptorSetLayout        descriptorSetLayout {};
+    VkPipelineLayout             pipelineLayout {};
+    VkPipeline                   graphicsPipeline {};
 
-    VkCommandPool commandPool{};
+    VkCommandPool                commandPool {};
 
-    std::vector<VkBuffer> shaderStorageBuffers;
-    std::vector<VkDeviceMemory> shaderStorageBuffersMemory;
+    std::vector<VkBuffer>        shaderStorageBuffers;
+    std::vector<VkDeviceMemory>  shaderStorageBuffersMemory;
 
-    VkImage depthImage{};
-    VkDeviceMemory depthImageMemory{};
-    VkImageView depthImageView{};
+    VkImage                      depthImage {};
+    VkDeviceMemory               depthImageMemory {};
+    VkImageView                  depthImageView {};
 
-    uint32_t mipLevels{};
-    VkImage textureImage{};
-    VkDeviceMemory textureImageMemory{};
-    VkImageView textureImageView{};
-    VkSampler textureSampler{};
+    uint32_t                     mipLevels {};
+    VkImage                      textureImage {};
+    VkDeviceMemory               textureImageMemory {};
+    VkImageView                  textureImageView {};
+    VkSampler                    textureSampler {};
 
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    VkBuffer vertexBuffer{};
-    VkDeviceMemory vertexBufferMemory{};
-    VkBuffer indexBuffer{};
-    VkDeviceMemory indexBufferMemory{};
+    std::vector<Vertex>          vertices;
+    std::vector<uint32_t>        indices;
+    VkBuffer                     vertexBuffer {};
+    VkDeviceMemory               vertexBufferMemory {};
+    VkBuffer                     indexBuffer {};
+    VkDeviceMemory               indexBufferMemory {};
 
-    std::vector<VkBuffer> uniformBuffers{};
-    std::vector<VkDeviceMemory> uniformBuffersMemory{};
-    std::vector<void*> uniformBuffersMapped{};
+    std::vector<VkBuffer>        uniformBuffers {};
+    std::vector<VkDeviceMemory>  uniformBuffersMemory {};
+    std::vector<void*>           uniformBuffersMapped {};
 
-    VkDescriptorPool descriptorPool{};
+    VkDescriptorPool             descriptorPool {};
     std::vector<VkDescriptorSet> descriptorSets;
 
-    std::vector<VkCommandBuffer> commandBuffers{};
+    std::vector<VkCommandBuffer> commandBuffers {};
 
-    std::vector<VkSemaphore> imageAvailableSemaphores{};
-    std::vector<VkSemaphore> renderFinishedSemaphores{};
-    std::vector<VkFence> inFlightFences{};
-    uint32_t currentFrame = 0;
+    std::vector<VkSemaphore>     imageAvailableSemaphores {};
+    std::vector<VkSemaphore>     renderFinishedSemaphores {};
+    std::vector<VkFence>         inFlightFences {};
+    uint32_t                     currentFrame = 0;
 
-    bool framebufferResized = false;
+    bool                         framebufferResized = false;
 
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
+    static void                  framebufferResizeCallback(GLFWwindow* window, int width, int height)
     {
         auto app = reinterpret_cast<HelloTraingle*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
@@ -372,7 +380,7 @@ class HelloTraingle
             throw std::runtime_error("validation layers requested, but not available!");
         }
 
-        VkApplicationInfo appInfo{};
+        VkApplicationInfo appInfo {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Vulkan";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -380,7 +388,7 @@ class HelloTraingle
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
-        VkInstanceCreateInfo createInfo{};
+        VkInstanceCreateInfo createInfo {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
@@ -389,7 +397,7 @@ class HelloTraingle
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions_debug.size());
         createInfo.ppEnabledExtensionNames = extensions_debug.data();
 
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo {};
         if (enableValidationLayers)
         {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -408,7 +416,7 @@ class HelloTraingle
             throw std::runtime_error("Failed");
         }
 
-        uint32_t exection_count{};
+        uint32_t exection_count {};
         vkEnumerateInstanceExtensionProperties(nullptr, &exection_count, nullptr);
         std::vector<VkExtensionProperties> extensions(exection_count);
         vkEnumerateInstanceExtensionProperties(nullptr, &exection_count, extensions.data());
@@ -425,11 +433,11 @@ class HelloTraingle
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         createInfo.pfnUserCallback = debugCallback;
     }
 
@@ -438,7 +446,7 @@ class HelloTraingle
         if (!enableValidationLayers)
             return;
 
-        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        VkDebugUtilsMessengerCreateInfoEXT createInfo {};
         populateDebugMessengerCreateInfo(createInfo);
 
         if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
@@ -485,17 +493,18 @@ class HelloTraingle
 
     void createLogicalDevice()
     {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices                   indices = findQueueFamilies(physicalDevice);
 
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-        std::set<uint32_t> uniqueQueueFamilies = {
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos {};
+        std::set<uint32_t>                   uniqueQueueFamilies = {
             indices.graphicsAndComputeFamily.value(),
-            indices.presentFamily.value()};
+            indices.presentFamily.value()
+        };
         float queuePriority = 1.0f;
 
         for (uint32_t queueFamily : uniqueQueueFamilies)
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
+            VkDeviceQueueCreateInfo queueCreateInfo {};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCreateInfo.queueFamilyIndex = queueFamily;
             queueCreateInfo.queueCount = 1;
@@ -503,10 +512,10 @@ class HelloTraingle
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
+        VkPhysicalDeviceFeatures deviceFeatures {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
-        VkDeviceCreateInfo createInfo{};
+        VkDeviceCreateInfo createInfo {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -531,18 +540,18 @@ class HelloTraingle
     {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
-        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-        VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-        VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+        VkSurfaceFormatKHR      surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+        VkPresentModeKHR        presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+        VkExtent2D              extent = chooseSwapExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount;
+        uint32_t                imageCount = swapChainSupport.capabilities.minImageCount;
         if (swapChainSupport.capabilities.maxImageCount > 0 &&
             swapChainSupport.capabilities.minImageCount > swapChainSupport.capabilities.maxImageCount)
         {
             imageCount = swapChainSupport.capabilities.maxImageCount;
         }
 
-        VkSwapchainCreateInfoKHR createInfo{};
+        VkSwapchainCreateInfoKHR createInfo {};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.surface = surface;
 
@@ -554,7 +563,7 @@ class HelloTraingle
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-        uint32_t queueFamilyIndices[] = {indices.graphicsAndComputeFamily.value(), indices.presentFamily.value()};
+        uint32_t           queueFamilyIndices[] = { indices.graphicsAndComputeFamily.value(), indices.presentFamily.value() };
         if (indices.graphicsAndComputeFamily != indices.presentFamily)
         {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -592,16 +601,16 @@ class HelloTraingle
         for (size_t i = 0; i < swapChainImages.size(); ++i)
         {
             swapChainImageViews[i] = createImageView(
-                swapChainImages[i],
-                swapChainImageFormat,
-                VK_IMAGE_ASPECT_COLOR_BIT,
-                1);
+            swapChainImages[i],
+            swapChainImageFormat,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1);
         }
     }
 
     void createRenderPass()
     {
-        VkAttachmentDescription colorAttachment{};
+        VkAttachmentDescription colorAttachment {};
         colorAttachment.format = swapChainImageFormat;
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -611,11 +620,11 @@ class HelloTraingle
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-        VkAttachmentReference colorAttachmentRef{};
+        VkAttachmentReference colorAttachmentRef {};
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        VkAttachmentDescription depthAttachment{};
+        VkAttachmentDescription depthAttachment {};
         depthAttachment.format = findDepthFormat();
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -625,28 +634,28 @@ class HelloTraingle
         depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        VkAttachmentReference depthAttachmentRef{};
+        VkAttachmentReference depthAttachmentRef {};
         depthAttachmentRef.attachment = 1;
         depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        VkSubpassDescription subpass{};
+        VkSubpassDescription subpass {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
         subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
-        VkSubpassDependency dependency{};
+        VkSubpassDependency dependency {};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
         dependency.srcAccessMask = 0;
         dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-        std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-        VkRenderPassCreateInfo renderPassInfo{};
+        std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+        VkRenderPassCreateInfo                 renderPassInfo {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         renderPassInfo.pAttachments = attachments.data();
@@ -663,22 +672,22 @@ class HelloTraingle
 
     void createDescriptorSetLayout()
     {
-        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        VkDescriptorSetLayoutBinding uboLayoutBinding {};
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-        VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+        VkDescriptorSetLayoutBinding samplerLayoutBinding {};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        std::array bindings = {uboLayoutBinding, samplerLayoutBinding};
+        std::array                      bindings = { uboLayoutBinding, samplerLayoutBinding };
 
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        VkDescriptorSetLayoutCreateInfo layoutInfo {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         layoutInfo.pBindings = bindings.data();
@@ -691,26 +700,26 @@ class HelloTraingle
 
     void createGraphicsPipeline()
     {
-        auto vertShaderCode = readFile("shaders/shader.vert.spv");
-        auto fragShaderCode = readFile("shaders/shader.frag.spv");
+        auto                            vertShaderCode = readFile("shaders/shader.vert.spv");
+        auto                            fragShaderCode = readFile("shaders/shader.frag.spv");
 
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+        VkShaderModule                  vertShaderModule = createShaderModule(vertShaderCode);
+        VkShaderModule                  fragShaderModule = createShaderModule(fragShaderCode);
 
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo {};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         vertShaderStageInfo.module = vertShaderModule;
         vertShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+        VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
         fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = fragShaderModule;
         fragShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+        VkPipelineShaderStageCreateInfo      shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
         auto bindingDescription = Vertex::getBindingDescription();
@@ -721,17 +730,17 @@ class HelloTraingle
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
         vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly {};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-        VkPipelineViewportStateCreateInfo viewportState{};
+        VkPipelineViewportStateCreateInfo viewportState {};
         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewportState.viewportCount = 1;
         viewportState.scissorCount = 1;
 
-        VkPipelineRasterizationStateCreateInfo rasterizer{};
+        VkPipelineRasterizationStateCreateInfo rasterizer {};
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
@@ -741,7 +750,7 @@ class HelloTraingle
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
-        VkPipelineMultisampleStateCreateInfo multisampling{};
+        VkPipelineMultisampleStateCreateInfo multisampling {};
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -750,12 +759,12 @@ class HelloTraingle
         multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
         multisampling.alphaToOneEnable = VK_FALSE;      // Optional
 
-        VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+        VkPipelineColorBlendAttachmentState colorBlendAttachment {};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachment.blendEnable = VK_FALSE;
 
-        VkPipelineColorBlendStateCreateInfo colorBlending{};
+        VkPipelineColorBlendStateCreateInfo colorBlending {};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY;
@@ -766,13 +775,13 @@ class HelloTraingle
         colorBlending.blendConstants[2] = 0.0f;
         colorBlending.blendConstants[3] = 0.0f;
 
-        std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-        VkPipelineDynamicStateCreateInfo dynamicState{};
+        std::vector<VkDynamicState>      dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        VkPipelineDynamicStateCreateInfo dynamicState {};
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
@@ -783,7 +792,7 @@ class HelloTraingle
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
-        VkPipelineDepthStencilStateCreateInfo depthStencil{};
+        VkPipelineDepthStencilStateCreateInfo depthStencil {};
         depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         depthStencil.depthTestEnable = VK_TRUE;
         depthStencil.depthWriteEnable = VK_TRUE;
@@ -797,7 +806,7 @@ class HelloTraingle
         depthStencil.front = {};
         depthStencil.back = {};
 
-        VkGraphicsPipelineCreateInfo pipelineInfo{};
+        VkGraphicsPipelineCreateInfo pipelineInfo {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = shaderStages;
@@ -834,9 +843,9 @@ class HelloTraingle
 
         for (size_t i = 0; i < swapChainImageViews.size(); ++i)
         {
-            std::vector attachments = {swapChainImageViews[i], depthImageView};
+            std::vector             attachments = { swapChainImageViews[i], depthImageView };
 
-            VkFramebufferCreateInfo framebufferInfo{};
+            VkFramebufferCreateInfo framebufferInfo {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = renderPass;
             framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -854,9 +863,9 @@ class HelloTraingle
 
     void createCommandPool()
     {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+        QueueFamilyIndices      queueFamilyIndices = findQueueFamilies(physicalDevice);
 
-        VkCommandPoolCreateInfo poolInfo{};
+        VkCommandPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsAndComputeFamily.value();
@@ -871,23 +880,23 @@ class HelloTraingle
     {
         VkFormat depthFormat = findDepthFormat();
         createImage(
-            swapChainExtent.width,
-            swapChainExtent.height,
-            1,
-            depthFormat,
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            depthImage,
-            depthImageMemory);
+        swapChainExtent.width,
+        swapChainExtent.height,
+        1,
+        depthFormat,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        depthImage,
+        depthImageMemory);
 
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
         transitionImageLayout(
-            depthImage,
-            depthFormat,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            1);
+        depthImage,
+        depthFormat,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        1);
     }
 
     VkFormat
@@ -913,9 +922,9 @@ class HelloTraingle
     VkFormat findDepthFormat()
     {
         return findSupportedFormat(
-            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
     bool hasStencilComponent(VkFormat format)
@@ -925,7 +934,7 @@ class HelloTraingle
 
     void createTextureImage()
     {
-        int texWidth, texHeight, texChannels;
+        int      texWidth, texHeight, texChannels;
         stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
@@ -937,14 +946,14 @@ class HelloTraingle
             throw std::runtime_error("failed to load texture image!");
         }
 
-        VkBuffer stagingBuffer;
+        VkBuffer       stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         createBuffer(
-            imageSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer,
-            stagingBufferMemory);
+        imageSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory);
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
@@ -954,28 +963,28 @@ class HelloTraingle
         stbi_image_free(pixels);
 
         createImage(
-            texWidth,
-            texHeight,
-            mipLevels,
-            VK_FORMAT_R8G8B8A8_SRGB,
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            textureImage,
-            textureImageMemory);
+        texWidth,
+        texHeight,
+        mipLevels,
+        VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        textureImage,
+        textureImageMemory);
 
         transitionImageLayout(
-            textureImage,
-            VK_FORMAT_R8G8B8_SRGB,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            mipLevels);
+        textureImage,
+        VK_FORMAT_R8G8B8_SRGB,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        mipLevels);
 
         copyBufferToImage(
-            stagingBuffer,
-            textureImage,
-            static_cast<uint32_t>(texWidth),
-            static_cast<uint32_t>(texHeight));
+        stagingBuffer,
+        textureImage,
+        static_cast<uint32_t>(texWidth),
+        static_cast<uint32_t>(texHeight));
 
         // transitionImageLayout(
         //     textureImage,
@@ -999,9 +1008,9 @@ class HelloTraingle
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
 
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkCommandBuffer      commandBuffer = beginSingleTimeCommands();
 
-        VkImageMemoryBarrier barrier{};
+        VkImageMemoryBarrier barrier {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.image = image;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1023,40 +1032,40 @@ class HelloTraingle
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
             vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                0,
-                0,
-                nullptr,
-                0,
-                nullptr,
-                1,
-                &barrier);
+            commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
 
-            VkImageBlit blit{};
-            blit.srcOffsets[0] = {0, 0, 0};
-            blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+            VkImageBlit blit {};
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
             blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.srcSubresource.mipLevel = i - 1;
             blit.srcSubresource.baseArrayLayer = 0;
             blit.srcSubresource.layerCount = 1;
-            blit.dstOffsets[0] = {0, 0, 0};
-            blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
             blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.dstSubresource.mipLevel = i;
             blit.dstSubresource.baseArrayLayer = 0;
             blit.dstSubresource.layerCount = 1;
 
             vkCmdBlitImage(
-                commandBuffer,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &blit,
-                VK_FILTER_LINEAR);
+            commandBuffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &blit,
+            VK_FILTER_LINEAR);
 
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1064,16 +1073,16 @@ class HelloTraingle
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                0,
-                0,
-                nullptr,
-                0,
-                nullptr,
-                1,
-                &barrier);
+            commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
 
             if (mipWidth > 1)
                 mipWidth /= 2;
@@ -1088,16 +1097,16 @@ class HelloTraingle
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         vkCmdPipelineBarrier(
-            commandBuffer,
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            0,
-            0,
-            nullptr,
-            0,
-            nullptr,
-            1,
-            &barrier);
+        commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier);
         endSingleTimeCommands(commandBuffer);
     }
 
@@ -1108,10 +1117,10 @@ class HelloTraingle
 
     void createTextureSampler()
     {
-        VkPhysicalDeviceProperties properties{};
+        VkPhysicalDeviceProperties properties {};
         vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 
-        VkSamplerCreateInfo samplerInfo{};
+        VkSamplerCreateInfo samplerInfo {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VK_FILTER_LINEAR;
         samplerInfo.minFilter = VK_FILTER_LINEAR;
@@ -1137,7 +1146,7 @@ class HelloTraingle
 
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
     {
-        VkImageViewCreateInfo viewInfo{};
+        VkImageViewCreateInfo viewInfo {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1159,17 +1168,17 @@ class HelloTraingle
     }
 
     void createImage(
-        uint32_t width,
-        uint32_t height,
-        uint32_t mipLevels,
-        VkFormat format,
-        VkImageTiling tiling,
-        VkImageUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkImage& image,
-        VkDeviceMemory& imageMemory)
+    uint32_t              width,
+    uint32_t              height,
+    uint32_t              mipLevels,
+    VkFormat              format,
+    VkImageTiling         tiling,
+    VkImageUsageFlags     usage,
+    VkMemoryPropertyFlags properties,
+    VkImage&              image,
+    VkDeviceMemory&       imageMemory)
     {
-        VkImageCreateInfo imageInfo{};
+        VkImageCreateInfo imageInfo {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent.width = width;
@@ -1189,10 +1198,10 @@ class HelloTraingle
             throw std::runtime_error("failed to create image!");
         }
 
-        VkMemoryRequirements memRequirements{};
+        VkMemoryRequirements memRequirements {};
         vkGetImageMemoryRequirements(device, image, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo{};
+        VkMemoryAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
@@ -1205,11 +1214,15 @@ class HelloTraingle
     }
 
     void transitionImageLayout(
-        VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
+    VkImage       image,
+    VkFormat      format,
+    VkImageLayout oldLayout,
+    VkImageLayout newLayout,
+    uint32_t      mipLevels)
     {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkCommandBuffer      commandBuffer = beginSingleTimeCommands();
 
-        VkImageMemoryBarrier barrier{};
+        VkImageMemoryBarrier barrier {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
         barrier.newLayout = newLayout;
@@ -1234,7 +1247,7 @@ class HelloTraingle
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
         else if (
-            oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -1243,11 +1256,11 @@ class HelloTraingle
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         }
         else if (
-            oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -1278,9 +1291,9 @@ class HelloTraingle
 
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
     {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkCommandBuffer   commandBuffer = beginSingleTimeCommands();
 
-        VkBufferImageCopy region{};
+        VkBufferImageCopy region {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
         region.bufferImageHeight = 0;
@@ -1290,8 +1303,8 @@ class HelloTraingle
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
 
-        region.imageOffset = {0, 0, 0};
-        region.imageExtent = {width, height, 1};
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent = { width, height, 1 };
 
         vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
@@ -1300,57 +1313,59 @@ class HelloTraingle
 
     void loadModel()
     {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
+        tinyobj::attrib_t                attrib;
+        std::vector<tinyobj::shape_t>    shapes;
         std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
+        std::string                      warn, err;
 
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
         {
             throw std::runtime_error(warn + err);
         }
 
-        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+        std::unordered_map<Vertex, uint32_t> unique_vertices {};
 
         for (auto const& shape : shapes)
         {
             for (auto const& index : shape.mesh.indices)
             {
-                Vertex vertex{};
+                Vertex vertex {};
                 vertex.pos = {
                     attrib.vertices[3 * index.vertex_index + 0],
                     attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]};
+                    attrib.vertices[3 * index.vertex_index + 2]
+                };
 
                 vertex.uv = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+                };
 
-                vertex.color = {1.0f, 1.0f, 1.0f};
+                vertex.color = { 1.0f, 1.0f, 1.0f };
 
-                if (!uniqueVertices.contains(vertex))
+                if (!unique_vertices.contains(vertex))
                 {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                    unique_vertices[vertex] = static_cast<uint32_t>(vertices.size());
                     vertices.push_back(vertex);
                 }
 
-                indices.push_back(uniqueVertices[vertex]);
+                indices.push_back(unique_vertices[vertex]);
             }
         }
     }
 
     void createVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+        VkDeviceSize   bufferSize = sizeof(vertices[0]) * vertices.size();
 
-        VkBuffer stagingBuffer;
+        VkBuffer       stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer,
-            stagingBufferMemory);
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory);
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
@@ -1358,11 +1373,11 @@ class HelloTraingle
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            vertexBuffer,
-            vertexBufferMemory);
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        vertexBuffer,
+        vertexBufferMemory);
 
         copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -1371,27 +1386,27 @@ class HelloTraingle
 
     void createIndexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        VkDeviceSize   bufferSize = sizeof(indices[0]) * indices.size();
 
-        VkBuffer stagingBuffer;
+        VkBuffer       stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer,
-            stagingBufferMemory);
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory);
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, indices.data(), bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
         createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            indexBuffer,
-            indexBufferMemory);
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        indexBuffer,
+        indexBufferMemory);
 
         copyBuffer(stagingBuffer, indexBuffer, bufferSize);
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -1409,11 +1424,11 @@ class HelloTraingle
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
             createBuffer(
-                bufferSize,
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                uniformBuffers[i],
-                uniformBuffersMemory[i]);
+            bufferSize,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            uniformBuffers[i],
+            uniformBuffersMemory[i]);
 
             vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
         }
@@ -1421,13 +1436,13 @@ class HelloTraingle
 
     void createDescriptorPool()
     {
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        std::array<VkDescriptorPoolSize, 2> poolSizes {};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-        VkDescriptorPoolCreateInfo poolInfo{};
+        VkDescriptorPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes = poolSizes.data();
@@ -1443,7 +1458,7 @@ class HelloTraingle
     {
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 
-        VkDescriptorSetAllocateInfo allocInfo{};
+        VkDescriptorSetAllocateInfo        allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
         allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
@@ -1457,17 +1472,17 @@ class HelloTraingle
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            VkDescriptorBufferInfo bufferInfo{};
+            VkDescriptorBufferInfo bufferInfo {};
             bufferInfo.buffer = uniformBuffers[i];
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
+            VkDescriptorImageInfo imageInfo {};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = textureImageView;
             imageInfo.sampler = textureSampler;
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites {};
 
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = descriptorSets[i];
@@ -1486,22 +1501,22 @@ class HelloTraingle
             descriptorWrites[1].pImageInfo = &imageInfo;
 
             vkUpdateDescriptorSets(
-                device,
-                static_cast<uint32_t>(descriptorWrites.size()),
-                descriptorWrites.data(),
-                0,
-                nullptr);
+            device,
+            static_cast<uint32_t>(descriptorWrites.size()),
+            descriptorWrites.data(),
+            0,
+            nullptr);
         }
     }
 
     void createBuffer(
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkBuffer& buffer,
-        VkDeviceMemory& bufferMemory)
+    VkDeviceSize          size,
+    VkBufferUsageFlags    usage,
+    VkMemoryPropertyFlags properties,
+    VkBuffer&             buffer,
+    VkDeviceMemory&       bufferMemory)
     {
-        VkBufferCreateInfo bufferInfo{};
+        VkBufferCreateInfo bufferInfo {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
@@ -1515,7 +1530,7 @@ class HelloTraingle
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo{};
+        VkMemoryAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
@@ -1530,7 +1545,7 @@ class HelloTraingle
 
     VkCommandBuffer beginSingleTimeCommands()
     {
-        VkCommandBufferAllocateInfo allocInfo{};
+        VkCommandBufferAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandPool = commandPool;
@@ -1539,7 +1554,7 @@ class HelloTraingle
         VkCommandBuffer commandBuffer;
         vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
 
-        VkCommandBufferBeginInfo beginInfo{};
+        VkCommandBufferBeginInfo beginInfo {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
@@ -1550,7 +1565,7 @@ class HelloTraingle
     void endSingleTimeCommands(VkCommandBuffer commandBuffer)
     {
         vkEndCommandBuffer(commandBuffer);
-        VkSubmitInfo submitInfo{};
+        VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
@@ -1562,7 +1577,7 @@ class HelloTraingle
     {
         VkCommandBuffer const commandBuffer = beginSingleTimeCommands();
 
-        VkBufferCopy copyRegion{};
+        VkBufferCopy          copyRegion {};
         copyRegion.size = size;
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
@@ -1588,7 +1603,7 @@ class HelloTraingle
     void createCommandBuffers()
     {
         commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-        VkCommandBufferAllocateInfo allocInfo{};
+        VkCommandBufferAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = commandPool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1602,7 +1617,7 @@ class HelloTraingle
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
-        VkCommandBufferBeginInfo beginInfo{};
+        VkCommandBufferBeginInfo beginInfo {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = 0;
         beginInfo.pInheritanceInfo = nullptr;
@@ -1612,17 +1627,17 @@ class HelloTraingle
             throw std::runtime_error("failed to begin recording command buffer!");
         }
 
-        VkRenderPassBeginInfo renderPassInfo{};
+        VkRenderPassBeginInfo renderPassInfo {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass;
         renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
 
-        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
+        std::array<VkClearValue, 2> clearValues {};
+        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        clearValues[1].depthStencil = { 1.0f, 0 };
 
         renderPassInfo.pClearValues = clearValues.data();
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -1630,7 +1645,7 @@ class HelloTraingle
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-        VkViewport viewport{};
+        VkViewport viewport {};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
         viewport.width = static_cast<float>(swapChainExtent.width);
@@ -1639,24 +1654,24 @@ class HelloTraingle
         viewport.maxDepth = 1.0f;
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
+        VkRect2D scissor {};
+        scissor.offset = { 0, 0 };
         scissor.extent = swapChainExtent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vertexBuffers[] = {vertexBuffer};
-        VkDeviceSize offsets[] = {0};
+        VkBuffer     vertexBuffers[] = { vertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(
-            commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineLayout,
-            0,
-            1,
-            &descriptorSets[currentFrame],
-            0,
-            nullptr);
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineLayout,
+        0,
+        1,
+        &descriptorSets[currentFrame],
+        0,
+        nullptr);
 
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
@@ -1673,10 +1688,10 @@ class HelloTraingle
         renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VkSemaphoreCreateInfo semaphoreInfo{};
+        VkSemaphoreCreateInfo semaphoreInfo {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        VkFenceCreateInfo fenceInfo{};
+        VkFenceCreateInfo fenceInfo {};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
@@ -1693,19 +1708,19 @@ class HelloTraingle
 
     void updateUniformBuffer()
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
+        static auto         startTime = std::chrono::high_resolution_clock::now();
 
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        auto                currentTime = std::chrono::high_resolution_clock::now();
+        float               time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        UniformBufferObject ubo{};
+        UniformBufferObject ubo {};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(
-            glm::radians(45.0f),
-            static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height),
-            0.1f,
-            10.0f);
+        glm::radians(45.0f),
+        static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height),
+        0.1f,
+        10.0f);
 
         ubo.proj[1][1] *= -1;
 
@@ -1716,14 +1731,14 @@ class HelloTraingle
     {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
-        uint32_t imageIndex{};
+        uint32_t imageIndex {};
         VkResult result = vkAcquireNextImageKHR(
-            device,
-            swapChain,
-            UINT64_MAX,
-            imageAvailableSemaphores[currentFrame],
-            VK_NULL_HANDLE,
-            &imageIndex);
+        device,
+        swapChain,
+        UINT64_MAX,
+        imageAvailableSemaphores[currentFrame],
+        VK_NULL_HANDLE,
+        &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -1742,11 +1757,11 @@ class HelloTraingle
         vkResetCommandBuffer(commandBuffers[currentFrame], 0);
         recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
-        VkSubmitInfo submitInfo{};
+        VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        VkSemaphore          waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
@@ -1754,7 +1769,7 @@ class HelloTraingle
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+        VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -1763,12 +1778,12 @@ class HelloTraingle
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
-        VkPresentInfoKHR presentInfo{};
+        VkPresentInfoKHR presentInfo {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = {swapChain};
+        VkSwapchainKHR swapChains[] = { swapChain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
@@ -1789,7 +1804,7 @@ class HelloTraingle
 
     VkShaderModule createShaderModule(std::vector<char> const& code)
     {
-        VkShaderModuleCreateInfo createInfo{};
+        VkShaderModuleCreateInfo createInfo {};
 
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = code.size();
@@ -1841,16 +1856,16 @@ class HelloTraingle
             int width, height;
             glfwGetFramebufferSize(VulkanWindow::get_window(), &width, &height);
 
-            VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+            VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
             actualExtent.width = std::clamp(
-                actualExtent.width,
-                capabilities.minImageExtent.width,
-                capabilities.maxImageExtent.width);
+            actualExtent.width,
+            capabilities.minImageExtent.width,
+            capabilities.maxImageExtent.width);
             actualExtent.height = std::clamp(
-                actualExtent.height,
-                capabilities.minImageExtent.height,
-                capabilities.maxImageExtent.height);
+            actualExtent.height,
+            capabilities.minImageExtent.height,
+            capabilities.maxImageExtent.height);
 
             return actualExtent;
         }
@@ -1858,11 +1873,11 @@ class HelloTraingle
 
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device)
     {
-        SwapChainSupportDetails details{};
+        SwapChainSupportDetails details {};
 
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
-        uint32_t formatCount{};
+        uint32_t formatCount {};
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
         if (formatCount != 0)
@@ -1885,8 +1900,8 @@ class HelloTraingle
 
     bool isDeviceSuitable(VkPhysicalDevice device)
     {
-        QueueFamilyIndices indices = findQueueFamilies(device);
-        bool extensionsSupported = checkDeviceExtensionSupport(device);
+        QueueFamilyIndices       indices = findQueueFamilies(device);
+        bool                     extensionsSupported = checkDeviceExtensionSupport(device);
 
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
@@ -1920,7 +1935,7 @@ class HelloTraingle
     {
         QueueFamilyIndices indices;
 
-        uint32_t queueFamilyCount = 0;
+        uint32_t           queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
@@ -1953,7 +1968,7 @@ class HelloTraingle
 
     std::vector<char const*> getRequiredExtensions()
     {
-        uint32_t glfwExtensionCount = 0;
+        uint32_t     glfwExtensionCount = 0;
         char const** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
@@ -2003,7 +2018,7 @@ class HelloTraingle
             throw std::runtime_error("failed to open file!");
         }
 
-        size_t fileSize = file.tellg();
+        size_t            fileSize = file.tellg();
         std::vector<char> buffer(fileSize);
 
         file.seekg(0);
@@ -2014,10 +2029,10 @@ class HelloTraingle
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
-        void* pUserData)
+    VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT             messageType,
+    VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
+    void*                                       pUserData)
     {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
@@ -2029,7 +2044,7 @@ int main2()
 {
     try
     {
-        HelloTraingle{}.run();
+        HelloTraingle {}.run();
     }
     catch (std::exception const& e)
     {

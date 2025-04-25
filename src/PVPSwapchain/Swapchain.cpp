@@ -105,11 +105,10 @@ pvp::Swapchain::Swapchain(Instance& instance, PhysicalDevice& PVPdevice)
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    const QueueFamilyIndices family_indices = get_queue_family_indices(physical_device, surface);
-
-    if (family_indices.graphics_family != family_indices.present_family)
+    const QueueFamilies& queue_families = PVPdevice.get_queue_families();
+    if (queue_families.graphics_family.family_index != queue_families.present_family.family_index)
     {
-        const uint32_t* queue_family = new uint32_t[] { family_indices.graphics_family, family_indices.present_family };
+        const uint32_t* queue_family = new uint32_t[] { queue_families.graphics_family.family_index, queue_families.present_family.family_index };
         destructor_queue.add_to_queue([&] { delete queue_family; });
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
@@ -163,6 +162,7 @@ pvp::Swapchain::Swapchain(Instance& instance, PhysicalDevice& PVPdevice)
                                      m_swapchain_extent.width,
                                      m_swapchain_extent.height,
                                      VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                     VK_IMAGE_LAYOUT_UNDEFINED,
                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                      VMA_MEMORY_USAGE_GPU_ONLY,
                                      VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -215,4 +215,8 @@ VkExtent2D pvp::Swapchain::get_swapchain_extent()
 VkSwapchainKHR pvp::Swapchain::get_swapchain()
 {
     return m_swapchain;
+}
+const std::vector<VkFramebuffer>& pvp::Swapchain::get_framebuffers()
+{
+    return m_framebuffers;
 }

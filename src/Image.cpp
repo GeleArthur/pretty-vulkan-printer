@@ -6,7 +6,7 @@
 
 namespace pvp
 {
-    Image::Image(VkDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memory_usage, VkImageAspectFlags aspect_flags)
+    Image::Image(VkDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageLayout layout, VkImageUsageFlags usage, VmaMemoryUsage memory_usage, VkImageAspectFlags aspect_flags)
     {
         m_device = device;
         VkImageCreateInfo image_info {};
@@ -19,7 +19,7 @@ namespace pvp
         image_info.arrayLayers = 1;
         image_info.format = format;
         image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_info.initialLayout = layout;
         image_info.usage = usage;
         image_info.samples = VK_SAMPLE_COUNT_1_BIT;
         image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

@@ -5,18 +5,17 @@
 #include <set>
 #include <stdexcept>
 
-const QueueFamilyIndices& get_queue_family_indices(const VkPhysicalDevice physical_device, const VkSurfaceKHR surface)
+std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice physical_device, const VkSurfaceKHR surface)
 {
-    static QueueFamilyIndices result;
-    if (result.success == true)
-        return result;
+    QueueFamilies result {};
 
-    uint32_t queue_family_count = 0;
+    uint32_t      queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
 
-    bool graphics_queue{}, compute_queue{}, transfer_queue{}, surface_queue{};
+    bool graphics_queue {}, compute_queue {}, transfer_queue {}, surface_queue {};
+    bool success = false;
 
     for (int family_index = 0; family_index < queue_families.size(); ++family_index)
     {
@@ -24,16 +23,15 @@ const QueueFamilyIndices& get_queue_family_indices(const VkPhysicalDevice physic
         {
             if (graphics_queue == false)
             {
-                result.graphics_family = family_index;
+                result.graphics_family.family_index = family_index;
                 graphics_queue = true;
             }
         }
-        // graphics_queue = true;
         if (queue_families[family_index].queueFlags & VK_QUEUE_COMPUTE_BIT)
         {
             if (compute_queue == false)
             {
-                result.compute_family = family_index;
+                result.compute_family.family_index = family_index;
                 compute_queue = true;
             }
         }
@@ -41,41 +39,41 @@ const QueueFamilyIndices& get_queue_family_indices(const VkPhysicalDevice physic
         {
             if (transfer_queue == false)
             {
-                result.transfer_family = family_index;
+                result.transfer_family.family_index = family_index;
                 transfer_queue = true;
             }
         }
 
-        VkBool32 is_supporting_queue{};
+        VkBool32 is_supporting_queue {};
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, family_index, surface, &is_supporting_queue);
         if (is_supporting_queue)
         {
-            result.present_family = family_index;
+            result.present_family.family_index = family_index;
             surface_queue = true;
         }
 
         if (graphics_queue && compute_queue && transfer_queue && surface_queue)
         {
-            result.success = true;
-            return result;
+            success = true;
+            return std::tuple(success, result);
         }
     }
 
-    return result;
+    return std::tuple(success, result);
 }
 
 VkPhysicalDevice get_best_device(
-    const std::vector<VkPhysicalDevice>& devices,
-    const std::vector<const char*>& device_extensions,
-    const VkSurfaceKHR& surface)
+const std::vector<VkPhysicalDevice>& devices,
+const std::vector<const char*>&      device_extensions,
+const VkSurfaceKHR&                  surface)
 {
-    uint32_t best_score = 0;
+    uint32_t         best_score = 0;
     VkPhysicalDevice best_device = VK_NULL_HANDLE;
 
     for (const VkPhysicalDevice device : devices)
     {
         // Does GPU support the extensions?
-        uint32_t extension_count{};
+        uint32_t extension_count {};
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
         std::vector<VkExtensionProperties> available_extensions(extension_count);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
@@ -84,9 +82,8 @@ VkPhysicalDevice get_best_device(
         for (const char* extension : device_extensions)
         {
             if (std::ranges::find_if(
-                    available_extensions,
-                    [&](const VkExtensionProperties& ex)
-                    { return std::strcmp(ex.extensionName, extension); }) == available_extensions.end())
+                available_extensions,
+                [&](const VkExtensionProperties& ex) { return std::strcmp(ex.extensionName, extension); }) == available_extensions.end())
             {
                 has_extension = false;
                 break;
@@ -102,12 +99,13 @@ VkPhysicalDevice get_best_device(
             continue;
         }
 
-        // Does it have all of the queue Families.
-        const QueueFamilyIndices& result = get_queue_family_indices(device, surface);
-        if (result.success == false)
-        {
-            continue;
-        }
+        // TODO: Make sure the device supports graphics and present queue
+
+        // const QueueFamilyIndicesStruct& result = get_queue_family_indices(device, surface);
+        // if (result.success == false)
+        // {
+        //     continue;
+        // }
 
         // What is the best gpu?
         VkPhysicalDeviceProperties device_properties;
@@ -130,11 +128,11 @@ VkPhysicalDevice get_best_device(
 }
 
 pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<std::string>& device_extensions)
-    : m_instance{pvp_instance}
+    : m_instance { pvp_instance }
 {
     const VkInstance instance = m_instance->get_instance();
 
-    std::vector device_extensions_real{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector      device_extensions_real { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     device_extensions_real.reserve(1 + device_extensions.size());
     for (std::string extension : device_extensions)
     {
@@ -153,20 +151,26 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
         throw std::runtime_error("No device found that works");
     }
 
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos{};
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos {};
 
-    QueueFamilyIndices queue_indices = get_queue_family_indices(m_physical_device, pvp_instance->get_surface());
+    auto [success, queue_families] = get_queue_family_indices(m_physical_device, pvp_instance->get_surface());
+
+    if (!success)
+    {
+        throw std::runtime_error("failed to find a suitable queue family!");
+    }
 
     std::set<uint32_t> unique_queue_families = {
-        queue_indices.compute_family,
-        queue_indices.graphics_family,
-        queue_indices.transfer_family,
-        queue_indices.present_family};
+        queue_families.compute_family.family_index,
+        queue_families.graphics_family.family_index,
+        queue_families.transfer_family.family_index,
+        queue_families.present_family.family_index
+    };
     float queue_priority = 1.0f;
 
     for (uint32_t queue_family : unique_queue_families)
     {
-        VkDeviceQueueCreateInfo queue_create_info{};
+        VkDeviceQueueCreateInfo queue_create_info {};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
         queue_create_info.queueCount = 1;
@@ -174,9 +178,9 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
         queue_create_infos.push_back(queue_create_info);
     }
 
-    VkPhysicalDeviceFeatures device_features{};
+    VkPhysicalDeviceFeatures device_features {};
 
-    VkDeviceCreateInfo device_create_info{};
+    VkDeviceCreateInfo       device_create_info {};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
     device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
@@ -193,10 +197,12 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
     }
     m_destructor.add_to_queue([&] { vkDestroyDevice(m_device, nullptr); });
 
-    vkGetDeviceQueue(m_device, queue_indices.graphics_family, 0, &m_graphics_queue);
-    vkGetDeviceQueue(m_device, queue_indices.compute_family, 0, &m_compute_queue);
-    vkGetDeviceQueue(m_device, queue_indices.transfer_family, 0, &m_transfer_queue);
-    vkGetDeviceQueue(m_device, queue_indices.present_family, 0, &m_present_queue);
+    vkGetDeviceQueue(m_device, queue_families.graphics_family.family_index, 0, &queue_families.graphics_family.queue);
+    vkGetDeviceQueue(m_device, queue_families.compute_family.family_index, 0, &queue_families.compute_family.queue);
+    vkGetDeviceQueue(m_device, queue_families.transfer_family.family_index, 0, &queue_families.transfer_family.queue);
+    vkGetDeviceQueue(m_device, queue_families.present_family.family_index, 0, &queue_families.present_family.queue);
+
+    m_queue_families = queue_families;
 }
 
 VkDevice pvp::PhysicalDevice::get_device()
@@ -206,20 +212,4 @@ VkDevice pvp::PhysicalDevice::get_device()
 VkPhysicalDevice pvp::PhysicalDevice::get_physical_device()
 {
     return m_physical_device;
-}
-VkQueue pvp::PhysicalDevice::get_graphics_queue()
-{
-    return m_graphics_queue;
-}
-VkQueue pvp::PhysicalDevice::get_compute_queue()
-{
-    return m_compute_queue;
-}
-VkQueue pvp::PhysicalDevice::get_transfer_queue()
-{
-    return m_transfer_queue;
-}
-VkQueue pvp::PhysicalDevice::get_present_queue()
-{
-    return m_present_queue;
 }

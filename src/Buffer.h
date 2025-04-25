@@ -1,13 +1,32 @@
 ﻿#pragma once
+#include <PVPCommandBuffer/CommandBuffer.h>
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 
-struct Buffer
+class Buffer
 {
-    Buffer(VkDeviceSize buffer_size, VmaMemoryUsage usage, VkBufferUsageFlagBits buffer_usage);
+    public:
+    Buffer(VkDeviceSize buffer_size, VkBufferUsageFlags buffer_usage, VmaMemoryUsage usage, VmaAllocationCreateFlags flags);
     ~Buffer();
-    void          destroy_buffer() const;
+    void      destroy_buffer() const;
 
-    VkBuffer      buffer;
-    VmaAllocation allocation;
+    VkBuffer& get_buffer()
+    {
+        return m_buffer;
+    };
+    VmaAllocation& get_allocation()
+    {
+        return m_allocation;
+    };
+    VmaAllocationInfo& get_allocation_info()
+    {
+        return m_allocation_info;
+    };
+
+    void copy_into_buffer(pvp::CommandBuffer& command_buffer, Buffer& destination);
+
+    private:
+    VkBuffer          m_buffer;
+    VmaAllocation     m_allocation;
+    VmaAllocationInfo m_allocation_info;
 };

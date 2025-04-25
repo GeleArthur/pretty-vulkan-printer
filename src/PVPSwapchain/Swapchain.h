@@ -14,12 +14,13 @@ namespace pvp
     {
         public:
         explicit Swapchain(Instance& instance, PhysicalDevice& PVPdevice);
-        static bool        does_device_support_swapchain(VkPhysicalDevice device, VkSurfaceKHR surface);
-        void               create_frame_buffers(VkDevice device, VkRenderPass render_pass);
+        static bool                       does_device_support_swapchain(VkPhysicalDevice device, VkSurfaceKHR surface);
+        void                              create_frame_buffers(VkDevice device, VkRenderPass render_pass);
 
-        VkSurfaceFormatKHR get_swapchain_surface_format();
-        VkExtent2D         get_swapchain_extent();
-        VkSwapchainKHR     get_swapchain();
+        VkSurfaceFormatKHR                get_swapchain_surface_format();
+        VkExtent2D                        get_swapchain_extent();
+        VkSwapchainKHR                    get_swapchain();
+        const std::vector<VkFramebuffer>& get_framebuffers();
 
         private:
         std::vector<VkFramebuffer> m_framebuffers;

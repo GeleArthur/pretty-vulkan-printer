@@ -8,8 +8,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(libraries)
-add_subdirectory(resources)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
@@ -53,7 +51,19 @@ add_executable(${PROJECT_NAME}
         src/Image.h
         src/Buffer.cpp
         src/Buffer.h
+        src/LoadModel.cpp
+        src/LoadModel.h
+        src/PVPCommandBuffer/CommandBuffer.cpp
+        src/PVPCommandBuffer/CommandBuffer.h
+        src/PVPSyncManager/SyncBuilder.cpp
+        src/PVPSyncManager/SyncBuilder.h
+        src/PVPSyncManager/Semaphore.h
+        src/PVPSyncManager/Fence.h
 )
+
+add_subdirectory(libraries)
+add_subdirectory(resources)
+add_dependencies(${PROJECT_NAME} copy_resources)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 

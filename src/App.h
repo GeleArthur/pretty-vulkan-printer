@@ -1,23 +1,24 @@
 ﻿#pragma once
+#include <Buffer.h>
+#include <LoadModel.h>
 #include <PVPInstance/PVPInstance.h>
 #include <PVPPhysicalDevice/PVPPhysicalDevice.h>
+#include <PVPSyncManager/Fence.h>
+#include <PVPSyncManager/Semaphore.h>
+#include <PVPSyncManager/SyncBuilder.h>
 #include <PVPVMAAllocator/VmaAllocator.h>
-
-struct PVPContext
-{
-    GLFWwindow*  window { nullptr };
-    VkInstance   instance { nullptr };
-    VkSurfaceKHR surface { nullptr };
-};
 
 namespace pvp
 {
+    class CommandBuffer;
 
     class Swapchain;
     class App
     {
         public:
         void run();
+        void draw_frame();
+        void record_commands(VkCommandBuffer graphics_command, uint32_t image_index);
 
         private:
         Instance*             m_pvp_instance {};
@@ -28,7 +29,15 @@ namespace pvp
         VkPipelineLayout      m_pipeline_layout {};
         PvpVmaAllocator*      m_allocator {};
         VkPipeline            m_graphics_pipeline {};
+        CommandBuffer*        m_command_buffer {};
+        Buffer*               m_vertex_buffer {};
+        SyncBuilder*          m_sync_builder {};
+        LoadModel             m_model {};
         DestructorQueue       m_destructor_queue;
+
+        Semaphore             m_image_available_semaphore {};
+        Semaphore             m_render_finished_semaphore {};
+        Fence                 m_in_flight_fence {};
     };
 
 } // namespace pvp
