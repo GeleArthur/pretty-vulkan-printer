@@ -2,7 +2,7 @@
 
 #include "../build/_deps/assimp-src/code/AssetLib/3DS/3DSExporter.h"
 
-#include <Buffer.h>
+#include <PVPBuffer/Buffer.h>
 #include <Image.h>
 #include <LoadModel.h>
 #include <UniformBufferStruct.h>
@@ -13,6 +13,7 @@
 #include <PVPSwapchain/Swapchain.h>
 
 #include <iostream>
+#include <PVPBuffer/BufferBuilder.h>
 #include <PVPCommandBuffer/CommandBuffer.h>
 #include <PVPGraphicsPipeline/DescriptorSetLayoutBuilder.h>
 #include <PVPGraphicsPipeline/PVPVertex.h>
@@ -69,12 +70,12 @@ void pvp::App::run()
     m_descriptor_pool = new DescriptorPool(m_pvp_physical_device->get_device(), { VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 } }, 2);
     m_destructor_queue.add_to_queue([&] { m_descriptor_pool->destroy(); });
 
-    m_uniform_buffer = new Buffer(
-    sizeof(UniformBufferObject),
-    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-    VMA_MEMORY_USAGE_AUTO,
-    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
-    m_destructor_queue.add_to_queue([&] { delete m_uniform_buffer; });
+    m_uniform_buffer = BufferBuilder()
+                       .set_size(sizeof(UniformBufferObject))
+                       .set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+                       .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+                       .build(PvpVmaAllocator::get_allocator());
+    m_destructor_queue.add_to_queue([&] { m_uniform_buffer.destroy(); });
 
     float               time = 1;
 
@@ -89,11 +90,11 @@ void pvp::App::run()
 
     ubo.proj[1][1] *= -1;
 
-    memcpy(m_uniform_buffer->get_allocation_info().pMappedData, &ubo, sizeof(ubo));
+    memcpy(m_uniform_buffer.get_allocation_info().pMappedData, &ubo, sizeof(ubo));
 
     m_descriptor = DescriptorSetBuilder()
                    .set_layout(layout)
-                   .bind_buffer(0, *m_uniform_buffer)
+                   .bind_buffer(0, m_uniform_buffer)
                    .build(m_pvp_physical_device->get_device(), *m_descriptor_pool);
 
     auto vertex_shader = ShaderLoader::load_shader_from_file(m_pvp_physical_device->get_device(), "shaders/shader.vert.spv");
@@ -114,20 +115,37 @@ void pvp::App::run()
 
     m_model.load_file(std::filesystem::absolute("resources/cube.fbx"));
 
-    Buffer transfer_buffer = Buffer(m_model.verties.size() * sizeof(PvpVertex),
-                                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                    VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
-                                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
+    Buffer transfer_buffer = BufferBuilder()
+                             .set_size(m_model.verties.size() * sizeof(PvpVertex))
+                             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+                             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+                             .build(PvpVmaAllocator::get_allocator());
+    transfer_buffer.input_data(m_model.verties.data(), m_model.verties.size() * sizeof(PvpVertex));
 
-    memcpy(transfer_buffer.get_allocation_info().pMappedData, m_model.verties.data(), m_model.verties.size() * sizeof(PvpVertex));
+    m_vertex_buffer = BufferBuilder()
+                      .set_size(m_model.verties.size() * sizeof(PvpVertex))
+                      .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+                      .build(PvpVmaAllocator::get_allocator());
+    m_destructor_queue.add_to_queue([&] { m_vertex_buffer.destroy(); });
 
-    m_vertex_buffer = new Buffer(m_model.verties.size() * sizeof(PvpVertex),
-                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                 VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
-                                 0);
-    m_destructor_queue.add_to_queue([&] { delete m_vertex_buffer; });
+    m_vertex_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer);
+    transfer_buffer.destroy();
 
-    transfer_buffer.copy_into_buffer(*m_command_buffer, *m_vertex_buffer);
+    Buffer transfer_buffer_index = BufferBuilder()
+                                   .set_size(m_model.verties.size() * sizeof(PvpVertex))
+                                   .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+                                   .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+                                   .build(PvpVmaAllocator::get_allocator());
+    transfer_buffer_index.input_data(m_model.indices.data(), m_model.indices.size() * sizeof(uint32_t));
+
+    m_index_buffer = BufferBuilder()
+                     .set_size(m_model.indices.size() * sizeof(uint32_t))
+                     .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+                     .build(PvpVmaAllocator::get_allocator());
+    m_destructor_queue.add_to_queue([&] { m_index_buffer.destroy(); });
+
+    m_index_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer_index);
+    transfer_buffer_index.destroy();
 
     VkSemaphoreCreateInfo semaphore_info {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -181,7 +199,7 @@ void pvp::App::draw_frame()
 
     ubo.proj[1][1] *= -1;
 
-    memcpy(m_uniform_buffer->get_allocation_info().pMappedData, &ubo, sizeof(ubo));
+    memcpy(m_uniform_buffer.get_allocation_info().pMappedData, &ubo, sizeof(ubo));
 
     record_commands(graphics_command, image_index);
 
@@ -260,7 +278,7 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     scissor.extent = m_pvp_swapchain->get_swapchain_extent();
     vkCmdSetScissor(graphics_command, 0, 1, &scissor);
 
-    VkBuffer     vertex_buffers[] = { m_vertex_buffer->get_buffer() };
+    VkBuffer     vertex_buffers[] = { m_vertex_buffer.get_buffer() };
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(graphics_command, 0, 1, vertex_buffers, offsets);
 
@@ -273,8 +291,10 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     &m_descriptor.handle,
     0,
     nullptr);
+    vkCmdBindIndexBuffer(graphics_command, m_index_buffer.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDraw(graphics_command, m_model.verties.size(), 1, 0, 0);
+    vkCmdDrawIndexed(graphics_command, m_model.indices.size(), 1, 0, 0, 0);
+    // vkCmdDraw(graphics_command, m_model.verties.size(), 1, 0, 0);
 
     vkCmdEndRenderPass(graphics_command);
 

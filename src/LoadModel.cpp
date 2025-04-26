@@ -13,4 +13,11 @@ void LoadModel::load_file(const std::filesystem::path& path)
         const aiVector3D& vertex = scene->mMeshes[0]->mVertices[i];
         verties.emplace_back(glm::vec3(vertex.x, vertex.y, vertex.z), glm::vec2());
     }
+
+    indices.reserve(scene->mMeshes[0]->mNumFaces * 3);
+    for (unsigned int i = 0; i < scene->mMeshes[0]->mNumFaces; ++i)
+        for (unsigned int j = 0; j < 3; ++j)
+            indices.emplace_back(scene->mMeshes[0]->mFaces[i].mIndices[j]);
+
+    aiReleaseImport(scene);
 }

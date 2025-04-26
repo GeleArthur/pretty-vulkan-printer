@@ -49,8 +49,8 @@ add_executable(${PROJECT_NAME}
         src/PVPVMAAllocator/VmaAllocator.h
         src/Image.cpp
         src/Image.h
-        src/Buffer.cpp
-        src/Buffer.h
+        src/PVPBuffer/Buffer.cpp
+        src/PVPBuffer/Buffer.h
         src/LoadModel.cpp
         src/LoadModel.h
         src/PVPCommandBuffer/CommandBuffer.cpp
@@ -72,6 +72,8 @@ add_executable(${PROJECT_NAME}
         src/PVPModels/GPUModel.cpp
         src/PVPModels/GPUModel.h
         src/PVPModels/ModelData.h
+        src/PVPBuffer/BufferBuilder.cpp
+        src/PVPBuffer/BufferBuilder.h
 )
 
 add_subdirectory(libraries)

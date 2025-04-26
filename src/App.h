@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <Buffer.h>
+#include <PVPBuffer/Buffer.h>
 #include <LoadModel.h>
 #include <PVPDescriptorSets/DescriptorSetBuilder.h>
 #include <PVPInstance/PVPInstance.h>
@@ -30,8 +30,9 @@ namespace pvp
         PvpVmaAllocator* m_allocator {};
         VkPipeline       m_graphics_pipeline {};
         CommandBuffer*   m_command_buffer {};
-        Buffer*          m_vertex_buffer {};
-        Buffer*          m_uniform_buffer {};
+        Buffer           m_vertex_buffer {};
+        Buffer           m_index_buffer {};
+        Buffer           m_uniform_buffer {};
         SyncBuilder*     m_sync_builder {};
         LoadModel        m_model {};
         DescriptorSet    m_descriptor {};
