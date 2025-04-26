@@ -38,7 +38,10 @@ void pvp::App::run()
     m_allocator = new PvpVmaAllocator(*m_pvp_instance, *m_pvp_physical_device);
     m_destructor_queue.add_to_queue([&] { delete m_allocator; });
 
-    m_pvp_swapchain = new Swapchain(*m_pvp_instance, *m_pvp_physical_device);
+    m_command_buffer = new CommandBuffer(*m_pvp_physical_device);
+    m_destructor_queue.add_to_queue([&] { delete m_command_buffer; });
+
+    m_pvp_swapchain = new Swapchain(*m_pvp_instance, *m_pvp_physical_device, *m_command_buffer);
     m_destructor_queue.add_to_queue([&] { delete m_pvp_swapchain; });
 
     m_pvp_render_pass = RenderPassBuilder().build(*m_pvp_swapchain, *m_pvp_physical_device);
@@ -47,9 +50,6 @@ void pvp::App::run()
 
     m_sync_builder = new SyncBuilder(m_pvp_physical_device->get_device());
     m_destructor_queue.add_to_queue([&] { delete m_sync_builder; });
-
-    m_command_buffer = new CommandBuffer(*m_pvp_physical_device);
-    m_destructor_queue.add_to_queue([&] { delete m_command_buffer; });
 
     DescriptorLayout layout = DescriptorLayout(m_pvp_physical_device->get_device(),
                                                {
@@ -98,7 +98,7 @@ void pvp::App::run()
                           .add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT)
                           .add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT)
                           .set_pipeline_layout(m_pipeline_layout)
-                          .set_input_atrribute_description(PvpVertex::get_attribute_descriptions())
+                          .set_input_attribute_description(PvpVertex::get_attribute_descriptions())
                           .set_input_binding_description(PvpVertex::get_binding_description())
                           .build(*m_pvp_physical_device);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_pvp_physical_device->get_device(), m_graphics_pipeline, nullptr); });

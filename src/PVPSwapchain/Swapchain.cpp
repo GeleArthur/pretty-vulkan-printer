@@ -1,6 +1,6 @@
 ﻿#include "Swapchain.h"
 
-#include <Image.h>
+#include <PVPImage/Image.h>
 #include <PVPInstance/PVPInstance.h>
 #include <PVPPhysicalDevice/PVPPhysicalDevice.h>
 
@@ -81,7 +81,7 @@ static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabili
     return actual_extent;
 }
 
-pvp::Swapchain::Swapchain(Instance& instance, PhysicalDevice& PVPdevice)
+pvp::Swapchain::Swapchain(Instance& instance, PhysicalDevice& PVPdevice, CommandBuffer& command_buffer)
 {
     const VkPhysicalDevice physical_device = PVPdevice.get_physical_device();
     const VkSurfaceKHR     surface = instance.get_surface();
@@ -162,10 +162,13 @@ pvp::Swapchain::Swapchain(Instance& instance, PhysicalDevice& PVPdevice)
                                      m_swapchain_extent.width,
                                      m_swapchain_extent.height,
                                      VK_FORMAT_D32_SFLOAT_S8_UINT,
-                                     VK_IMAGE_LAYOUT_UNDEFINED,
                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                     VMA_MEMORY_USAGE_GPU_ONLY,
-                                     VK_IMAGE_ASPECT_DEPTH_BIT);
+                                     VK_IMAGE_ASPECT_DEPTH_BIT,
+                                     VMA_MEMORY_USAGE_GPU_ONLY);
+
+    auto cmd = command_buffer.begin_single_use_transfer_command();
+    m_depth_buffer_image->transition_layout(cmd, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    command_buffer.end_single_use_transfer_command(cmd);
 
     m_destructor_queue.add_to_queue([&] { delete m_depth_buffer_image; });
 }

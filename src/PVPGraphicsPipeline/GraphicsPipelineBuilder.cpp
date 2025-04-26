@@ -62,16 +62,16 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     color_blend_attachment.blendEnable = VK_FALSE;
 
-    VkPipelineColorBlendStateCreateInfo colorBlending {};
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &color_blend_attachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
+    VkPipelineColorBlendStateCreateInfo color_blending {};
+    color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    color_blending.logicOpEnable = VK_FALSE;
+    color_blending.logicOp = VK_LOGIC_OP_COPY;
+    color_blending.attachmentCount = 1;
+    color_blending.pAttachments = &color_blend_attachment;
+    color_blending.blendConstants[0] = 0.0f;
+    color_blending.blendConstants[1] = 0.0f;
+    color_blending.blendConstants[2] = 0.0f;
+    color_blending.blendConstants[3] = 0.0f;
 
     std::vector                      dynamic_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineDynamicStateCreateInfo dynamic_state {};
@@ -79,19 +79,19 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
     dynamic_state.pDynamicStates = dynamic_states.data();
 
-    VkPipelineDepthStencilStateCreateInfo depthStencil {};
-    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
+    VkPipelineDepthStencilStateCreateInfo depth_stencil {};
+    depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil.depthTestEnable = VK_TRUE;
+    depth_stencil.depthWriteEnable = VK_TRUE;
 
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-    depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f;
-    depthStencil.maxDepthBounds = 1.0f;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depth_stencil.depthBoundsTestEnable = VK_FALSE;
+    depth_stencil.minDepthBounds = 0.0f;
+    depth_stencil.maxDepthBounds = 1.0f;
 
-    depthStencil.stencilTestEnable = VK_FALSE;
-    depthStencil.front = {};
-    depthStencil.back = {};
+    depth_stencil.stencilTestEnable = VK_FALSE;
+    depth_stencil.front = {};
+    depth_stencil.back = {};
 
     VkGraphicsPipelineCreateInfo pipelineInfo {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -103,8 +103,8 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     pipelineInfo.pViewportState = &viewport_state;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDepthStencilState = &depth_stencil;
+    pipelineInfo.pColorBlendState = &color_blending;
     pipelineInfo.pDynamicState = &dynamic_state;
 
     pipelineInfo.layout = m_pipeline_layout;
@@ -128,14 +128,13 @@ pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::add_shader(VkShaderM
     m_shader_stages.push_back(std::tuple(shader, stage));
     return *this;
 }
-pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_binding_description(
-const std::vector<VkVertexInputBindingDescription>& binding_description)
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_binding_description(const std::vector<VkVertexInputBindingDescription>& binding_description)
 {
     m_input_binding_descriptions = binding_description;
     return *this;
 }
 
-pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_atrribute_description(const std::vector<VkVertexInputAttributeDescription>& binding_description)
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_attribute_description(const std::vector<VkVertexInputAttributeDescription>& binding_description)
 {
     m_input_atrribute_descriptions = binding_description;
     return *this;

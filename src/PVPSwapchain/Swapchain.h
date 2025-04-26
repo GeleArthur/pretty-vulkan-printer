@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <DestructorQueue.h>
-#include <Image.h>
+#include <PVPImage/Image.h>
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -13,7 +13,7 @@ namespace pvp
     class Swapchain
     {
         public:
-        explicit Swapchain(Instance& instance, PhysicalDevice& PVPdevice);
+        explicit Swapchain(Instance& instance, PhysicalDevice& PVPdevice, CommandBuffer& command_buffer);
         static bool                       does_device_support_swapchain(VkPhysicalDevice device, VkSurfaceKHR surface);
         void                              create_frame_buffers(VkDevice device, VkRenderPass render_pass);
 

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <span>
 #include <PVPPhysicalDevice/PVPPhysicalDevice.h>
 #include <vulkan/vulkan.h>
 #include <vector>
@@ -11,7 +12,7 @@ namespace pvp
         VkPipeline               build(pvp::PhysicalDevice& device);
         GraphicsPipelineBuilder& add_shader(VkShaderModule& shader, VkShaderStageFlagBits stage);
         GraphicsPipelineBuilder& set_input_binding_description(const std::vector<VkVertexInputBindingDescription>& binding_description);
-        GraphicsPipelineBuilder& set_input_atrribute_description(const std::vector<VkVertexInputAttributeDescription>& binding_description);
+        GraphicsPipelineBuilder& set_input_attribute_description(const std::vector<VkVertexInputAttributeDescription>& binding_description);
         GraphicsPipelineBuilder& set_topology(VkPrimitiveTopology topology);
         GraphicsPipelineBuilder& set_pipeline_layout(VkPipelineLayout pipeline_layout);
         GraphicsPipelineBuilder& set_render_pass(VkRenderPass render_pass);

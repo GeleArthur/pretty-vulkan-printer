@@ -21,6 +21,8 @@ add_executable(${PROJECT_NAME}
 
         src/stb_image.h
         src/tiny_obj_loader.h
+        src/PVPImage/Image.cpp
+        src/PVPImage/Image.h
         src/PVPPhysicalDevice/PVPPhysicalDevice.cpp
         src/PVPPhysicalDevice/PVPPhysicalDevice.h
         src/PVPSwapchain/Swapchain.cpp
@@ -47,8 +49,6 @@ add_executable(${PROJECT_NAME}
         src/PVPVMAAllocator/VmaAllocator.cpp
         src/PVPVMAAllocator/VmaAllocator.cpp
         src/PVPVMAAllocator/VmaAllocator.h
-        src/Image.cpp
-        src/Image.h
         src/PVPBuffer/Buffer.cpp
         src/PVPBuffer/Buffer.h
         src/LoadModel.cpp
@@ -80,6 +80,8 @@ add_executable(${PROJECT_NAME}
         src/PVPFrameContext/FrameContext.h
         src/PVPSyncManager/FrameSyncers.cpp
         src/PVPSyncManager/FrameSyncers.h
+        src/PVPImage/Sampler.cpp
+        src/PVPImage/Sampler.h
 )
 
 add_subdirectory(libraries)
