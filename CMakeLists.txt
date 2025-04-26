@@ -59,6 +59,19 @@ add_executable(${PROJECT_NAME}
         src/PVPSyncManager/SyncBuilder.h
         src/PVPSyncManager/Semaphore.h
         src/PVPSyncManager/Fence.h
+        src/globalconst.h
+        src/PVPDescriptorSets/DescriptorSetBuilder.cpp
+        src/PVPDescriptorSets/DescriptorSetBuilder.h
+        src/PVPDescriptorSets/DescriptorPool.h
+        src/PVPDescriptorSets/DescriptorPool.cpp
+        src/PVPDescriptorSets/DescriptorLayout.cpp
+        src/PVPDescriptorSets/DescriptorLayout.h
+        src/PVPDescriptorSets/DescriptorSet.cpp
+        src/PVPDescriptorSets/DescriptorSet.h
+        src/UniformBufferStruct.h
+        src/PVPModels/GPUModel.cpp
+        src/PVPModels/GPUModel.h
+        src/PVPModels/ModelData.h
 )
 
 add_subdirectory(libraries)

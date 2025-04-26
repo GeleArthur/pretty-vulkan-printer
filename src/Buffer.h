@@ -5,28 +5,30 @@
 
 class Buffer
 {
-    public:
+public:
     Buffer(VkDeviceSize buffer_size, VkBufferUsageFlags buffer_usage, VmaMemoryUsage usage, VmaAllocationCreateFlags flags);
     ~Buffer();
-    void      destroy_buffer() const;
+    void destroy_buffer() const;
 
-    VkBuffer& get_buffer()
+    const VkBuffer& get_buffer() const
     {
         return m_buffer;
     };
-    VmaAllocation& get_allocation()
+
+    const VmaAllocation& get_allocation() const
     {
         return m_allocation;
     };
-    VmaAllocationInfo& get_allocation_info()
+
+    const VmaAllocationInfo& get_allocation_info() const
     {
         return m_allocation_info;
     };
 
     void copy_into_buffer(pvp::CommandBuffer& command_buffer, Buffer& destination);
 
-    private:
-    VkBuffer          m_buffer;
-    VmaAllocation     m_allocation;
+private:
+    VkBuffer m_buffer;
+    VmaAllocation m_allocation;
     VmaAllocationInfo m_allocation_info;
 };

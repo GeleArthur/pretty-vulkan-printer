@@ -5,7 +5,9 @@
 #include <Buffer.h>
 #include <Image.h>
 #include <LoadModel.h>
+#include <UniformBufferStruct.h>
 #include <array>
+#include <globalconst.h>
 #include <PVPGraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <PVPRenderPass/RenderPassBuilder.h>
 #include <PVPSwapchain/Swapchain.h>
@@ -17,6 +19,8 @@
 #include <PVPGraphicsPipeline/PipelineLayoutBuilder.h>
 #include <PVPGraphicsPipeline/ShaderLoader.h>
 #include <assimp/cimport.h>
+#include <PVPDescriptorSets/DescriptorLayout.h>
+#include <glm/gtx/quaternion.hpp>
 
 void pvp::App::run()
 {
@@ -49,14 +53,51 @@ void pvp::App::run()
     m_command_buffer = new CommandBuffer(*m_pvp_physical_device);
     m_destructor_queue.add_to_queue([&] { delete m_command_buffer; });
 
+    DescriptorLayout layout = DescriptorLayout(m_pvp_physical_device->get_device(),
+                                               {
+                                               VkDescriptorSetLayoutBinding {
+                                               0,
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                               1,
+                                               VK_SHADER_STAGE_VERTEX_BIT,
+                                               nullptr },
+                                               });
+
+    m_pipeline_layout = PipelineLayoutBuilder().add_descriptor_layout(layout.get_handle()).build(m_pvp_physical_device->get_device());
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_pvp_physical_device->get_device(), m_pipeline_layout, nullptr); });
+
+    m_descriptor_pool = new DescriptorPool(m_pvp_physical_device->get_device(), { VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 } }, 2);
+    m_destructor_queue.add_to_queue([&] { m_descriptor_pool->destroy(); });
+
+    m_uniform_buffer = new Buffer(
+    sizeof(UniformBufferObject),
+    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+    VMA_MEMORY_USAGE_AUTO,
+    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
+    m_destructor_queue.add_to_queue([&] { delete m_uniform_buffer; });
+
+    float               time = 1;
+
+    UniformBufferObject ubo {};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(
+    glm::radians(45.0f),
+    static_cast<float>(m_pvp_swapchain->get_swapchain_extent().width) / static_cast<float>(m_pvp_swapchain->get_swapchain_extent().height),
+    0.1f,
+    10.0f);
+
+    ubo.proj[1][1] *= -1;
+
+    memcpy(m_uniform_buffer->get_allocation_info().pMappedData, &ubo, sizeof(ubo));
+
+    m_descriptor = DescriptorSetBuilder()
+                   .set_layout(layout)
+                   .bind_buffer(0, *m_uniform_buffer)
+                   .build(m_pvp_physical_device->get_device(), *m_descriptor_pool);
+
     auto vertex_shader = ShaderLoader::load_shader_from_file(m_pvp_physical_device->get_device(), "shaders/shader.vert.spv");
     auto fragment_shader = ShaderLoader::load_shader_from_file(m_pvp_physical_device->get_device(), "shaders/shader.frag.spv");
-
-    m_descriptor_set_layout = DescriptorSetLayoutBuilder().build(m_pvp_physical_device->get_device());
-    m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_pvp_physical_device->get_device(), m_descriptor_set_layout, nullptr); });
-
-    m_pipeline_layout = PipelineLayoutBuilder().add_descriptor_layout(m_descriptor_set_layout).build(m_pvp_physical_device->get_device());
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_pvp_physical_device->get_device(), m_pipeline_layout, nullptr); });
 
     m_graphics_pipeline = GraphicsPipelineBuilder()
                           .set_render_pass(m_pvp_render_pass)
@@ -95,7 +136,6 @@ void pvp::App::run()
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    // I AM SO DONE I WANT ANYTHING
     m_image_available_semaphore = m_sync_builder->create_semaphore();
     m_destructor_queue.add_to_queue([&] { m_image_available_semaphore.destroy(m_pvp_physical_device->get_device()); });
 
@@ -113,6 +153,7 @@ void pvp::App::run()
 
     vkDeviceWaitIdle(m_pvp_physical_device->get_device());
 }
+
 void pvp::App::draw_frame()
 {
     vkWaitForFences(m_pvp_physical_device->get_device(), 1, &m_in_flight_fence.handle, VK_TRUE, UINT64_MAX);
@@ -122,7 +163,25 @@ void pvp::App::draw_frame()
     uint32_t image_index {};
     vkAcquireNextImageKHR(m_pvp_physical_device->get_device(), m_pvp_swapchain->get_swapchain(), UINT64_MAX, m_image_available_semaphore.handle, VK_NULL_HANDLE, &image_index);
 
-    VkCommandBuffer graphics_command = m_command_buffer->get_graphics_command_buffer();
+    VkCommandBuffer     graphics_command = m_command_buffer->get_graphics_command_buffer();
+
+    static auto         start_time = std::chrono::high_resolution_clock::now();
+
+    auto                current_time = std::chrono::high_resolution_clock::now();
+    float               time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+
+    UniformBufferObject ubo {};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(
+    glm::radians(45.0f),
+    static_cast<float>(m_pvp_swapchain->get_swapchain_extent().width) / static_cast<float>(m_pvp_swapchain->get_swapchain_extent().height),
+    0.1f,
+    10.0f);
+
+    ubo.proj[1][1] *= -1;
+
+    memcpy(m_uniform_buffer->get_allocation_info().pMappedData, &ubo, sizeof(ubo));
 
     record_commands(graphics_command, image_index);
 
@@ -159,6 +218,7 @@ void pvp::App::draw_frame()
 
     vkQueuePresentKHR(m_pvp_physical_device->get_queue_families().present_family.queue, &present_info);
 }
+
 void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
 {
     VkCommandBufferBeginInfo beginInfo {};
@@ -203,7 +263,19 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     VkBuffer     vertex_buffers[] = { m_vertex_buffer->get_buffer() };
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(graphics_command, 0, 1, vertex_buffers, offsets);
+
+    vkCmdBindDescriptorSets(
+    graphics_command,
+    VK_PIPELINE_BIND_POINT_GRAPHICS,
+    m_pipeline_layout,
+    0,
+    1,
+    &m_descriptor.handle,
+    0,
+    nullptr);
+
     vkCmdDraw(graphics_command, m_model.verties.size(), 1, 0, 0);
+
     vkCmdEndRenderPass(graphics_command);
 
     if (vkEndCommandBuffer(graphics_command) != VK_SUCCESS)

@@ -16,7 +16,10 @@ Buffer::Buffer(VkDeviceSize buffer_size, VkBufferUsageFlags buffer_usage, VmaMem
     allocation_create_info.usage = usage;
     allocation_create_info.flags = flags;
 
-    vmaCreateBuffer(PvpVmaAllocator::get_allocator(), &create_info, &allocation_create_info, &m_buffer, &m_allocation, &m_allocation_info);
+    if (vmaCreateBuffer(PvpVmaAllocator::get_allocator(), &create_info, &allocation_create_info, &m_buffer, &m_allocation, &m_allocation_info) != VK_SUCCESS)
+    {
+        throw std::exception("Can't create buffer");
+    }
 }
 Buffer::~Buffer()
 {

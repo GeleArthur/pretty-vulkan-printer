@@ -7,6 +7,7 @@
 namespace pvp
 {
     Image::Image(VkDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageLayout layout, VkImageUsageFlags usage, VmaMemoryUsage memory_usage, VkImageAspectFlags aspect_flags)
+        : m_layout { layout }
     {
         m_device = device;
         VkImageCreateInfo image_info {};
@@ -61,5 +62,9 @@ namespace pvp
     VmaAllocation Image::get_allocation() const
     {
         return m_allocation;
+    }
+    VkImageLayout Image::get_layout() const
+    {
+        return m_layout;
     }
 } // namespace pvp
