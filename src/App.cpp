@@ -1,13 +1,10 @@
 ﻿#include "App.h"
 
-#include "../build/_deps/assimp-src/code/AssetLib/3DS/3DSExporter.h"
-
-#include <PVPBuffer/Buffer.h>
-#include <Image.h>
 #include <LoadModel.h>
 #include <UniformBufferStruct.h>
 #include <array>
 #include <globalconst.h>
+#include <PVPBuffer/Buffer.h>
 #include <PVPGraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <PVPRenderPass/RenderPassBuilder.h>
 #include <PVPSwapchain/Swapchain.h>
@@ -15,13 +12,12 @@
 #include <iostream>
 #include <PVPBuffer/BufferBuilder.h>
 #include <PVPCommandBuffer/CommandBuffer.h>
-#include <PVPGraphicsPipeline/DescriptorSetLayoutBuilder.h>
+#include <PVPDescriptorSets/DescriptorLayout.h>
 #include <PVPGraphicsPipeline/PVPVertex.h>
 #include <PVPGraphicsPipeline/PipelineLayoutBuilder.h>
 #include <PVPGraphicsPipeline/ShaderLoader.h>
-#include <assimp/cimport.h>
-#include <PVPDescriptorSets/DescriptorLayout.h>
 #include <PVPUniformBuffers/UniformBuffer.h>
+#include <assimp/cimport.h>
 #include <glm/gtx/quaternion.hpp>
 
 void pvp::App::run()
@@ -88,7 +84,6 @@ void pvp::App::run()
     ubo.proj[1][1] *= -1;
 
     m_uniform_buffer->update(0, ubo);
-    // memcpy(m_uniform_buffer.get_allocation_info().pMappedData, &ubo, sizeof(ubo));
 
     m_descriptors = DescriptorSetBuilder()
                     .set_layout(layout)
@@ -145,13 +140,6 @@ void pvp::App::run()
     m_index_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer_index);
     transfer_buffer_index.destroy();
 
-    VkSemaphoreCreateInfo semaphore_info {};
-    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fence_info {};
-    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
     m_frame_syncers = new FrameSyncers(*m_sync_builder);
     m_destructor_queue.add_to_queue([&] { delete m_frame_syncers; });
 
@@ -167,7 +155,6 @@ void pvp::App::run()
 void pvp::App::draw_frame()
 {
     vkWaitForFences(m_pvp_physical_device->get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
-
     vkResetFences(m_pvp_physical_device->get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
 
     uint32_t image_index {};

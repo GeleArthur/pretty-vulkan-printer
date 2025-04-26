@@ -42,7 +42,6 @@ namespace pvp
         DescriptorPool*                     m_descriptor_pool {};
         DestructorQueue                     m_destructor_queue;
         uint32_t                            m_double_buffer_frame { 0 };
-
         FrameSyncers*                       m_frame_syncers {};
     };
 
