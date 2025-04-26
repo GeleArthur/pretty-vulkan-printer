@@ -1,5 +1,6 @@
 ﻿#include "CommandBuffer.h"
 
+#include <globalconst.h>
 #include <stdexcept>
 
 namespace pvp
@@ -27,22 +28,23 @@ namespace pvp
 
         VkCommandBufferAllocateInfo alloc_info {};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         alloc_info.commandPool = m_reset_graphics_command_pool;
-        alloc_info.commandBufferCount = 1;
+        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-        vkAllocateCommandBuffers(m_device, &alloc_info, &m_graphics_command_buffer);
+        m_graphics_command_buffer.resize(MAX_FRAMES_IN_FLIGHT);
+        vkAllocateCommandBuffers(m_device, &alloc_info, m_graphics_command_buffer.data());
     }
     CommandBuffer::~CommandBuffer()
     {
-        vkFreeCommandBuffers(m_device, m_reset_graphics_command_pool, 1, &m_graphics_command_buffer);
+        vkFreeCommandBuffers(m_device, m_reset_graphics_command_pool, MAX_FRAMES_IN_FLIGHT, m_graphics_command_buffer.data());
         vkDestroyCommandPool(m_device, m_single_use_transfer_command_pool, nullptr);
         vkDestroyCommandPool(m_device, m_reset_graphics_command_pool, nullptr);
     }
-    VkCommandBuffer CommandBuffer::get_graphics_command_buffer() const
+    VkCommandBuffer CommandBuffer::get_graphics_command_buffer(uint32_t current_frame) const
     {
-        vkResetCommandBuffer(m_graphics_command_buffer, 0);
-        return m_graphics_command_buffer;
+        // vkResetCommandBuffer(m_graphics_command_buffer, 0);
+        return m_graphics_command_buffer[current_frame];
     }
 
     VkCommandBuffer CommandBuffer::begin_single_use_transfer_command() const

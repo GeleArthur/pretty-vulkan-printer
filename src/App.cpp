@@ -21,6 +21,7 @@
 #include <PVPGraphicsPipeline/ShaderLoader.h>
 #include <assimp/cimport.h>
 #include <PVPDescriptorSets/DescriptorLayout.h>
+#include <PVPUniformBuffers/UniformBuffer.h>
 #include <glm/gtx/quaternion.hpp>
 
 void pvp::App::run()
@@ -70,16 +71,12 @@ void pvp::App::run()
     m_descriptor_pool = new DescriptorPool(m_pvp_physical_device->get_device(), { VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 } }, 2);
     m_destructor_queue.add_to_queue([&] { m_descriptor_pool->destroy(); });
 
-    m_uniform_buffer = BufferBuilder()
-                       .set_size(sizeof(UniformBufferObject))
-                       .set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-                       .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-                       .build(PvpVmaAllocator::get_allocator());
-    m_destructor_queue.add_to_queue([&] { m_uniform_buffer.destroy(); });
+    m_uniform_buffer = new UniformBuffer<ModelCameraViewData>(PvpVmaAllocator::get_allocator());
+    m_destructor_queue.add_to_queue([&] { delete m_uniform_buffer; });
 
     float               time = 1;
 
-    UniformBufferObject ubo {};
+    ModelCameraViewData ubo {};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(
@@ -90,12 +87,13 @@ void pvp::App::run()
 
     ubo.proj[1][1] *= -1;
 
-    memcpy(m_uniform_buffer.get_allocation_info().pMappedData, &ubo, sizeof(ubo));
+    m_uniform_buffer->update(0, ubo);
+    // memcpy(m_uniform_buffer.get_allocation_info().pMappedData, &ubo, sizeof(ubo));
 
-    m_descriptor = DescriptorSetBuilder()
-                   .set_layout(layout)
-                   .bind_buffer(0, m_uniform_buffer)
-                   .build(m_pvp_physical_device->get_device(), *m_descriptor_pool);
+    m_descriptors = DescriptorSetBuilder()
+                    .set_layout(layout)
+                    .bind_buffer(0, *m_uniform_buffer)
+                    .build(m_pvp_physical_device->get_device(), *m_descriptor_pool);
 
     auto vertex_shader = ShaderLoader::load_shader_from_file(m_pvp_physical_device->get_device(), "shaders/shader.vert.spv");
     auto fragment_shader = ShaderLoader::load_shader_from_file(m_pvp_physical_device->get_device(), "shaders/shader.frag.spv");
@@ -154,14 +152,8 @@ void pvp::App::run()
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    m_image_available_semaphore = m_sync_builder->create_semaphore();
-    m_destructor_queue.add_to_queue([&] { m_image_available_semaphore.destroy(m_pvp_physical_device->get_device()); });
-
-    m_render_finished_semaphore = m_sync_builder->create_semaphore();
-    m_destructor_queue.add_to_queue([&] { m_render_finished_semaphore.destroy(m_pvp_physical_device->get_device()); });
-
-    m_in_flight_fence = m_sync_builder->create_fence(true);
-    m_destructor_queue.add_to_queue([&] { m_in_flight_fence.destroy(m_pvp_physical_device->get_device()); });
+    m_frame_syncers = new FrameSyncers(*m_sync_builder);
+    m_destructor_queue.add_to_queue([&] { delete m_frame_syncers; });
 
     while (!glfwWindowShouldClose(m_pvp_instance->get_window()))
     {
@@ -174,21 +166,26 @@ void pvp::App::run()
 
 void pvp::App::draw_frame()
 {
-    vkWaitForFences(m_pvp_physical_device->get_device(), 1, &m_in_flight_fence.handle, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(m_pvp_physical_device->get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
 
-    vkResetFences(m_pvp_physical_device->get_device(), 1, &m_in_flight_fence.handle);
+    vkResetFences(m_pvp_physical_device->get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
 
     uint32_t image_index {};
-    vkAcquireNextImageKHR(m_pvp_physical_device->get_device(), m_pvp_swapchain->get_swapchain(), UINT64_MAX, m_image_available_semaphore.handle, VK_NULL_HANDLE, &image_index);
+    vkAcquireNextImageKHR(m_pvp_physical_device->get_device(),
+                          m_pvp_swapchain->get_swapchain(),
+                          UINT64_MAX,
+                          m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle,
+                          VK_NULL_HANDLE,
+                          &image_index);
 
-    VkCommandBuffer     graphics_command = m_command_buffer->get_graphics_command_buffer();
+    VkCommandBuffer     graphics_command = m_command_buffer->get_graphics_command_buffer(m_double_buffer_frame);
 
     static auto         start_time = std::chrono::high_resolution_clock::now();
 
     auto                current_time = std::chrono::high_resolution_clock::now();
     float               time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
-    UniformBufferObject ubo {};
+    ModelCameraViewData ubo {};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(
@@ -199,14 +196,14 @@ void pvp::App::draw_frame()
 
     ubo.proj[1][1] *= -1;
 
-    memcpy(m_uniform_buffer.get_allocation_info().pMappedData, &ubo, sizeof(ubo));
+    m_uniform_buffer->update(m_double_buffer_frame, ubo);
 
     record_commands(graphics_command, image_index);
 
     VkSubmitInfo submit_info {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore          wait_semaphores[] = { m_image_available_semaphore.handle };
+    VkSemaphore          wait_semaphores[] = { m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = wait_semaphores;
@@ -215,11 +212,11 @@ void pvp::App::draw_frame()
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &graphics_command;
 
-    VkSemaphore signal_semaphores[] = { m_render_finished_semaphore.handle };
+    VkSemaphore signal_semaphores[] = { m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle };
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    if (vkQueueSubmit(m_pvp_physical_device->get_queue_families().graphics_family.queue, 1, &submit_info, m_in_flight_fence.handle) != VK_SUCCESS)
+    if (vkQueueSubmit(m_pvp_physical_device->get_queue_families().graphics_family.queue, 1, &submit_info, m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
@@ -235,6 +232,8 @@ void pvp::App::draw_frame()
     present_info.pImageIndices = &image_index;
 
     vkQueuePresentKHR(m_pvp_physical_device->get_queue_families().present_family.queue, &present_info);
+
+    m_double_buffer_frame = (m_double_buffer_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
@@ -288,13 +287,12 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     m_pipeline_layout,
     0,
     1,
-    &m_descriptor.handle,
+    &m_descriptors.sets[m_double_buffer_frame],
     0,
     nullptr);
     vkCmdBindIndexBuffer(graphics_command, m_index_buffer.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdDrawIndexed(graphics_command, m_model.indices.size(), 1, 0, 0, 0);
-    // vkCmdDraw(graphics_command, m_model.verties.size(), 1, 0, 0);
 
     vkCmdEndRenderPass(graphics_command);
 

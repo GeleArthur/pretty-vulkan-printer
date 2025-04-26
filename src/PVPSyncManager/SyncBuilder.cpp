@@ -15,6 +15,7 @@ namespace pvp
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
         Semaphore result;
+        result.device = m_device;
         vkCreateSemaphore(m_device, &semaphore_info, nullptr, &result.handle);
         return result;
     }
@@ -25,6 +26,7 @@ namespace pvp
         fence_info.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
         Fence result;
+        result.device = m_device;
         vkCreateFence(m_device, &fence_info, nullptr, &result.handle);
         return result;
     }

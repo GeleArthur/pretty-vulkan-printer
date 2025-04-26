@@ -151,7 +151,7 @@ namespace std
     };
 } // namespace std
 
-struct UniformBufferObject
+struct ModelCameraViewData
 {
     glm::mat4 model;
     glm::mat4 view;
@@ -1415,7 +1415,7 @@ class HelloTraingle
 
     void createUniformBuffers()
     {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+        VkDeviceSize bufferSize = sizeof(ModelCameraViewData);
 
         uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
         uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1475,7 +1475,7 @@ class HelloTraingle
             VkDescriptorBufferInfo bufferInfo {};
             bufferInfo.buffer = uniformBuffers[i];
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
+            bufferInfo.range = sizeof(ModelCameraViewData);
 
             VkDescriptorImageInfo imageInfo {};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1713,7 +1713,7 @@ class HelloTraingle
         auto                currentTime = std::chrono::high_resolution_clock::now();
         float               time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        UniformBufferObject ubo {};
+        ModelCameraViewData ubo {};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(

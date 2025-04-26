@@ -66,14 +66,20 @@ add_executable(${PROJECT_NAME}
         src/PVPDescriptorSets/DescriptorPool.cpp
         src/PVPDescriptorSets/DescriptorLayout.cpp
         src/PVPDescriptorSets/DescriptorLayout.h
-        src/PVPDescriptorSets/DescriptorSet.cpp
-        src/PVPDescriptorSets/DescriptorSet.h
+        src/PVPDescriptorSets/DescriptorSets.cpp
+        src/PVPDescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
         src/PVPModels/GPUModel.cpp
         src/PVPModels/GPUModel.h
         src/PVPModels/ModelData.h
         src/PVPBuffer/BufferBuilder.cpp
         src/PVPBuffer/BufferBuilder.h
+        src/PVPUniformBuffers/UniformBuffer.cpp
+        src/PVPUniformBuffers/UniformBuffer.h
+        src/PVPFrameContext/FrameContext.cpp
+        src/PVPFrameContext/FrameContext.h
+        src/PVPSyncManager/FrameSyncers.cpp
+        src/PVPSyncManager/FrameSyncers.h
 )
 
 add_subdirectory(libraries)
