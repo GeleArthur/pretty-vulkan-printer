@@ -113,7 +113,7 @@ void pvp::App::run()
     vkDestroyShaderModule(m_pvp_physical_device->get_device(), vertex_shader, nullptr);
     vkDestroyShaderModule(m_pvp_physical_device->get_device(), fragment_shader, nullptr);
 
-    m_model.load_file(std::filesystem::absolute("resources/cube.fbx"));
+    m_model.load_file(std::filesystem::absolute("resources/viking_room.obj"));
 
     Buffer transfer_buffer = BufferBuilder()
                              .set_size(m_model.verties.size() * sizeof(PvpVertex))

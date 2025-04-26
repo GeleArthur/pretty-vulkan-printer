@@ -1,11 +1,19 @@
 ﻿#include "LoadModel.h"
 
+#include <iostream>
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <spdlog/spdlog.h>
 void LoadModel::load_file(const std::filesystem::path& path)
 {
     const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate);
+
+    if (scene == nullptr)
+    {
+        spdlog::error("Failed to load model: {}", aiGetErrorString());
+        return;
+    }
 
     verties.reserve(scene->mMeshes[0]->mNumVertices);
     for (unsigned int i = 0; i < scene->mMeshes[0]->mNumVertices; ++i)
