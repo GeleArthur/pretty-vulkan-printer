@@ -5,13 +5,14 @@ class DestructorQueue;
 
 namespace pvp
 {
-class PhysicalDevice;
-class Swapchain;
-class RenderPassBuilder
-{
-  public:
-    VkRenderPass build(Swapchain& swapchain, PhysicalDevice& device);
+    class PhysicalDevice;
+    class Swapchain;
+    class RenderPassBuilder
+    {
+        public:
+        // Needs swapchain for format. Could maybe be removed
+        VkRenderPass build(Swapchain& swapchain, PhysicalDevice& device);
 
-  private:
-};
+        private:
+    };
 } // namespace pvp

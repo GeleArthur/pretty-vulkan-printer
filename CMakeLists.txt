@@ -82,6 +82,8 @@ add_executable(${PROJECT_NAME}
         src/PVPSyncManager/FrameSyncers.h
         src/PVPImage/Sampler.cpp
         src/PVPImage/Sampler.h
+        src/PVPImage/TextureBuilder.cpp
+        src/PVPImage/TextureBuilder.h
 )
 
 add_subdirectory(libraries)

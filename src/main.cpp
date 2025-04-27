@@ -4,6 +4,9 @@
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 // Easy memory leak detector.
 #if WIN32
 #define _CRTDBG_MAP_ALLOC

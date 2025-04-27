@@ -1,11 +1,10 @@
 ﻿#pragma once
-#include <PVPBuffer/Buffer.h>
 #include <LoadModel.h>
 #include <UniformBufferStruct.h>
+#include <PVPBuffer/Buffer.h>
 #include <PVPDescriptorSets/DescriptorSetBuilder.h>
 #include <PVPInstance/PVPInstance.h>
 #include <PVPPhysicalDevice/PVPPhysicalDevice.h>
-#include <PVPSyncManager/Fence.h>
 #include <PVPSyncManager/FrameSyncers.h>
 #include <PVPSyncManager/Semaphore.h>
 #include <PVPSyncManager/SyncBuilder.h>
@@ -17,7 +16,7 @@ namespace pvp
     class CommandBuffer;
 
     class Swapchain;
-    class App
+    class App final
     {
         public:
         void run();
@@ -38,6 +37,7 @@ namespace pvp
         UniformBuffer<ModelCameraViewData>* m_uniform_buffer {};
         SyncBuilder*                        m_sync_builder {};
         LoadModel                           m_model {};
+        Image*                              m_texture {};
         DescriptorSets                      m_descriptors {};
         DescriptorPool*                     m_descriptor_pool {};
         DestructorQueue                     m_destructor_queue;

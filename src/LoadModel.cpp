@@ -7,14 +7,13 @@
 #include <spdlog/spdlog.h>
 void LoadModel::load_file(const std::filesystem::path& path)
 {
-    const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate);
+    const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
     if (scene == nullptr)
     {
         spdlog::error("Failed to load model: {}", aiGetErrorString());
         return;
     }
-    
 
     verties.reserve(scene->mMeshes[0]->mNumVertices);
     for (unsigned int i = 0; i < scene->mMeshes[0]->mNumVertices; ++i)

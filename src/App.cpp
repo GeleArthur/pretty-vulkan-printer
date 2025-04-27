@@ -16,6 +16,7 @@
 #include <PVPGraphicsPipeline/PVPVertex.h>
 #include <PVPGraphicsPipeline/PipelineLayoutBuilder.h>
 #include <PVPGraphicsPipeline/ShaderLoader.h>
+#include <PVPImage/TextureBuilder.h>
 #include <PVPUniformBuffers/UniformBuffer.h>
 #include <assimp/cimport.h>
 #include <glm/gtx/quaternion.hpp>
@@ -59,6 +60,12 @@ void pvp::App::run()
                                                1,
                                                VK_SHADER_STAGE_VERTEX_BIT,
                                                nullptr },
+                                               VkDescriptorSetLayoutBinding {
+                                               1,
+                                               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                               1,
+                                               VK_SHADER_STAGE_FRAGMENT_BIT,
+                                               nullptr },
                                                });
 
     m_pipeline_layout = PipelineLayoutBuilder().add_descriptor_layout(layout.get_handle()).build(m_pvp_physical_device->get_device());
@@ -85,9 +92,13 @@ void pvp::App::run()
 
     m_uniform_buffer->update(0, ubo);
 
+    m_texture = new Image(TextureBuilder().set_path("resources/viking_room.png").build(m_pvp_physical_device->get_device(), *m_command_buffer)); // pain
+    m_destructor_queue.add_to_queue([&] { delete m_texture; });
+
     m_descriptors = DescriptorSetBuilder()
                     .set_layout(layout)
                     .bind_buffer(0, *m_uniform_buffer)
+                    .bind_image(1, *m_texture)
                     .build(m_pvp_physical_device->get_device(), *m_descriptor_pool);
 
     auto vertex_shader = ShaderLoader::load_shader_from_file(m_pvp_physical_device->get_device(), "shaders/shader.vert.spv");
@@ -107,7 +118,7 @@ void pvp::App::run()
     vkDestroyShaderModule(m_pvp_physical_device->get_device(), fragment_shader, nullptr);
 
     m_model.load_file(std::filesystem::absolute("resources/viking_room.obj"));
-
+    // Vertex loading
     Buffer transfer_buffer = BufferBuilder()
                              .set_size(m_model.verties.size() * sizeof(PvpVertex))
                              .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
@@ -124,6 +135,7 @@ void pvp::App::run()
     m_vertex_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer);
     transfer_buffer.destroy();
 
+    // Index loading
     Buffer transfer_buffer_index = BufferBuilder()
                                    .set_size(m_model.verties.size() * sizeof(PvpVertex))
                                    .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
@@ -140,6 +152,7 @@ void pvp::App::run()
     m_index_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer_index);
     transfer_buffer_index.destroy();
 
+    // Frame synces
     m_frame_syncers = new FrameSyncers(*m_sync_builder);
     m_destructor_queue.add_to_queue([&] { delete m_frame_syncers; });
 
@@ -158,12 +171,22 @@ void pvp::App::draw_frame()
     vkResetFences(m_pvp_physical_device->get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
 
     uint32_t image_index {};
-    vkAcquireNextImageKHR(m_pvp_physical_device->get_device(),
-                          m_pvp_swapchain->get_swapchain(),
-                          UINT64_MAX,
-                          m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle,
-                          VK_NULL_HANDLE,
-                          &image_index);
+    VkResult result = vkAcquireNextImageKHR(m_pvp_physical_device->get_device(),
+                                            m_pvp_swapchain->get_swapchain(),
+                                            UINT64_MAX,
+                                            m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle,
+                                            VK_NULL_HANDLE,
+                                            &image_index);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        m_pvp_swapchain->recreate_swapchain(*m_pvp_physical_device, *m_command_buffer, m_pvp_render_pass);
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
 
     VkCommandBuffer     graphics_command = m_command_buffer->get_graphics_command_buffer(m_double_buffer_frame);
 
@@ -174,7 +197,7 @@ void pvp::App::draw_frame()
 
     ModelCameraViewData ubo {};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(
     glm::radians(45.0f),
     static_cast<float>(m_pvp_swapchain->get_swapchain_extent().width) / static_cast<float>(m_pvp_swapchain->get_swapchain_extent().height),
@@ -218,7 +241,16 @@ void pvp::App::draw_frame()
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &image_index;
 
-    vkQueuePresentKHR(m_pvp_physical_device->get_queue_families().present_family.queue, &present_info);
+    result = vkQueuePresentKHR(m_pvp_physical_device->get_queue_families().present_family.queue, &present_info);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        m_pvp_swapchain->recreate_swapchain(*m_pvp_physical_device, *m_command_buffer, m_pvp_render_pass);
+    }
+    else if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -241,7 +273,7 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     render_pass_info.renderArea.extent = m_pvp_swapchain->get_swapchain_extent();
 
     std::array<VkClearValue, 2> clear_values {};
-    clear_values[0].color = { { 0.0f, 0.2f, 0.0f, 1.0f } };
+    clear_values[0].color = { { 0.2f, 0.2f, 0.2f, 1.0f } };
     clear_values[1].depthStencil = { 1.0f, 0 };
 
     render_pass_info.clearValueCount = clear_values.size();
