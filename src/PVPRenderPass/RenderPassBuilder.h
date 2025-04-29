@@ -3,16 +3,19 @@
 
 class DestructorQueue;
 
+// Maybe make a special renderpass for the swapchain
+// Better idea use that new thing. No more render passes
+
 namespace pvp
 {
-    class PhysicalDevice;
+    class Device;
     class Swapchain;
     class RenderPassBuilder
     {
-        public:
+    public:
         // Needs swapchain for format. Could maybe be removed
-        VkRenderPass build(Swapchain& swapchain, PhysicalDevice& device);
+        VkRenderPass build(Swapchain& swapchain, Device& device);
 
-        private:
+    private:
     };
 } // namespace pvp

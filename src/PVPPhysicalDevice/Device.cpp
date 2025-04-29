@@ -1,5 +1,5 @@
-﻿#include "PVPPhysicalDevice.h"
-#include <PVPInstance/PVPInstance.h>
+﻿#include "Device.h"
+#include <PVPInstance/Instance.h>
 #include <PVPSwapchain/Swapchain.h>
 
 #include <set>
@@ -7,14 +7,14 @@
 
 std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice physical_device, const VkSurfaceKHR surface)
 {
-    QueueFamilies result {};
+    QueueFamilies result{};
 
-    uint32_t      queue_family_count = 0;
+    uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
 
-    bool graphics_queue {}, compute_queue {}, transfer_queue {}, surface_queue {};
+    bool graphics_queue{}, compute_queue{}, transfer_queue{}, surface_queue{};
     bool success = false;
 
     for (int family_index = 0; family_index < queue_families.size(); ++family_index)
@@ -44,7 +44,7 @@ std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice 
             }
         }
 
-        VkBool32 is_supporting_queue {};
+        VkBool32 is_supporting_queue{};
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, family_index, surface, &is_supporting_queue);
         if (is_supporting_queue)
         {
@@ -73,7 +73,7 @@ const VkSurfaceKHR&                  surface)
     for (const VkPhysicalDevice device : devices)
     {
         // Does GPU support the extensions?
-        uint32_t extension_count {};
+        uint32_t extension_count{};
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
         std::vector<VkExtensionProperties> available_extensions(extension_count);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
@@ -127,12 +127,12 @@ const VkSurfaceKHR&                  surface)
     return best_device;
 }
 
-pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<std::string>& device_extensions)
-    : m_instance { pvp_instance }
+pvp::Device::Device(Instance* pvp_instance, const std::vector<std::string>& device_extensions)
+    : m_instance{ pvp_instance }
 {
     const VkInstance instance = m_instance->get_instance();
 
-    std::vector      device_extensions_real { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    std::vector device_extensions_real{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     device_extensions_real.reserve(1 + device_extensions.size());
     for (std::string extension : device_extensions)
     {
@@ -151,7 +151,7 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
         throw std::runtime_error("No device found that works");
     }
 
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos {};
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos{};
 
     auto [success, queue_families] = get_queue_family_indices(m_physical_device, pvp_instance->get_surface());
 
@@ -170,7 +170,7 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
 
     for (uint32_t queue_family : unique_queue_families)
     {
-        VkDeviceQueueCreateInfo queue_create_info {};
+        VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
         queue_create_info.queueCount = 1;
@@ -178,9 +178,9 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
         queue_create_infos.push_back(queue_create_info);
     }
 
-    VkPhysicalDeviceFeatures device_features {};
+    VkPhysicalDeviceFeatures device_features{};
 
-    VkDeviceCreateInfo       device_create_info {};
+    VkDeviceCreateInfo device_create_info{};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
     device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
@@ -205,11 +205,11 @@ pvp::PhysicalDevice::PhysicalDevice(Instance* pvp_instance, const std::vector<st
     m_queue_families = queue_families;
 }
 
-VkDevice pvp::PhysicalDevice::get_device()
+VkDevice pvp::Device::get_device()
 {
     return m_device;
 }
-VkPhysicalDevice pvp::PhysicalDevice::get_physical_device()
+VkPhysicalDevice pvp::Device::get_physical_device()
 {
     return m_physical_device;
 }

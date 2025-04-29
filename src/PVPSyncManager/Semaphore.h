@@ -4,8 +4,8 @@
 struct Semaphore
 {
     VkSemaphore handle = VK_NULL_HANDLE;
-    VkDevice    device = VK_NULL_HANDLE;
-    void        destroy() const
+
+    void destroy(const VkDevice device) const
     {
         vkDestroySemaphore(device, handle, nullptr);
     };

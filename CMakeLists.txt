@@ -15,16 +15,16 @@ add_executable(${PROJECT_NAME}
         src/App.h
         src/DestructorQueue.cpp
         src/DestructorQueue.h
-        src/PVPInstance/PVPInstance.cpp
-        src/PVPInstance/PVPInstance.h
+        src/PVPInstance/Instance.cpp
+        src/PVPInstance/Instance.h
         src/VulkanExternalFunctions.h
 
         src/stb_image.h
         src/tiny_obj_loader.h
         src/PVPImage/Image.cpp
         src/PVPImage/Image.h
-        src/PVPPhysicalDevice/PVPPhysicalDevice.cpp
-        src/PVPPhysicalDevice/PVPPhysicalDevice.h
+        src/PVPPhysicalDevice/Device.cpp
+        src/PVPPhysicalDevice/Device.h
         src/PVPSwapchain/Swapchain.cpp
         src/PVPSwapchain/Swapchain.h
         src/PVPPhysicalDevice/PVPDeviceBuilder.cpp
@@ -40,12 +40,10 @@ add_executable(${PROJECT_NAME}
         src/PVPGraphicsPipeline/ShaderLoader.h
         src/PVPGraphicsPipeline/PipelineLayoutBuilder.cpp
         src/PVPGraphicsPipeline/PipelineLayoutBuilder.h
-        src/PVPGraphicsPipeline/PVPVertex.cpp
-        src/PVPGraphicsPipeline/PVPVertex.h
+        src/PVPGraphicsPipeline/Vertex.cpp
+        src/PVPGraphicsPipeline/Vertex.h
         src/PVPGraphicsPipeline/DescriptorSetLayoutBuilder.cpp
         src/PVPGraphicsPipeline/DescriptorSetLayoutBuilder.h
-        src/PVPSwapchain/FrameBuffers.cpp
-        src/PVPSwapchain/FrameBuffers.h
         src/PVPVMAAllocator/VmaAllocator.cpp
         src/PVPVMAAllocator/VmaAllocator.cpp
         src/PVPVMAAllocator/VmaAllocator.h
@@ -66,7 +64,6 @@ add_executable(${PROJECT_NAME}
         src/PVPDescriptorSets/DescriptorPool.cpp
         src/PVPDescriptorSets/DescriptorLayout.cpp
         src/PVPDescriptorSets/DescriptorLayout.h
-        src/PVPDescriptorSets/DescriptorSets.cpp
         src/PVPDescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
         src/PVPModels/GPUModel.cpp
@@ -87,8 +84,13 @@ add_executable(${PROJECT_NAME}
 )
 
 add_subdirectory(libraries)
-add_subdirectory(resources)
-add_dependencies(${PROJECT_NAME} copy_resources)
+
+# needs to be different as it doesn't run when source files don't change
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+        "${CMAKE_SOURCE_DIR}/resources"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 

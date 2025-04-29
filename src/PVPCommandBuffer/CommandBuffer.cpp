@@ -5,10 +5,10 @@
 
 namespace pvp
 {
-    CommandBuffer::CommandBuffer(PhysicalDevice& physical)
+    CommandBuffer::CommandBuffer(Device& physical)
     {
         m_device = physical.get_device();
-        VkCommandPoolCreateInfo pool_info {};
+        VkCommandPoolCreateInfo pool_info{};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
         pool_info.queueFamilyIndex = physical.get_queue_families().transfer_family.family_index;
@@ -26,7 +26,7 @@ namespace pvp
             throw std::runtime_error("failed to create command pool!");
         }
 
-        VkCommandBufferAllocateInfo alloc_info {};
+        VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         alloc_info.commandPool = m_reset_graphics_command_pool;
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -49,7 +49,7 @@ namespace pvp
 
     VkCommandBuffer CommandBuffer::begin_single_use_transfer_command() const
     {
-        VkCommandBufferAllocateInfo alloc_info {};
+        VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         alloc_info.commandPool = m_single_use_transfer_command_pool;
@@ -58,7 +58,7 @@ namespace pvp
         VkCommandBuffer command_buffer;
         vkAllocateCommandBuffers(m_device, &alloc_info, &command_buffer);
 
-        VkCommandBufferBeginInfo begin_info {};
+        VkCommandBufferBeginInfo begin_info{};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkBeginCommandBuffer(command_buffer, &begin_info);
@@ -68,7 +68,7 @@ namespace pvp
     void CommandBuffer::end_single_use_transfer_command(VkCommandBuffer command_buffer) const
     {
         vkEndCommandBuffer(command_buffer);
-        VkSubmitInfo submit_info {};
+        VkSubmitInfo submit_info{};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer;

@@ -4,9 +4,9 @@
 
 struct Fence
 {
-    VkFence  handle = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE; // :(
-    void     destroy() const
+    VkFence handle = VK_NULL_HANDLE;
+
+    void destroy(const VkDevice device) const
     {
         vkDestroyFence(device, handle, nullptr);
     };

@@ -7,15 +7,15 @@ namespace pvp
 {
     VkDescriptorSetLayout DescriptorSetLayoutBuilder::build(VkDevice device)
     {
-        VkDescriptorSetLayoutBinding ubo_layout_binding {};
+        VkDescriptorSetLayoutBinding ubo_layout_binding{};
         ubo_layout_binding.binding = 0;
         ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         ubo_layout_binding.descriptorCount = 1;
         ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-        std::array                      bindings = { ubo_layout_binding };
+        std::array bindings = { ubo_layout_binding };
 
-        VkDescriptorSetLayoutCreateInfo layout_info {};
+        VkDescriptorSetLayoutCreateInfo layout_info{};
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
         layout_info.pBindings = bindings.data();

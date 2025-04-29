@@ -1,9 +1,9 @@
 ﻿#include "LoadModel.h"
 
-#include <iostream>
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <iostream>
 #include <spdlog/spdlog.h>
 void LoadModel::load_file(const std::filesystem::path& path)
 {

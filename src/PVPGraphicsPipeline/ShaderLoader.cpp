@@ -1,8 +1,4 @@
-﻿//
-// Created by a on 19/04/2025.
-//
-
-#include "ShaderLoader.h"
+﻿#include "ShaderLoader.h"
 
 #include <fstream>
 
@@ -18,7 +14,7 @@ std::vector<char> ShaderLoader::load_file(const std::filesystem::path& path)
 
 VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, std::filesystem::path path)
 {
-    VkShaderModuleCreateInfo create_info {};
+    VkShaderModuleCreateInfo create_info{};
     const std::vector<char>  shader_code = load_file(path);
 
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

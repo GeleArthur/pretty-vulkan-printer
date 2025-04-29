@@ -1,19 +1,19 @@
 ﻿#include "GraphicsPipelineBuilder.h"
 
-#include <PVPPhysicalDevice/PVPPhysicalDevice.h>
+#include <PVPPhysicalDevice/Device.h>
 #include <vulkan/vulkan_core.h>
 
 #include <stdexcept>
 #include <vector>
 
-VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
+VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
 {
     DestructorQueue                              destructor_queue;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages;
 
     for (const auto& shader : m_shader_stages)
     {
-        VkPipelineShaderStageCreateInfo vert_shader_stage_info {};
+        VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
         vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vert_shader_stage_info.module = std::get<0>(shader);
         vert_shader_stage_info.stage = std::get<1>(shader);
@@ -21,7 +21,7 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
         pipeline_shader_stages.push_back(vert_shader_stage_info);
     }
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_info {};
+    VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     vertex_input_info.vertexBindingDescriptionCount = m_input_binding_descriptions.size();
@@ -29,17 +29,17 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     vertex_input_info.vertexAttributeDescriptionCount = m_input_atrribute_descriptions.size();
     vertex_input_info.pVertexAttributeDescriptions = m_input_atrribute_descriptions.data();
 
-    VkPipelineInputAssemblyStateCreateInfo input_assembly {};
+    VkPipelineInputAssemblyStateCreateInfo input_assembly{};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     input_assembly.topology = m_topology;
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
-    VkPipelineViewportStateCreateInfo viewport_state {};
+    VkPipelineViewportStateCreateInfo viewport_state{};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state.viewportCount = 1;
     viewport_state.scissorCount = 1;
 
-    VkPipelineRasterizationStateCreateInfo rasterizer {};
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
@@ -49,7 +49,7 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
-    VkPipelineMultisampleStateCreateInfo multisampling {};
+    VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -58,11 +58,11 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
     multisampling.alphaToOneEnable = VK_FALSE;      // Optional
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment {};
+    VkPipelineColorBlendAttachmentState color_blend_attachment{};
     color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     color_blend_attachment.blendEnable = VK_FALSE;
 
-    VkPipelineColorBlendStateCreateInfo color_blending {};
+    VkPipelineColorBlendStateCreateInfo color_blending{};
     color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blending.logicOpEnable = VK_FALSE;
     color_blending.logicOp = VK_LOGIC_OP_COPY;
@@ -74,12 +74,12 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     color_blending.blendConstants[3] = 0.0f;
 
     std::vector                      dynamic_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    VkPipelineDynamicStateCreateInfo dynamic_state {};
+    VkPipelineDynamicStateCreateInfo dynamic_state{};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
     dynamic_state.pDynamicStates = dynamic_states.data();
 
-    VkPipelineDepthStencilStateCreateInfo depth_stencil {};
+    VkPipelineDepthStencilStateCreateInfo depth_stencil{};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil.depthTestEnable = VK_TRUE;
     depth_stencil.depthWriteEnable = VK_TRUE;
@@ -93,7 +93,7 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::PhysicalDevice& device)
     depth_stencil.front = {};
     depth_stencil.back = {};
 
-    VkGraphicsPipelineCreateInfo pipelineInfo {};
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = pipeline_shader_stages.size();
     pipelineInfo.pStages = pipeline_shader_stages.data();

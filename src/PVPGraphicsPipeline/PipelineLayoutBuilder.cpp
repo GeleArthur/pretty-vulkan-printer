@@ -4,7 +4,7 @@
 
 VkPipelineLayout PipelineLayoutBuilder::build(const VkDevice device) const
 {
-    VkPipelineLayoutCreateInfo pipeline_layout_info {};
+    VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = m_descriptor_layouts.size();
     pipeline_layout_info.pSetLayouts = m_descriptor_layouts.data();

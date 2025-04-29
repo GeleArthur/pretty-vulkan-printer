@@ -1,4 +1,5 @@
 ﻿#include "App.h"
+
 #include <iostream>
 
 #define VMA_IMPLEMENTATION
@@ -21,7 +22,7 @@ int main()
 #endif
     try
     {
-        pvp::App {}.run();
+        pvp::App{}.run();
     }
     catch (std::exception const& e)
     {

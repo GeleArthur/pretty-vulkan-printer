@@ -7,11 +7,11 @@
 
 class DestructorQueue final
 {
-  public:
+public:
     void add_to_queue(const std::function<void()>& function);
     void destroy_and_clear();
     ~DestructorQueue();
 
-  private:
+private:
     std::deque<std::function<void()>> m_destruction_functions;
 };
