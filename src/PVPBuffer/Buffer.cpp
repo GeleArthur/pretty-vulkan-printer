@@ -1,14 +1,12 @@
 ﻿#include "Buffer.h"
 
+#include <any>
 #include <iostream>
+#include <span>
 #include <PVPCommandBuffer/CommandBuffer.h>
 #include <PVPVMAAllocator/VmaAllocator.h>
 #include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
-
-pvp::Buffer::Buffer()
-{
-}
 
 void pvp::Buffer::copy_from_buffer(pvp::CommandBuffer& command_buffer, Buffer& source) const
 {
@@ -25,7 +23,7 @@ void pvp::Buffer::destroy() const
 {
     vmaDestroyBuffer(PvpVmaAllocator::get_allocator(), m_buffer, m_allocation);
 }
-void pvp::Buffer::input_data(const void* data, const size_t size) const
+void pvp::Buffer::set_image_data(std::span<const std::byte> input_data) const
 {
-    memcpy(m_allocation_info.pMappedData, data, size);
+    memcpy(m_allocation_info.pMappedData, input_data.data(), input_data.size());
 }

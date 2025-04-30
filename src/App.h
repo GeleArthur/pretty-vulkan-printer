@@ -37,7 +37,7 @@ namespace pvp
         UniformBuffer<ModelCameraViewData>* m_uniform_buffer{};
         SyncBuilder*                        m_sync_builder{};
         LoadModel                           m_model{};
-        Image*                              m_texture{};
+        Image                              m_texture{};
         DescriptorSets                      m_descriptors{};
         DescriptorPool*                     m_descriptor_pool{};
         uint32_t                            m_double_buffer_frame{ 0 };

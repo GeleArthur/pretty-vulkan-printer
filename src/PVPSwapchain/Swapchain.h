@@ -27,7 +27,7 @@ namespace pvp
         void create_the_swapchain(Device& device, CommandBuffer& command_buffer);
 
         std::vector<VkFramebuffer> m_framebuffers;
-        Image*                     m_depth_buffer_image;
+        Image                     m_depth_buffer_image;
         std::vector<VkImage>       m_swapchain_images;
         std::vector<VkImageView>   m_swapchain_image_views;
         VkSwapchainKHR             m_swapchain;

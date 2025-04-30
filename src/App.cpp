@@ -22,13 +22,12 @@
 void pvp::App::run()
 {
     // TODO: Debug stuff and swapchain extensions should be moved inside as it a given that we want it.
-    m_pvp_instance = new Instance(
-    800,
-    800,
-    "pretty vulkan printer",
-    true,
-    { VK_EXT_DEBUG_UTILS_EXTENSION_NAME },
-    { "VK_LAYER_KHRONOS_validation" });
+    m_pvp_instance = new Instance(800,
+                                  800,
+                                  "pretty vulkan printer",
+                                  true,
+                                  { VK_EXT_DEBUG_UTILS_EXTENSION_NAME },
+                                  { "VK_LAYER_KHRONOS_validation" });
     m_destructor_queue.add_to_queue([&] { delete m_pvp_instance; });
 
     m_pvp_device = new Device(m_pvp_instance, {});
@@ -51,11 +50,11 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { delete m_sync_builder; });
 
     DescriptorLayout layout = DescriptorLayout(
-    m_pvp_device->get_device(),
-    {
-    VkDescriptorSetLayoutBinding{ 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
-    VkDescriptorSetLayoutBinding{ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
-    });
+        m_pvp_device->get_device(),
+        {
+            VkDescriptorSetLayoutBinding{ 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+            VkDescriptorSetLayoutBinding{ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+        });
 
     m_pipeline_layout = PipelineLayoutBuilder().add_descriptor_layout(layout.get_handle()).build(m_pvp_device->get_device());
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_pvp_device->get_device(), m_pipeline_layout, nullptr); });
@@ -66,27 +65,30 @@ void pvp::App::run()
     m_uniform_buffer = new UniformBuffer<ModelCameraViewData>(PvpVmaAllocator::get_allocator());
     m_destructor_queue.add_to_queue([&] { delete m_uniform_buffer; });
 
-    m_texture = new Image(TextureBuilder().set_path("resources/viking_room.png").build(m_pvp_device->get_device(), *m_command_buffer)); // pain
-    m_destructor_queue.add_to_queue([&] { delete m_texture; });
+    TextureBuilder()
+        .set_path("resources/viking_room.png")
+        .build(m_pvp_device->get_device(), *m_command_buffer, m_texture);
+    
+    m_destructor_queue.add_to_queue([&] { m_texture.destroy(m_pvp_device->get_device()); });
 
     m_descriptors = DescriptorSetBuilder()
-                    .set_layout(layout)
-                    .bind_buffer(0, *m_uniform_buffer)
-                    .bind_image(1, *m_texture)
-                    .build(m_pvp_device->get_device(), *m_descriptor_pool);
+                        .set_layout(layout)
+                        .bind_buffer(0, *m_uniform_buffer)
+                        .bind_image(1, m_texture)
+                        .build(m_pvp_device->get_device(), *m_descriptor_pool);
 
     // Shader loading
     auto vertex_shader = ShaderLoader::load_shader_from_file(m_pvp_device->get_device(), "shaders/shader.vert.spv");
     auto fragment_shader = ShaderLoader::load_shader_from_file(m_pvp_device->get_device(), "shaders/shader.frag.spv");
 
     m_graphics_pipeline = GraphicsPipelineBuilder()
-                          .set_render_pass(m_pvp_render_pass)
-                          .add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT)
-                          .add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT)
-                          .set_pipeline_layout(m_pipeline_layout)
-                          .set_input_attribute_description(Vertex::get_attribute_descriptions())
-                          .set_input_binding_description(Vertex::get_binding_description())
-                          .build(*m_pvp_device);
+                              .set_render_pass(m_pvp_render_pass)
+                              .add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT)
+                              .add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT)
+                              .set_pipeline_layout(m_pipeline_layout)
+                              .set_input_attribute_description(Vertex::get_attribute_descriptions())
+                              .set_input_binding_description(Vertex::get_binding_description())
+                              .build(*m_pvp_device);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_pvp_device->get_device(), m_graphics_pipeline, nullptr); });
 
     vkDestroyShaderModule(m_pvp_device->get_device(), vertex_shader, nullptr);
@@ -96,34 +98,39 @@ void pvp::App::run()
     m_model.load_file(std::filesystem::absolute("resources/viking_room.obj"));
 
     // Vertex loading
-    Buffer transfer_buffer = BufferBuilder()
-                             .set_size(m_model.verties.size() * sizeof(Vertex))
-                             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-                             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-                             .build(PvpVmaAllocator::get_allocator());
-    transfer_buffer.input_data(m_model.verties.data(), m_model.verties.size() * sizeof(Vertex));
+    Buffer transfer_buffer{};
+    BufferBuilder()
+        .set_size(m_model.verties.size() * sizeof(Vertex))
+        .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+        .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        .build(PvpVmaAllocator::get_allocator(), transfer_buffer);
 
-    m_vertex_buffer = BufferBuilder()
-                      .set_size(m_model.verties.size() * sizeof(Vertex))
-                      .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-                      .build(PvpVmaAllocator::get_allocator());
+    transfer_buffer.set_image_data(std::as_bytes(std::span(m_model.verties)));
+
+    BufferBuilder()
+        .set_size(m_model.verties.size() * sizeof(Vertex))
+        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .build(PvpVmaAllocator::get_allocator(), m_vertex_buffer);
+
     m_destructor_queue.add_to_queue([&] { m_vertex_buffer.destroy(); });
 
     m_vertex_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer);
     transfer_buffer.destroy();
 
     // Index loading
-    Buffer transfer_buffer_index = BufferBuilder()
-                                   .set_size(m_model.verties.size() * sizeof(Vertex))
-                                   .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-                                   .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-                                   .build(PvpVmaAllocator::get_allocator());
-    transfer_buffer_index.input_data(m_model.indices.data(), m_model.indices.size() * sizeof(uint32_t));
+    Buffer transfer_buffer_index{};
+    BufferBuilder()
+        .set_size(m_model.verties.size() * sizeof(Vertex))
+        .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+        .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        .build(PvpVmaAllocator::get_allocator(), transfer_buffer_index);
 
-    m_index_buffer = BufferBuilder()
-                     .set_size(m_model.indices.size() * sizeof(uint32_t))
-                     .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-                     .build(PvpVmaAllocator::get_allocator());
+    transfer_buffer_index.set_image_data(std::as_bytes(std::span(m_model.indices)));
+
+    BufferBuilder()
+        .set_size(m_model.indices.size() * sizeof(uint32_t))
+        .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .build(PvpVmaAllocator::get_allocator(), m_index_buffer);
     m_destructor_queue.add_to_queue([&] { m_index_buffer.destroy(); });
 
     m_index_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer_index);

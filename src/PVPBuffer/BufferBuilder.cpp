@@ -26,9 +26,8 @@ namespace pvp
         m_flags = flags;
         return *this;
     }
-    Buffer BufferBuilder::build(const VmaAllocator& allocator)
+    void BufferBuilder::build(const VmaAllocator& allocator, Buffer& buffer) const
     {
-        Buffer             result;
         VkBufferCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -39,10 +38,9 @@ namespace pvp
         allocation_create_info.usage = m_usage;
         allocation_create_info.flags = m_flags;
 
-        if (vmaCreateBuffer(allocator, &create_info, &allocation_create_info, &result.m_buffer, &result.m_allocation, &result.m_allocation_info) != VK_SUCCESS)
+        if (vmaCreateBuffer(allocator, &create_info, &allocation_create_info, &buffer.m_buffer, &buffer.m_allocation, &buffer.m_allocation_info) != VK_SUCCESS)
         {
             throw std::exception("Can't create buffer");
         }
-        return result;
     }
 } // namespace pvp

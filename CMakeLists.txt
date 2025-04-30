@@ -81,6 +81,8 @@ add_executable(${PROJECT_NAME}
         src/PVPImage/Sampler.h
         src/PVPImage/TextureBuilder.cpp
         src/PVPImage/TextureBuilder.h
+        src/PVPImage/ImageBuilder.cpp
+        src/PVPImage/ImageBuilder.h
 )
 
 add_subdirectory(libraries)

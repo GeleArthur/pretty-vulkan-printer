@@ -10,12 +10,13 @@ namespace pvp
 {
     class TextureBuilder
     {
-        public:
+    public:
         TextureBuilder() = default;
         TextureBuilder& set_path(std::filesystem::path path);
-        Image           build(VkDevice device, const CommandBuffer& command_buffer) const;
+        
+        void            build(VkDevice device, const CommandBuffer& command_buffer, Image& image) const;
 
-        private:
+    private:
         std::filesystem::path m_path;
     };
 } // namespace pvp

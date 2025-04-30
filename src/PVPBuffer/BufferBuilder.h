@@ -17,7 +17,7 @@ namespace pvp
         BufferBuilder& set_memory_usage(VmaMemoryUsage usage);
         BufferBuilder& set_flags(VmaAllocationCreateFlags flags);
 
-        Buffer build(const VmaAllocator& allocator);
+        void build(const VmaAllocator& allocator, Buffer& buffer) const;
 
     private:
         VkDeviceSize             m_buffer_size{ 0 };
