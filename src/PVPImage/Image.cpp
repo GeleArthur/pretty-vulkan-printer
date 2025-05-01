@@ -10,7 +10,6 @@ namespace pvp
     {
         vmaDestroyImage(PvpVmaAllocator::get_allocator(), m_image, m_allocation);
         vkDestroyImageView(device, m_view, nullptr);
-        m_sampler.destroy(device);
     }
 
     VkImageView Image::get_view() const
@@ -108,7 +107,7 @@ namespace pvp
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
 
-        region.imageOffset = {0, 0, 0};
+        region.imageOffset = { 0, 0, 0 };
         region.imageExtent = m_extent;
 
         vkCmdCopyBufferToImage(cmd,
@@ -119,34 +118,4 @@ namespace pvp
                                &region);
     }
 
-    Sampler Image::get_sampler() const
-    {
-        return m_sampler;
-    }
-
-    // void Image::create_sampler()
-    // {
-    //     VkSamplerCreateInfo sampler_info{};
-    //     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    //     sampler_info.magFilter = VK_FILTER_LINEAR;
-    //     sampler_info.minFilter = VK_FILTER_LINEAR;
-    //     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    //     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    //     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    //     sampler_info.anisotropyEnable = VK_FALSE;
-    //     sampler_info.maxAnisotropy = 0.0f;
-    //     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    //     sampler_info.unnormalizedCoordinates = VK_FALSE;
-    //     sampler_info.compareEnable = VK_FALSE;
-    //     sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
-    //     sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    //     sampler_info.minLod = 0.0f;
-    //     sampler_info.maxLod = static_cast<float>(1);
-    //     sampler_info.mipLodBias = 0.0f;
-    //
-    //     if (vkCreateSampler(m_device, &sampler_info, nullptr, &m_sampler.handle) != VK_SUCCESS)
-    //     {
-    //         throw std::runtime_error("failed to create texture sampler!");
-    //     }
-    // }
 } // namespace pvp

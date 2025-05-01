@@ -87,6 +87,8 @@ add_executable(${PROJECT_NAME}
         src/PVPCommandBuffer/CommandBufferBuilder.h
         src/PVPRenderer/PVPRenderer.cpp
         src/PVPRenderer/PVPRenderer.h
+        src/PVPImage/SamplerBuilder.cpp
+        src/PVPImage/SamplerBuilder.h
 )
 
 add_subdirectory(libraries)

@@ -19,9 +19,9 @@ namespace pvp
         return *this;
     }
 
-    DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, const Image& image)
+    DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, const Image& image, const Sampler& sampler)
     {
-        m_images.push_back({ binding, &image });
+        m_images.push_back({ binding, image, sampler });
         return *this;
     }
 
@@ -64,9 +64,9 @@ namespace pvp
             for (const auto& image : m_images)
             {
                 VkDescriptorImageInfo image_info{};
-                image_info.imageView = std::get<1>(image)->get_view();
-                image_info.sampler = std::get<1>(image)->get_sampler().handle;
-                image_info.imageLayout = std::get<1>(image)->get_layout();
+                image_info.imageView = std::get<1>(image).get().get_view();
+                image_info.sampler = std::get<2>(image).get().handle;
+                image_info.imageLayout = std::get<1>(image).get().get_layout();
 
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

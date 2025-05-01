@@ -58,6 +58,7 @@ void pvp::ImageBuilder::build(VkDevice device, VmaAllocator allocator, pvp::Imag
     }
     image.m_extent = VkExtent3D(m_size.width, m_size.height, 1);
     image.m_debug_create_info = create_info;
+    image.m_current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageViewCreateInfo view_info{};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

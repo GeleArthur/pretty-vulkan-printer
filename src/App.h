@@ -16,6 +16,7 @@ namespace pvp
     class CommandBuffer;
 
     class Swapchain;
+
     class App final
     {
     public:
@@ -37,12 +38,12 @@ namespace pvp
         UniformBuffer<ModelCameraViewData>* m_uniform_buffer{};
         SyncBuilder*                        m_sync_builder{};
         LoadModel                           m_model{};
-        Image                              m_texture{};
+        Sampler                             m_sampler{};
+        Image                               m_texture{};
         DescriptorSets                      m_descriptors{};
         DescriptorPool*                     m_descriptor_pool{};
         uint32_t                            m_double_buffer_frame{ 0 };
         FrameSyncers*                       m_frame_syncers{};
         DestructorQueue                     m_destructor_queue;
     };
-
 } // namespace pvp

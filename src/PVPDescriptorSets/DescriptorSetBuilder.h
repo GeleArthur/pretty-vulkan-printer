@@ -22,14 +22,14 @@ namespace pvp
 
         template<typename T>
         DescriptorSetBuilder& bind_buffer(uint32_t binding, const UniformBuffer<T>& buffer);
-        DescriptorSetBuilder& bind_image(uint32_t binding, const Image& image);
+        DescriptorSetBuilder& bind_image(uint32_t binding, const Image& image, const Sampler& sampler);
 
         DescriptorSets build(VkDevice device, DescriptorPool pool) const;
 
     private:
-        DescriptorLayout*                                                                    m_descriptor_layout{};
-        std::vector<std::tuple<uint32_t, std::reference_wrapper<const std::vector<Buffer>>>> m_buffers;
-        std::vector<std::tuple<uint32_t, const Image*>>                                      m_images;
+        DescriptorLayout*                                                                                             m_descriptor_layout{};
+        std::vector<std::tuple<uint32_t, std::reference_wrapper<const std::vector<Buffer>>>>                          m_buffers;
+        std::vector<std::tuple<uint32_t, std::reference_wrapper<const Image>, std::reference_wrapper<const Sampler>>> m_images;
     };
 
     template<typename T>
