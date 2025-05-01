@@ -21,7 +21,7 @@ namespace pvp
 
     void TextureBuilder::build(const VkDevice device, const CommandBuffer& command_buffer, Image& image_texture) const
     {
-        int      tex_width, tex_height, tex_channels;
+        int tex_width, tex_height, tex_channels;
         stbi_uc* pixels = stbi_load(m_path.generic_string().c_str(), &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha);
 
         if (!pixels)
@@ -38,12 +38,12 @@ namespace pvp
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
             .build(PvpVmaAllocator::get_allocator(), staging_buffer);
 
-        staging_buffer.set_image_data(std::as_bytes(std::span(pixels, image_size)));
+        staging_buffer.set_mapped_data(std::as_bytes(std::span(pixels, image_size)));
         stbi_image_free(pixels);
 
 
         ImageBuilder()
-            .set_size({ static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height) })
+            .set_size({static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height)})
             .set_format(VK_FORMAT_R8G8B8_SRGB)
             .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)

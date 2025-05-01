@@ -26,8 +26,8 @@ void pvp::App::run()
                                   800,
                                   "pretty vulkan printer",
                                   true,
-                                  { VK_EXT_DEBUG_UTILS_EXTENSION_NAME },
-                                  { "VK_LAYER_KHRONOS_validation" });
+                                  {VK_EXT_DEBUG_UTILS_EXTENSION_NAME},
+                                  {"VK_LAYER_KHRONOS_validation"});
     m_destructor_queue.add_to_queue([&] { delete m_pvp_instance; });
 
     m_pvp_device = new Device(m_pvp_instance, {});
@@ -52,15 +52,19 @@ void pvp::App::run()
     DescriptorLayout layout = DescriptorLayout(
         m_pvp_device->get_device(),
         {
-            VkDescriptorSetLayoutBinding{ 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
-            VkDescriptorSetLayoutBinding{ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+            VkDescriptorSetLayoutBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            VkDescriptorSetLayoutBinding{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
         });
 
     m_pipeline_layout = PipelineLayoutBuilder().add_descriptor_layout(layout.get_handle()).build(m_pvp_device->get_device());
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_pvp_device->get_device(), m_pipeline_layout, nullptr); });
 
-    m_descriptor_pool = new DescriptorPool(m_pvp_device->get_device(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 } }, 2);
-    m_destructor_queue.add_to_queue([&] { m_descriptor_pool->destroy(); delete m_descriptor_pool; });
+    m_descriptor_pool = new DescriptorPool(m_pvp_device->get_device(), {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}}, 2);
+    m_destructor_queue.add_to_queue([&]
+    {
+        m_descriptor_pool->destroy();
+        delete m_descriptor_pool;
+    });
 
     m_uniform_buffer = new UniformBuffer<ModelCameraViewData>(PvpVmaAllocator::get_allocator());
     m_destructor_queue.add_to_queue([&] { delete m_uniform_buffer; });
@@ -68,27 +72,27 @@ void pvp::App::run()
     TextureBuilder()
         .set_path("resources/viking_room.png")
         .build(m_pvp_device->get_device(), *m_command_buffer, m_texture);
-    
+
     m_destructor_queue.add_to_queue([&] { m_texture.destroy(m_pvp_device->get_device()); });
 
     m_descriptors = DescriptorSetBuilder()
-                        .set_layout(layout)
-                        .bind_buffer(0, *m_uniform_buffer)
-                        .bind_image(1, m_texture)
-                        .build(m_pvp_device->get_device(), *m_descriptor_pool);
+                    .set_layout(layout)
+                    .bind_buffer(0, *m_uniform_buffer)
+                    .bind_image(1, m_texture)
+                    .build(m_pvp_device->get_device(), *m_descriptor_pool);
 
     // Shader loading
     auto vertex_shader = ShaderLoader::load_shader_from_file(m_pvp_device->get_device(), "shaders/shader.vert.spv");
     auto fragment_shader = ShaderLoader::load_shader_from_file(m_pvp_device->get_device(), "shaders/shader.frag.spv");
 
     m_graphics_pipeline = GraphicsPipelineBuilder()
-                              .set_render_pass(m_pvp_render_pass)
-                              .add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT)
-                              .add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT)
-                              .set_pipeline_layout(m_pipeline_layout)
-                              .set_input_attribute_description(Vertex::get_attribute_descriptions())
-                              .set_input_binding_description(Vertex::get_binding_description())
-                              .build(*m_pvp_device);
+                          .set_render_pass(m_pvp_render_pass)
+                          .add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT)
+                          .add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT)
+                          .set_pipeline_layout(m_pipeline_layout)
+                          .set_input_attribute_description(Vertex::get_attribute_descriptions())
+                          .set_input_binding_description(Vertex::get_binding_description())
+                          .build(*m_pvp_device);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_pvp_device->get_device(), m_graphics_pipeline, nullptr); });
 
     vkDestroyShaderModule(m_pvp_device->get_device(), vertex_shader, nullptr);
@@ -105,7 +109,7 @@ void pvp::App::run()
         .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
         .build(PvpVmaAllocator::get_allocator(), transfer_buffer);
 
-    transfer_buffer.set_image_data(std::as_bytes(std::span(m_model.verties)));
+    transfer_buffer.set_mapped_data(std::as_bytes(std::span(m_model.verties)));
 
     BufferBuilder()
         .set_size(m_model.verties.size() * sizeof(Vertex))
@@ -125,7 +129,7 @@ void pvp::App::run()
         .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
         .build(PvpVmaAllocator::get_allocator(), transfer_buffer_index);
 
-    transfer_buffer_index.set_image_data(std::as_bytes(std::span(m_model.indices)));
+    transfer_buffer_index.set_mapped_data(std::as_bytes(std::span(m_model.indices)));
 
     BufferBuilder()
         .set_size(m_model.indices.size() * sizeof(uint32_t))
@@ -138,7 +142,11 @@ void pvp::App::run()
 
     // Frame synces
     m_frame_syncers = new FrameSyncers(*m_sync_builder);
-    m_destructor_queue.add_to_queue([&] { m_frame_syncers->destroy(m_pvp_device->get_device()); delete m_frame_syncers; });
+    m_destructor_queue.add_to_queue([&]
+    {
+        m_frame_syncers->destroy(m_pvp_device->get_device());
+        delete m_frame_syncers;
+    });
 
     // TODO: poll events on other thread
     while (!glfwWindowShouldClose(m_pvp_instance->get_window()))
@@ -173,7 +181,7 @@ void pvp::App::draw_frame()
 
     static auto start_time = std::chrono::high_resolution_clock::now();
 
-    auto  current_time = std::chrono::high_resolution_clock::now();
+    auto current_time = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
     ModelCameraViewData ubo{};
@@ -190,8 +198,8 @@ void pvp::App::draw_frame()
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore          wait_semaphores[] = { m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle };
-    VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore wait_semaphores[] = {m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle};
+    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = wait_semaphores;
     submit_info.pWaitDstStageMask = wait_stages;
@@ -199,7 +207,7 @@ void pvp::App::draw_frame()
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &graphics_command;
 
-    VkSemaphore signal_semaphores[] = { m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle };
+    VkSemaphore signal_semaphores[] = {m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle};
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
@@ -213,7 +221,7 @@ void pvp::App::draw_frame()
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = signal_semaphores;
 
-    VkSwapchainKHR swap_chains[] = { m_pvp_swapchain->get_swapchain() };
+    VkSwapchainKHR swap_chains[] = {m_pvp_swapchain->get_swapchain()};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &image_index;
@@ -246,14 +254,14 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     render_pass_info.renderPass = m_pvp_render_pass;
     render_pass_info.framebuffer = m_pvp_swapchain->get_framebuffers()[image_index];
-    render_pass_info.renderArea.offset = { 0, 0 };
+    render_pass_info.renderArea.offset = {0, 0};
     render_pass_info.renderArea.extent = m_pvp_swapchain->get_swapchain_extent();
 
     std::array<VkClearValue, 2> clear_values{};
     clear_values[0].color = {
-        { 0.2f, 0.2f, 0.2f, 1.0f }
+        {0.2f, 0.2f, 0.2f, 1.0f}
     };
-    clear_values[1].depthStencil = { 1.0f, 0 };
+    clear_values[1].depthStencil = {1.0f, 0};
 
     render_pass_info.clearValueCount = clear_values.size();
     render_pass_info.pClearValues = clear_values.data();
@@ -271,12 +279,12 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
     vkCmdSetViewport(graphics_command, 0, 1, &viewport);
 
     VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
+    scissor.offset = {0, 0};
     scissor.extent = m_pvp_swapchain->get_swapchain_extent();
     vkCmdSetScissor(graphics_command, 0, 1, &scissor);
 
-    VkBuffer     vertex_buffers[] = { m_vertex_buffer.get_buffer() };
-    VkDeviceSize offsets[] = { 0 };
+    VkBuffer vertex_buffers[] = {m_vertex_buffer.get_buffer()};
+    VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(graphics_command, 0, 1, vertex_buffers, offsets);
 
     vkCmdBindDescriptorSets(graphics_command,

@@ -23,7 +23,8 @@ void pvp::Buffer::destroy() const
 {
     vmaDestroyBuffer(PvpVmaAllocator::get_allocator(), m_buffer, m_allocation);
 }
-void pvp::Buffer::set_image_data(std::span<const std::byte> input_data) const
+
+void pvp::Buffer::set_mapped_data(std::span<const std::byte> input_data) const
 {
     memcpy(m_allocation_info.pMappedData, input_data.data(), input_data.size());
 }

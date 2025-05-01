@@ -81,8 +81,8 @@ pvp::Swapchain::Swapchain(Instance& instance, Device& device, CommandBuffer& com
     : m_instance(&instance)
 {
     const VkPhysicalDevice physical_device = device.get_physical_device();
-    const VkSurfaceKHR     surface = instance.get_surface();
-    DestructorQueue        destructor_queue;
+    const VkSurfaceKHR surface = instance.get_surface();
+    DestructorQueue destructor_queue;
 
     m_swapchain_surface_format = get_best_surface_format(physical_device, surface);
     create_the_swapchain(device, command_buffer);
@@ -98,13 +98,14 @@ bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device
 
     return format_count > 0 && present_mode_count > 0;
 }
+
 void pvp::Swapchain::create_frame_buffers(VkDevice device, const VkRenderPass render_pass)
 {
     m_framebuffers.resize(m_swapchain_image_views.size());
 
     for (size_t i = 0; i < m_swapchain_image_views.size(); ++i)
     {
-        std::vector attachments = { m_swapchain_image_views[i], m_depth_buffer_image.get_view() };
+        std::vector attachments = {m_swapchain_image_views[i], m_depth_buffer_image.get_view()};
 
         VkFramebufferCreateInfo framebuffer_info{};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -119,11 +120,13 @@ void pvp::Swapchain::create_frame_buffers(VkDevice device, const VkRenderPass re
         {
             throw std::runtime_error("failed to create framebuffer!");
         }
-        m_swap_chain_destructor.add_to_queue([device, framebuffer = m_framebuffers[i]] {
+        m_swap_chain_destructor.add_to_queue([device, framebuffer = m_framebuffers[i]]
+        {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         });
     }
 }
+
 void pvp::Swapchain::recreate_swapchain(Device& device, CommandBuffer& command_buffer, VkRenderPass render_pass)
 {
     int width = 0, height = 0;
@@ -187,7 +190,7 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     const QueueFamilies& queue_families = device.get_queue_families();
-    const uint32_t       queue_family[2] = {
+    const uint32_t queue_family[2] = {
         queue_families.graphics_family.family_index,
         queue_families.present_family.family_index
     };
@@ -214,7 +217,8 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
     {
         throw std::runtime_error("failed to create swapchain");
     }
-    m_swap_chain_destructor.add_to_queue([&] {
+    m_swap_chain_destructor.add_to_queue([&]
+    {
         vkDestroySwapchainKHR(device.get_device(), m_swapchain, nullptr);
     });
 
@@ -241,17 +245,18 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
         {
             throw std::runtime_error("failed to create texture image view!");
         }
-        m_swap_chain_destructor.add_to_queue(            [&, view_ptr = m_swapchain_image_views[i]] {
-                vkDestroyImageView(device.get_device(), view_ptr, nullptr);
-            });
+        m_swap_chain_destructor.add_to_queue([&, view_ptr = m_swapchain_image_views[i]]
+        {
+            vkDestroyImageView(device.get_device(), view_ptr, nullptr);
+        });
     }
 
     ImageBuilder()
-        .SetSize(m_swapchain_extent)
-        .SetAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT)
-        .SetFormat(VK_FORMAT_D32_SFLOAT)
-        .SetMemoryUsage(VMA_MEMORY_USAGE_GPU_ONLY)
-        .SetUsage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        .set_size(m_swapchain_extent)
+        .set_aspect_flags(VK_IMAGE_ASPECT_DEPTH_BIT)
+        .set_format(VK_FORMAT_D32_SFLOAT)
+        .set_memory_usage(VMA_MEMORY_USAGE_GPU_ONLY)
+        .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
         .build(device.get_device(), PvpVmaAllocator::get_allocator(), m_depth_buffer_image);
 
     VkCommandBuffer cmd = command_buffer.begin_single_use_transfer_command();

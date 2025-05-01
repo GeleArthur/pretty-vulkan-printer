@@ -83,6 +83,10 @@ add_executable(${PROJECT_NAME}
         src/PVPImage/TextureBuilder.h
         src/PVPImage/ImageBuilder.cpp
         src/PVPImage/ImageBuilder.h
+        src/PVPCommandBuffer/CommandBufferBuilder.cpp
+        src/PVPCommandBuffer/CommandBufferBuilder.h
+        src/PVPRenderer/PVPRenderer.cpp
+        src/PVPRenderer/PVPRenderer.h
 )
 
 add_subdirectory(libraries)
