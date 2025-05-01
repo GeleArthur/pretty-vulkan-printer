@@ -29,8 +29,8 @@ add_executable(${PROJECT_NAME}
         src/PVPSwapchain/Swapchain.h
         src/PVPPhysicalDevice/PVPDeviceBuilder.cpp
         src/PVPPhysicalDevice/PVPDeviceBuilder.h
-        src/PVPInstance/PVPInstanceBuilder.cpp
-        src/PVPInstance/PVPInstanceBuilder.h
+        src/PVPInstance/InstanceBuilder.cpp
+        src/PVPInstance/InstanceBuilder.h
         src/PVPRenderPass/RenderPassBuilder.cpp
         src/PVPRenderPass/RenderPassBuilder.h
         src/PVPGraphicsPipeline/GraphicsPipelineBuilder.cpp
@@ -89,6 +89,16 @@ add_executable(${PROJECT_NAME}
         src/PVPRenderer/PVPRenderer.h
         src/PVPImage/SamplerBuilder.cpp
         src/PVPImage/SamplerBuilder.h
+        src/PVPDebugger/Debugger.cpp
+        src/PVPDebugger/Debugger.h
+        src/PVPWindow/WindowSurface.cpp
+        src/PVPWindow/WindowSurface.h
+        src/PVPWindow/WindowSurfaceBuilder.cpp
+        src/PVPWindow/WindowSurfaceBuilder.h
+        src/PhysicalDevice.cpp
+        src/PhysicalDevice.h
+        src/PhysicalDevice/PhysicalDeviceBuilder.cpp
+        src/PhysicalDevice/PhysicalDeviceBuilder.h
 )
 
 add_subdirectory(libraries)

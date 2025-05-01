@@ -43,7 +43,7 @@ namespace pvp
     }
     VkCommandBuffer CommandBuffer::get_graphics_command_buffer(uint32_t current_frame) const
     {
-        // vkResetCommandBuffer(m_graphics_command_buffer, 0);
+        vkResetCommandBuffer(m_graphics_command_buffer[current_frame], 0);
         return m_graphics_command_buffer[current_frame];
     }
 

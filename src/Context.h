@@ -1,11 +1,13 @@
 ﻿#pragma once
 
 #include <PVPInstance/Instance.h>
+#include <PVPVMAAllocator/VmaAllocator.h>
 namespace pvp
 {
     struct Context
     {
-        Instance instance;
+        VkDevice     device;
+        VmaAllocator allocator;
     };
 
 } // namespace pvp

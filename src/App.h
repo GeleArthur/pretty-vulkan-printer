@@ -10,6 +10,7 @@
 #include <PVPSyncManager/SyncBuilder.h>
 #include <PVPUniformBuffers/UniformBuffer.h>
 #include <PVPVMAAllocator/VmaAllocator.h>
+#include <PVPWindow/WindowSurface.h>
 
 namespace pvp
 {
@@ -25,7 +26,8 @@ namespace pvp
         void record_commands(VkCommandBuffer graphics_command, uint32_t image_index);
 
     private:
-        Instance*                           m_pvp_instance{};
+        Instance                            m_instance{};
+        WindowSurface                       m_window_surface{};
         Device*                             m_pvp_device{};
         Swapchain*                          m_pvp_swapchain{};
         VkRenderPass                        m_pvp_render_pass{};

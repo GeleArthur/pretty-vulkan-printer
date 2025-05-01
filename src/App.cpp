@@ -5,6 +5,7 @@
 #include <array>
 #include <globalconst.h>
 #include <iostream>
+#include <GLFW/glfw3.h>
 #include <PVPBuffer/Buffer.h>
 #include <PVPBuffer/BufferBuilder.h>
 #include <PVPCommandBuffer/CommandBuffer.h>
@@ -15,32 +16,49 @@
 #include <PVPGraphicsPipeline/ShaderLoader.h>
 #include <PVPImage/SamplerBuilder.h>
 #include <PVPImage/TextureBuilder.h>
+#include <PVPInstance/InstanceBuilder.h>
 #include <PVPRenderPass/RenderPassBuilder.h>
 #include <PVPSwapchain/Swapchain.h>
 #include <PVPUniformBuffers/UniformBuffer.h>
+#include <PVPWindow/WindowSurfaceBuilder.h>
 #include <glm/gtx/quaternion.hpp>
 
 void pvp::App::run()
 {
     // TODO: Debug stuff and swapchain extensions should be moved inside as it a given that we want it.
-    m_pvp_instance = new Instance(800,
-                                  800,
-                                  "pretty vulkan printer",
-                                  true,
-                                  { VK_EXT_DEBUG_UTILS_EXTENSION_NAME },
-                                  { "VK_LAYER_KHRONOS_validation" });
-    m_destructor_queue.add_to_queue([&] { delete m_pvp_instance; });
+    // m_pvp_instance = new Instance(800,
+    //                               800,
+    //                               "pretty vulkan printer",
+    //                               true,
+    //                               { VK_EXT_DEBUG_UTILS_EXTENSION_NAME },
+    //                               { "VK_LAYER_KHRONOS_validation" });
+    // m_destructor_queue.add_to_queue([&] { delete m_pvp_instance; });
 
-    m_pvp_device = new Device(m_pvp_instance, {});
+    glfwInit();
+    m_destructor_queue.add_to_queue([&] { glfwTerminate(); });
+
+    InstanceBuilder()
+        .enable_debugging(true)
+        .set_app_name("pretty vulkan printer")
+        .build(m_instance);
+    m_destructor_queue.add_to_queue([&] { m_instance.destroy(); });
+
+    WindowSurfaceBuilder()
+        .set_window_size(800, 600)
+        .set_window_title("pretty vulkan printer")
+        .build(m_instance, m_window_surface);
+    m_destructor_queue.add_to_queue([&] { m_window_surface.destroy(m_instance); });
+
+    m_pvp_device = new Device(m_instance, {});
     m_destructor_queue.add_to_queue([&] { delete m_pvp_device; });
 
-    m_allocator = new PvpVmaAllocator(*m_pvp_instance, *m_pvp_device);
+    m_allocator = new PvpVmaAllocator(*m_instance, *m_pvp_device);
     m_destructor_queue.add_to_queue([&] { delete m_allocator; });
 
     m_command_buffer = new CommandBuffer(*m_pvp_device);
     m_destructor_queue.add_to_queue([&] { delete m_command_buffer; });
 
-    m_pvp_swapchain = new Swapchain(*m_pvp_instance, *m_pvp_device, *m_command_buffer);
+    m_pvp_swapchain = new Swapchain(*m_instance, *m_pvp_device, *m_command_buffer);
     m_destructor_queue.add_to_queue([&] { delete m_pvp_swapchain; });
 
     m_pvp_render_pass = RenderPassBuilder().build(*m_pvp_swapchain, *m_pvp_device);
@@ -150,7 +168,7 @@ void pvp::App::run()
     });
 
     // TODO: poll events on other thread
-    while (!glfwWindowShouldClose(m_pvp_instance->get_window()))
+    while (!glfwWindowShouldClose(m_instance->get_window()))
     {
         glfwPollEvents();
         draw_frame();
@@ -178,8 +196,6 @@ void pvp::App::draw_frame()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    VkCommandBuffer graphics_command = m_command_buffer->get_graphics_command_buffer(m_double_buffer_frame);
-
     static auto start_time = std::chrono::high_resolution_clock::now();
 
     auto  current_time = std::chrono::high_resolution_clock::now();
@@ -189,11 +205,11 @@ void pvp::App::draw_frame()
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_pvp_swapchain->get_swapchain_extent().width) / static_cast<float>(m_pvp_swapchain->get_swapchain_extent().height), 0.1f, 10.0f);
-
     ubo.proj[1][1] *= -1;
 
     m_uniform_buffer->update(m_double_buffer_frame, ubo);
 
+    VkCommandBuffer graphics_command = m_command_buffer->get_graphics_command_buffer(m_double_buffer_frame);
     record_commands(graphics_command, image_index);
 
     VkSubmitInfo submit_info{};
@@ -243,10 +259,10 @@ void pvp::App::draw_frame()
 
 void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
 {
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if (vkBeginCommandBuffer(graphics_command, &beginInfo) != VK_SUCCESS)
+    if (vkBeginCommandBuffer(graphics_command, &begin_info) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
