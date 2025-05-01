@@ -254,7 +254,7 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
     ImageBuilder()
         .set_size(m_swapchain_extent)
         .set_aspect_flags(VK_IMAGE_ASPECT_DEPTH_BIT)
-        .set_format(VK_FORMAT_D32_SFLOAT)
+        .set_format(VK_FORMAT_D32_SFLOAT_S8_UINT)
         .set_memory_usage(VMA_MEMORY_USAGE_GPU_ONLY)
         .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
         .build(device.get_device(), PvpVmaAllocator::get_allocator(), m_depth_buffer_image);

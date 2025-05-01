@@ -29,7 +29,7 @@ namespace pvp
             spdlog::error("{}", stbi_failure_reason());
             throw std::runtime_error("failed to load texture image!");
         }
-        VkDeviceSize image_size = tex_width * tex_height * tex_channels;
+        VkDeviceSize image_size = tex_width * tex_height * 4;
 
         Buffer staging_buffer;
         BufferBuilder()
@@ -44,7 +44,7 @@ namespace pvp
 
         ImageBuilder()
             .set_size({static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height)})
-            .set_format(VK_FORMAT_R8G8B8_SRGB)
+            .set_format(VK_FORMAT_R8G8B8A8_SRGB)
             .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
