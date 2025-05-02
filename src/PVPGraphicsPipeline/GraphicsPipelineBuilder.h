@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <span>
-#include <PVPPhysicalDevice/Device.h>
+#include <PVPDevice/Device.h>
 #include <vulkan/vulkan.h>
 #include <vector>
 

@@ -1,23 +1,21 @@
 ﻿#include "VmaAllocator.h"
 
-// TODO: bad singleton
-static VmaAllocator allocator_instance;
+#include "PVPDevice/Device.h"
+#include "PVPInstance/Instance.h"
+#include "PVPPhysicalDevice/PhysicalDevice.h"
 
-VmaAllocator& PvpVmaAllocator::get_allocator()
+
+const VmaAllocator& pvp::PvpVmaAllocator::get_allocator() const
 {
-    return allocator_instance;
+    return m_allocator;
 }
 
-PvpVmaAllocator::PvpVmaAllocator(pvp::Instance& instance, pvp::Device& physical_device)
+void pvp::create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device)
 {
     VmaAllocatorCreateInfo allocator_info{};
     allocator_info.instance = instance.get_instance();
     allocator_info.physicalDevice = physical_device.get_physical_device();
-    allocator_info.device = physical_device.get_device();
+    allocator_info.device = device.get_device();
 
-    vmaCreateAllocator(&allocator_info, &allocator_instance);
-}
-PvpVmaAllocator::~PvpVmaAllocator()
-{
-    vmaDestroyAllocator(allocator_instance);
+    vmaCreateAllocator(&allocator_info, &allocator.m_allocator);
 }

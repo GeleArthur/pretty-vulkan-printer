@@ -11,9 +11,9 @@
 #include <PVPCommandBuffer/CommandBuffer.h>
 #include <PVPDescriptorSets/DescriptorLayout.h>
 #include <PVPGraphicsPipeline/GraphicsPipelineBuilder.h>
-#include <PVPGraphicsPipeline/Vertex.h>
 #include <PVPGraphicsPipeline/PipelineLayoutBuilder.h>
 #include <PVPGraphicsPipeline/ShaderLoader.h>
+#include <PVPGraphicsPipeline/Vertex.h>
 #include <PVPImage/SamplerBuilder.h>
 #include <PVPImage/TextureBuilder.h>
 #include <PVPInstance/InstanceBuilder.h>
@@ -25,48 +25,57 @@
 
 void pvp::App::run()
 {
-    // TODO: Debug stuff and swapchain extensions should be moved inside as it a given that we want it.
-    // m_pvp_instance = new Instance(800,
-    //                               800,
-    //                               "pretty vulkan printer",
-    //                               true,
-    //                               { VK_EXT_DEBUG_UTILS_EXTENSION_NAME },
-    //                               { "VK_LAYER_KHRONOS_validation" });
-    // m_destructor_queue.add_to_queue([&] { delete m_pvp_instance; });
-
     glfwInit();
-    m_destructor_queue.add_to_queue([&] { glfwTerminate(); });
+    m_destructor_queue.add_to_queue([&] {
+        glfwTerminate();
+    });
 
     InstanceBuilder()
         .enable_debugging(true)
         .set_app_name("pretty vulkan printer")
         .build(m_instance);
-    m_destructor_queue.add_to_queue([&] { m_instance.destroy(); });
+    m_destructor_queue.add_to_queue([&] {
+        m_instance.destroy();
+    });
 
     WindowSurfaceBuilder()
         .set_window_size(800, 600)
         .set_window_title("pretty vulkan printer")
         .build(m_instance, m_window_surface);
-    m_destructor_queue.add_to_queue([&] { m_window_surface.destroy(m_instance); });
+    m_destructor_queue.add_to_queue([&] {
+        m_window_surface.destroy(m_instance);
+    });
 
     m_pvp_device = new Device(m_instance, {});
-    m_destructor_queue.add_to_queue([&] { delete m_pvp_device; });
+    m_destructor_queue.add_to_queue([&] {
+        delete m_pvp_device;
+    });
 
     m_allocator = new PvpVmaAllocator(*m_instance, *m_pvp_device);
-    m_destructor_queue.add_to_queue([&] { delete m_allocator; });
+    m_destructor_queue.add_to_queue([&] {
+        delete m_allocator;
+    });
 
     m_command_buffer = new CommandBuffer(*m_pvp_device);
-    m_destructor_queue.add_to_queue([&] { delete m_command_buffer; });
+    m_destructor_queue.add_to_queue([&] {
+        delete m_command_buffer;
+    });
 
     m_pvp_swapchain = new Swapchain(*m_instance, *m_pvp_device, *m_command_buffer);
-    m_destructor_queue.add_to_queue([&] { delete m_pvp_swapchain; });
+    m_destructor_queue.add_to_queue([&] {
+        delete m_pvp_swapchain;
+    });
 
     m_pvp_render_pass = RenderPassBuilder().build(*m_pvp_swapchain, *m_pvp_device);
-    m_destructor_queue.add_to_queue([&] { vkDestroyRenderPass(m_pvp_device->get_device(), m_pvp_render_pass, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyRenderPass(m_pvp_device->get_device(), m_pvp_render_pass, nullptr);
+    });
     m_pvp_swapchain->create_frame_buffers(m_pvp_device->get_device(), m_pvp_render_pass);
 
     m_sync_builder = new SyncBuilder(m_pvp_device->get_device());
-    m_destructor_queue.add_to_queue([&] { delete m_sync_builder; });
+    m_destructor_queue.add_to_queue([&] {
+        delete m_sync_builder;
+    });
 
     DescriptorLayout layout = DescriptorLayout(
         m_pvp_device->get_device(),
@@ -76,7 +85,9 @@ void pvp::App::run()
         });
 
     m_pipeline_layout = PipelineLayoutBuilder().add_descriptor_layout(layout.get_handle()).build(m_pvp_device->get_device());
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_pvp_device->get_device(), m_pipeline_layout, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipelineLayout(m_pvp_device->get_device(), m_pipeline_layout, nullptr);
+    });
 
     m_descriptor_pool = new DescriptorPool(m_pvp_device->get_device(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 } }, 2);
     m_destructor_queue.add_to_queue([&] {
@@ -85,15 +96,21 @@ void pvp::App::run()
     });
 
     m_uniform_buffer = new UniformBuffer<ModelCameraViewData>(PvpVmaAllocator::get_allocator());
-    m_destructor_queue.add_to_queue([&] { delete m_uniform_buffer; });
+    m_destructor_queue.add_to_queue([&] {
+        delete m_uniform_buffer;
+    });
 
     TextureBuilder()
         .set_path("resources/viking_room.png")
         .build(m_pvp_device->get_device(), *m_command_buffer, m_texture);
-    m_destructor_queue.add_to_queue([&] { m_texture.destroy(m_pvp_device->get_device()); });
+    m_destructor_queue.add_to_queue([&] {
+        m_texture.destroy(m_pvp_device->get_device());
+    });
 
     SamplerBuilder().build(m_pvp_device->get_device(), m_sampler);
-    m_destructor_queue.add_to_queue([&] { m_sampler.destroy(m_pvp_device->get_device()); });
+    m_destructor_queue.add_to_queue([&] {
+        m_sampler.destroy(m_pvp_device->get_device());
+    });
 
     m_descriptors = DescriptorSetBuilder()
                         .set_layout(layout)
@@ -113,7 +130,9 @@ void pvp::App::run()
                               .set_input_attribute_description(Vertex::get_attribute_descriptions())
                               .set_input_binding_description(Vertex::get_binding_description())
                               .build(*m_pvp_device);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_pvp_device->get_device(), m_graphics_pipeline, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipeline(m_pvp_device->get_device(), m_graphics_pipeline, nullptr);
+    });
 
     vkDestroyShaderModule(m_pvp_device->get_device(), vertex_shader, nullptr);
     vkDestroyShaderModule(m_pvp_device->get_device(), fragment_shader, nullptr);
@@ -136,7 +155,9 @@ void pvp::App::run()
         .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
         .build(PvpVmaAllocator::get_allocator(), m_vertex_buffer);
 
-    m_destructor_queue.add_to_queue([&] { m_vertex_buffer.destroy(); });
+    m_destructor_queue.add_to_queue([&] {
+        m_vertex_buffer.destroy();
+    });
 
     m_vertex_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer);
     transfer_buffer.destroy();
@@ -155,7 +176,9 @@ void pvp::App::run()
         .set_size(m_model.indices.size() * sizeof(uint32_t))
         .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
         .build(PvpVmaAllocator::get_allocator(), m_index_buffer);
-    m_destructor_queue.add_to_queue([&] { m_index_buffer.destroy(); });
+    m_destructor_queue.add_to_queue([&] {
+        m_index_buffer.destroy();
+    });
 
     m_index_buffer.copy_from_buffer(*m_command_buffer, transfer_buffer_index);
     transfer_buffer_index.destroy();

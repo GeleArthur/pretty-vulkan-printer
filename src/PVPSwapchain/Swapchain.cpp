@@ -4,7 +4,7 @@
 
 #include <PVPImage/Image.h>
 #include <PVPInstance/Instance.h>
-#include <PVPPhysicalDevice/Device.h>
+#include <PVPDevice/Device.h>
 #include <algorithm>
 #include <array>
 #include <iostream>

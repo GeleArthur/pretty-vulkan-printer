@@ -1,11 +1,12 @@
-﻿project(pretty-vulkan-printer-libraries)
+﻿cmake_minimum_required(VERSION 3.25)
+project(pretty-vulkan-printer-libraries)
 
 include(FetchContent)
 
-include(FindVulkan REQUIRED)
-if(NOT VULKAN_FOUND)
+find_package(Vulkan REQUIRED)
+if (NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
-endif()
+endif ()
 
 FetchContent_Declare(
         glm
@@ -83,6 +84,14 @@ FetchContent_MakeAvailable(assimp)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
+# hihihi
+add_library(spirv-reflect STATIC
+        ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.h
+        ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.c
+)
+target_include_directories(spirv-reflect PUBLIC ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect)
+set_target_properties(spirv-reflect PROPERTIES PROPERTY EXCLUDE_FROM_ALL)
+
 target_link_libraries(${PROJECT_NAME} INTERFACE
         glm::glm
         glfw
@@ -90,5 +99,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         spdlog
         assimp
         Vulkan::Vulkan
-        #        GPUOpen::VulkanMemoryAllocator
+        spirv-reflect
 )

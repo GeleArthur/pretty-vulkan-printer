@@ -4,7 +4,7 @@
 #include <PVPBuffer/Buffer.h>
 #include <PVPDescriptorSets/DescriptorSetBuilder.h>
 #include <PVPInstance/Instance.h>
-#include <PVPPhysicalDevice/Device.h>
+#include <PVPDevice/Device.h>
 #include <PVPSyncManager/FrameSyncers.h>
 #include <PVPSyncManager/Semaphore.h>
 #include <PVPSyncManager/SyncBuilder.h>

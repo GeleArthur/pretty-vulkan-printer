@@ -6,31 +6,20 @@
 #include <string>
 
 // Could be better
-struct QueueFamily
-{
-    uint32_t family_index{};
-    VkQueue  queue{};
-};
-
-struct QueueFamilies
-{
-    QueueFamily graphics_family{};
-    QueueFamily transfer_family{};
-    QueueFamily compute_family{};
-    QueueFamily present_family{};
-};
 
 namespace pvp
 {
     // TODO: Is context not device
     class Instance;
+
     class Device
     {
     public:
         explicit Device(Instance* pvp_instance, const std::vector<std::string>& device_extensions);
 
-        VkDevice             get_device();
-        VkPhysicalDevice     get_physical_device();
+        VkDevice         get_device() const;
+        VkPhysicalDevice get_physical_device() const;
+
         const QueueFamilies& get_queue_families() const
         {
             return m_queue_families;
@@ -43,5 +32,4 @@ namespace pvp
         Instance*        m_instance{};
         DestructorQueue  m_destructor;
     };
-
 } // namespace pvp

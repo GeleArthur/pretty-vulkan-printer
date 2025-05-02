@@ -1,6 +1,6 @@
 ﻿#include "GraphicsPipelineBuilder.h"
 
-#include <PVPPhysicalDevice/Device.h>
+#include <PVPDevice/Device.h>
 #include <vulkan/vulkan_core.h>
 
 #include <stdexcept>

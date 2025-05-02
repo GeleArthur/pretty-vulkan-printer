@@ -7,16 +7,18 @@
 
 namespace pvp
 {
-    class WindowSurface
+    class WindowSurface final
     {
     public:
         explicit WindowSurface() = default;
+        const GLFWwindow&   get_window() const;
+        const VkSurfaceKHR& get_surface() const;
+
         void destroy(const Instance& instance) const;
 
     private:
         friend class WindowSurfaceBuilder;
-        GLFWwindow*      m_window{ nullptr };
-        VkSurfaceKHR     m_surface{ VK_NULL_HANDLE };
-        VkPhysicalDevice m_physical_device{ VK_NULL_HANDLE };
+        GLFWwindow*  m_window{ nullptr };
+        VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
     };
 } // namespace pvp

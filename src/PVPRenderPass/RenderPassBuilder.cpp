@@ -4,7 +4,7 @@
 
 #include "RenderPassBuilder.h"
 
-#include <PVPPhysicalDevice/Device.h>
+#include <PVPDevice/Device.h>
 #include <PVPSwapchain/Swapchain.h>
 
 #include <array>

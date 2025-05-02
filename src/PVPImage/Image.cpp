@@ -4,12 +4,14 @@
 #include <PVPVMAAllocator/VmaAllocator.h>
 #include <vulkan/vulkan.h>
 
+#include "PVPPhysicalDevice/Context.h"
+
 namespace pvp
 {
-    void Image::destroy(VkDevice device)
+    void Image::destroy(const Context& context)
     {
-        vmaDestroyImage(PvpVmaAllocator::get_allocator(), m_image, m_allocation);
-        vkDestroyImageView(device, m_view, nullptr);
+        vmaDestroyImage(context.allocator.get_allocator(), m_image, m_allocation);
+        vkDestroyImageView(context.device.get_device(), m_view, nullptr);
     }
 
     VkImageView Image::get_view() const

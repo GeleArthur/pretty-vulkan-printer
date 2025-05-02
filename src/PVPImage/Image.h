@@ -3,13 +3,15 @@
 
 #include <PVPBuffer/Buffer.h>
 
+#include "PVPPhysicalDevice/Context.h"
+
 namespace pvp
 {
     class Image final
     {
     public:
         Image() = default;
-        void destroy(VkDevice device);
+        void destroy(const Context& context);
 
         VkImageView              get_view() const;
         VkImage                  get_image() const;

@@ -10,16 +10,16 @@ std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice 
     QueueFamilies result{};
 
     uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
+    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties2> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &queue_family_count, queue_families.data());
 
     bool graphics_queue{}, compute_queue{}, transfer_queue{}, surface_queue{};
     bool success = false;
 
     for (int family_index = 0; family_index < queue_families.size(); ++family_index)
     {
-        if (queue_families[family_index].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (queue_families[family_index].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             if (graphics_queue == false)
             {
@@ -27,7 +27,7 @@ std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice 
                 graphics_queue = true;
             }
         }
-        if (queue_families[family_index].queueFlags & VK_QUEUE_COMPUTE_BIT)
+        if (queue_families[family_index].queueFamilyProperties.queueFlags & VK_QUEUE_COMPUTE_BIT)
         {
             if (compute_queue == false)
             {
@@ -35,7 +35,7 @@ std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice 
                 compute_queue = true;
             }
         }
-        if (queue_families[family_index].queueFlags & VK_QUEUE_TRANSFER_BIT)
+        if (queue_families[family_index].queueFamilyProperties.queueFlags & VK_QUEUE_TRANSFER_BIT)
         {
             if (transfer_queue == false)
             {
@@ -62,10 +62,9 @@ std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice 
     return std::tuple(success, result);
 }
 
-VkPhysicalDevice get_best_device(
-const std::vector<VkPhysicalDevice>& devices,
-const std::vector<const char*>&      device_extensions,
-const VkSurfaceKHR&                  surface)
+VkPhysicalDevice get_best_device(const std::vector<VkPhysicalDevice>& devices,
+                                 const std::vector<const char*>&      device_extensions,
+                                 const VkSurfaceKHR&                  surface)
 {
     uint32_t         best_score = 0;
     VkPhysicalDevice best_device = VK_NULL_HANDLE;
@@ -82,8 +81,10 @@ const VkSurfaceKHR&                  surface)
         for (const char* extension : device_extensions)
         {
             if (std::ranges::find_if(
-                available_extensions,
-                [&](const VkExtensionProperties& ex) { return std::strcmp(ex.extensionName, extension); }) == available_extensions.end())
+                    available_extensions,
+                    [&](const VkExtensionProperties& ex) {
+                        return std::strcmp(ex.extensionName, extension);
+                    }) == available_extensions.end())
             {
                 has_extension = false;
                 break;
@@ -170,6 +171,7 @@ pvp::Device::Device(Instance* pvp_instance, const std::vector<std::string>& devi
 
     for (uint32_t queue_family : unique_queue_families)
     {
+        VkDeviceQueueInfo2;
         VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
@@ -195,7 +197,9 @@ pvp::Device::Device(Instance* pvp_instance, const std::vector<std::string>& devi
     {
         throw std::runtime_error("failed to create logical device!");
     }
-    m_destructor.add_to_queue([&] { vkDestroyDevice(m_device, nullptr); });
+    m_destructor.add_to_queue([&] {
+        vkDestroyDevice(m_device, nullptr);
+    });
 
     vkGetDeviceQueue(m_device, queue_families.graphics_family.family_index, 0, &queue_families.graphics_family.queue);
     vkGetDeviceQueue(m_device, queue_families.compute_family.family_index, 0, &queue_families.compute_family.queue);
@@ -205,11 +209,12 @@ pvp::Device::Device(Instance* pvp_instance, const std::vector<std::string>& devi
     m_queue_families = queue_families;
 }
 
-VkDevice pvp::Device::get_device()
+VkDevice pvp::Device::get_device() const
 {
     return m_device;
 }
-VkPhysicalDevice pvp::Device::get_physical_device()
+
+VkPhysicalDevice pvp::Device::get_physical_device() const
 {
     return m_physical_device;
 }

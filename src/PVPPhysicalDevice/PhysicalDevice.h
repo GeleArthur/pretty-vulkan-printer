@@ -3,15 +3,15 @@
 
 namespace pvp
 {
-    class PhysicalDevice
+    class PhysicalDevice final
     {
     public:
         explicit PhysicalDevice() = default;
 
-        const VkPhysicalDevice& get_physical_device();
-        
+        const VkPhysicalDevice& get_physical_device() const;
+
     private:
+        friend class LogicPhysicalQueueBuilder;
         VkPhysicalDevice m_physical_device{ VK_NULL_HANDLE };
     };
-
 } // namespace pvp

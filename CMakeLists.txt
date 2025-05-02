@@ -1,5 +1,6 @@
-﻿cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION 3.25)
 project(pretty-vulkan-printer VERSION 1.0 LANGUAGES CXX C)
+
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
@@ -23,19 +24,15 @@ add_executable(${PROJECT_NAME}
         src/tiny_obj_loader.h
         src/PVPImage/Image.cpp
         src/PVPImage/Image.h
-        src/PVPPhysicalDevice/Device.cpp
-        src/PVPPhysicalDevice/Device.h
         src/PVPSwapchain/Swapchain.cpp
         src/PVPSwapchain/Swapchain.h
-        src/PVPPhysicalDevice/PVPDeviceBuilder.cpp
-        src/PVPPhysicalDevice/PVPDeviceBuilder.h
         src/PVPInstance/InstanceBuilder.cpp
         src/PVPInstance/InstanceBuilder.h
         src/PVPRenderPass/RenderPassBuilder.cpp
         src/PVPRenderPass/RenderPassBuilder.h
         src/PVPGraphicsPipeline/GraphicsPipelineBuilder.cpp
         src/PVPGraphicsPipeline/GraphicsPipelineBuilder.h
-        src/Context.h
+        src/PVPPhysicalDevice/Context.h
         src/PVPGraphicsPipeline/ShaderLoader.cpp
         src/PVPGraphicsPipeline/ShaderLoader.h
         src/PVPGraphicsPipeline/PipelineLayoutBuilder.cpp
@@ -95,10 +92,10 @@ add_executable(${PROJECT_NAME}
         src/PVPWindow/WindowSurface.h
         src/PVPWindow/WindowSurfaceBuilder.cpp
         src/PVPWindow/WindowSurfaceBuilder.h
-        src/PhysicalDevice.cpp
-        src/PhysicalDevice.h
-        src/PhysicalDevice/PhysicalDeviceBuilder.cpp
-        src/PhysicalDevice/PhysicalDeviceBuilder.h
+        src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.h
+        src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.cpp
+        src/PVPPhysicalDevice/QueueFamillies.cpp
+        src/PVPPhysicalDevice/QueueFamillies.h
 )
 
 add_subdirectory(libraries)

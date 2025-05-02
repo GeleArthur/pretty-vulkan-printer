@@ -1,16 +1,23 @@
 ﻿#pragma once
 
-// #define VMA_STATIC_VULKAN_FUNCTIONS
-// #define VMA_STATS_STRING_ENABLED 1
 #include <vma/vk_mem_alloc.h>
 
-#include <PVPInstance/Instance.h>
-#include <PVPPhysicalDevice/Device.h>
-
-class PvpVmaAllocator
+namespace pvp
 {
-public:
-    static VmaAllocator& get_allocator();
-    PvpVmaAllocator(pvp::Instance& instance, pvp::Device& physical_device);
-    ~PvpVmaAllocator();
-};
+    class PhysicalDevice;
+    class Device;
+    class Instance;
+
+    class PvpVmaAllocator
+    {
+    public:
+        [[nodiscard]] const VmaAllocator& get_allocator() const;
+
+    private:
+        friend void create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device);
+        VmaAllocator m_allocator{ VK_NULL_HANDLE };
+    };
+
+
+    void create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device);
+}
