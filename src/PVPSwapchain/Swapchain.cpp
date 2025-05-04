@@ -1,5 +1,6 @@
 ﻿#include "Swapchain.h"
 
+#include "GLFW/glfw3.h"
 #include "PVPImage/ImageBuilder.h"
 
 #include <PVPImage/Image.h>
@@ -80,11 +81,11 @@ static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabili
 pvp::Swapchain::Swapchain(Instance& instance, Device& device, CommandBuffer& command_buffer)
     : m_instance(&instance)
 {
-    const VkPhysicalDevice physical_device = device.get_physical_device();
-    const VkSurfaceKHR     surface = instance.get_surface();
-    DestructorQueue        destructor_queue;
+    // const VkPhysicalDevice physical_device = device.get_physical_device();
+    // const VkSurfaceKHR     surface = instance.get_surface();
+    DestructorQueue destructor_queue;
 
-    m_swapchain_surface_format = get_best_surface_format(physical_device, surface);
+    // m_swapchain_surface_format = get_best_surface_format(physical_device, surface);
     create_the_swapchain(device, command_buffer);
 }
 
@@ -129,10 +130,10 @@ void pvp::Swapchain::create_frame_buffers(VkDevice device, const VkRenderPass re
 void pvp::Swapchain::recreate_swapchain(Device& device, CommandBuffer& command_buffer, VkRenderPass render_pass)
 {
     int width = 0, height = 0;
-    glfwGetFramebufferSize(m_instance->get_window(), &width, &height);
+    // glfwGetFramebufferSize(m_instance->get_window(), &width, &height);
     while (width == 0 || height == 0)
     {
-        glfwGetFramebufferSize(m_instance->get_window(), &width, &height);
+        // glfwGetFramebufferSize(m_instance->get_window(), &width, &height);
         glfwWaitEvents();
     }
 
@@ -174,13 +175,13 @@ void pvp::Swapchain::destroy_old_swapchain()
 void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& command_buffer)
 {
     VkSurfaceCapabilitiesKHR surface_capabilities{};
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.get_physical_device(), m_instance->get_surface(), &surface_capabilities);
+    // vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.get_physical_device(), m_instance->get_surface(), &surface_capabilities);
 
-    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, m_instance->get_window());
+    // m_swapchain_extent = get_swap_chain_extent(surface_capabilities, m_instance->get_window());
 
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = m_instance->get_surface();
+    // create_info.surface = m_instance->get_surface();
     create_info.minImageCount = get_mini_image_count(surface_capabilities);
     create_info.imageFormat = m_swapchain_surface_format.format;
     create_info.imageColorSpace = m_swapchain_surface_format.colorSpace;
@@ -188,19 +189,19 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    const QueueFamilies& queue_families = device.get_queue_families();
-    const uint32_t       queue_family[2] = {
-        queue_families.graphics_family.family_index,
-        queue_families.present_family.family_index
-    };
-    if (queue_families.graphics_family.family_index != queue_families.present_family.family_index)
+    // const QueueFamilies& queue_families = device.get_queue_families();
+    // const uint32_t       queue_family[2] = {
+    // queue_families.graphics_present_family.family_index,
+    // queue_families.present_family.family_index
+    // };
+    // if (queue_families.graphics_present_family.family_index != queue_families.graphics_present_family.family_index)
     {
-        create_info.pQueueFamilyIndices = queue_family;
+        // create_info.pQueueFamilyIndices = queue_family;
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
-        create_info.pQueueFamilyIndices = queue_family;
+        // create_info.pQueueFamilyIndices = queue_family;
     }
-    else
+    // else
     {
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         create_info.queueFamilyIndexCount = 0;
@@ -208,7 +209,7 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
     }
     create_info.preTransform = surface_capabilities.currentTransform;
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    create_info.presentMode = get_best_present_mode(device.get_physical_device(), m_instance->get_surface());
+    // create_info.presentMode = get_best_present_mode(device.get_physical_device(), m_instance->get_surface());
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
@@ -253,10 +254,10 @@ void pvp::Swapchain::create_the_swapchain(Device& device, const CommandBuffer& c
         .set_aspect_flags(VK_IMAGE_ASPECT_DEPTH_BIT)
         .set_format(VK_FORMAT_D32_SFLOAT_S8_UINT)
         .set_memory_usage(VMA_MEMORY_USAGE_GPU_ONLY)
-        .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        .build(device.get_device(), PvpVmaAllocator::get_allocator(), m_depth_buffer_image);
+        .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    // .build(device.get_device(), PvpVmaAllocator::get_allocator(), m_depth_buffer_image);
 
-    m_swap_chain_destructor.add_to_queue([&] { m_depth_buffer_image.destroy(device.get_device()); });
+    // m_swap_chain_destructor.add_to_queue([&] { m_depth_buffer_image.destroy(device.get_device()); });
 
     VkCommandBuffer cmd = command_buffer.begin_single_use_transfer_command();
     m_depth_buffer_image.transition_layout(cmd, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);

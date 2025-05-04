@@ -4,10 +4,13 @@
 #include "PVPInstance/Instance.h"
 #include "PVPPhysicalDevice/PhysicalDevice.h"
 
-
 const VmaAllocator& pvp::PvpVmaAllocator::get_allocator() const
 {
     return m_allocator;
+}
+void pvp::PvpVmaAllocator::destroy() const
+{
+    vmaDestroyAllocator(m_allocator);
 }
 
 void pvp::create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device)

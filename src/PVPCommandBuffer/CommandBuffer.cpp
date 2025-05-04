@@ -1,4 +1,4 @@
-﻿#include "CommandBuffer.h"
+#include "CommandBuffer.h"
 
 #include <globalconst.h>
 #include <stdexcept>
@@ -11,15 +11,15 @@ namespace pvp
         VkCommandPoolCreateInfo pool_info{};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        pool_info.queueFamilyIndex = physical.get_queue_families().transfer_family.family_index;
-        m_transfer_family = physical.get_queue_families().transfer_family;
+        // pool_info.queueFamilyIndex = physical.get_queue_families().transfer_family.family_index;
+        // m_transfer_family = physical.get_queue_families().transfer_family;
         if (vkCreateCommandPool(physical.get_device(), &pool_info, nullptr, &m_single_use_transfer_command_pool) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create command pool!");
         }
 
         pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        pool_info.queueFamilyIndex = physical.get_queue_families().graphics_family.family_index;
+        // pool_info.queueFamilyIndex = physical.get_queue_families().graphics_present_family.family_index;
 
         if (vkCreateCommandPool(physical.get_device(), &pool_info, nullptr, &m_reset_graphics_command_pool) != VK_SUCCESS)
         {

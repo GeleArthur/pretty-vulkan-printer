@@ -1,5 +1,6 @@
-﻿cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.25)
 project(pretty-vulkan-printer VERSION 1.0 LANGUAGES CXX C)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
@@ -94,8 +95,9 @@ add_executable(${PROJECT_NAME}
         src/PVPWindow/WindowSurfaceBuilder.h
         src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.h
         src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.cpp
-        src/PVPPhysicalDevice/QueueFamillies.cpp
         src/PVPPhysicalDevice/QueueFamillies.h
+        src/PVPDevice/Device.cpp
+        src/PVPDevice/Device.h
 )
 
 add_subdirectory(libraries)

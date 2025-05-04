@@ -21,7 +21,7 @@ void pvp::Buffer::copy_from_buffer(pvp::CommandBuffer& command_buffer, Buffer& s
 
 void pvp::Buffer::destroy() const
 {
-    vmaDestroyBuffer(PvpVmaAllocator::get_allocator(), m_buffer, m_allocation);
+    // vmaDestroyBuffer(PvpVmaAllocator::get_allocator(), m_buffer, m_allocation);
 }
 
 void pvp::Buffer::set_mapped_data(std::span<const std::byte> input_data) const

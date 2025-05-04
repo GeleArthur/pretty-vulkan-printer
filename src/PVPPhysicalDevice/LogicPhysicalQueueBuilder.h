@@ -17,12 +17,13 @@ namespace pvp
     {
     public:
         explicit LogicPhysicalQueueBuilder() = default;
+        LogicPhysicalQueueBuilder& set_extensions(const std::vector<const char*>& extension);
 
-        void build(const Instance& instance, const WindowSurface& window_surface, PhysicalDevice& physical_device, Device& device, QueueFamilies& queue_families);
+        void build(const Instance& instance, const WindowSurface& window_surface, PhysicalDevice& physical_device_out, Device& device_out, QueueFamilies& queue_families_out);
 
     private:
-        [[nodiscard]] VkPhysicalDevice                get_best_device(const Instance& instance, const WindowSurface& window_surface) const;
-        std::tuple<bool, QueueFamilies> get_queue_family_indices(const VkPhysicalDevice& physical_device);
-        std::vector<const char*>        m_extentions;
+        [[nodiscard]] std::tuple<VkPhysicalDevice, QueueFamilies> get_best_device(const Instance& instance, const WindowSurface& window_surface) const;
+        [[nodiscard]] std::tuple<bool, QueueFamilies>             get_queue_family_indices(const VkPhysicalDevice& physical_device, const WindowSurface& window_surface) const;
+        std::vector<const char*>                                  m_extensions;
     };
 } // namespace pvp

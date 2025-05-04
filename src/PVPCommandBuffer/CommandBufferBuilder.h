@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include "PVPPhysicalDevice/QueueFamillies.h"
+
 #include <PVPDevice/Device.h>
 #include <vulkan/vulkan.h>
 
@@ -9,5 +11,5 @@ public:
 
 private:
     VkCommandPoolCreateFlags m_flags;
-    QueueFamily m_queue;
+    pvp::QueueFamily         m_queue;
 };

@@ -96,7 +96,9 @@ void pvp::InstanceBuilder::build(Instance& instance)
     if (m_is_debugging)
     {
         static VkDebugUtilsMessengerEXT debug_messenger{};
-        if (VulkanInstanceExtensions::vkCreateDebugUtilsMessengerEXT(instance.m_instance, Debugger::get_debug_info(), nullptr, &debug_messenger) != VK_SUCCESS)
+
+        const VkDebugUtilsMessengerCreateInfoEXT* convertToLValue = Debugger::get_debug_info();
+        if (VulkanInstanceExtensions::vkCreateDebugUtilsMessengerEXT(instance.m_instance, convertToLValue, nullptr, &debug_messenger) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create DebugUtilsMessengerEXT");
         }

@@ -12,10 +12,10 @@ namespace pvp
 {
     struct Context
     {
-        Device device;
+        Device          device;
         PvpVmaAllocator allocator;
-        PhysicalDevice physical_device;
-        QueueFamilies queue_families;
-        CommandBuffer command_buffer;
+        PhysicalDevice  physical_device;
+        QueueFamilies   queue_families;
+        CommandBuffer   command_buffer;
     };
 } // namespace pvp

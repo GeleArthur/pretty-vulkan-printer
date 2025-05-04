@@ -12,12 +12,12 @@ namespace pvp
     {
     public:
         [[nodiscard]] const VmaAllocator& get_allocator() const;
+        void destroy();
 
     private:
         friend void create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device);
         VmaAllocator m_allocator{ VK_NULL_HANDLE };
     };
-
 
     void create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device);
 }

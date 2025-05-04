@@ -1,5 +1,7 @@
 ﻿#include "GraphicsPipelineBuilder.h"
 
+#include "DestructorQueue.h"
+
 #include <PVPDevice/Device.h>
 #include <vulkan/vulkan_core.h>
 
@@ -8,7 +10,7 @@
 
 VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
 {
-    DestructorQueue destructor_queue;
+    DestructorQueue                              destructor_queue;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages;
 
     for (const auto& shader : m_shader_stages)
@@ -53,10 +55,10 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading = 1.0f; // Optional
-    multisampling.pSampleMask = nullptr; // Optional
+    multisampling.minSampleShading = 1.0f;          // Optional
+    multisampling.pSampleMask = nullptr;            // Optional
     multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-    multisampling.alphaToOneEnable = VK_FALSE; // Optional
+    multisampling.alphaToOneEnable = VK_FALSE;      // Optional
 
     VkPipelineColorBlendAttachmentState color_blend_attachment{};
     color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -73,7 +75,7 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     color_blending.blendConstants[2] = 0.0f;
     color_blending.blendConstants[3] = 0.0f;
 
-    std::vector dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    std::vector                      dynamic_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineDynamicStateCreateInfo dynamic_state{};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());

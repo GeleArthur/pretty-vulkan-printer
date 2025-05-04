@@ -7,14 +7,13 @@ namespace pvp
     struct QueueFamily
     {
         std::uint32_t family_index{};
-        VkQueue       queue{};
+        VkQueue       queue{ VK_NULL_HANDLE };
     };
 
     struct QueueFamilies
     {
-        QueueFamily graphics_family{};
+        QueueFamily graphics_present_family{};
         QueueFamily transfer_family{};
         QueueFamily compute_family{};
-        QueueFamily present_family{};
     };
 } // namespace pvp

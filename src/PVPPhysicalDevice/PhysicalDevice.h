@@ -8,7 +8,7 @@ namespace pvp
     public:
         explicit PhysicalDevice() = default;
 
-        const VkPhysicalDevice& get_physical_device() const;
+        [[nodiscard]] const VkPhysicalDevice& get_physical_device() const;
 
     private:
         friend class LogicPhysicalQueueBuilder;
