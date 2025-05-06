@@ -158,6 +158,7 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] {m_frame_syncers->destroy(m_device.get_device()); delete m_frame_syncers; });
 
     m_cmd_pool_graphics_present = CommandPool(m_context, *m_queue_families.get_queue_family(VK_QUEUE_GRAPHICS_BIT, true), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    m_destructor_queue.add_to_queue([&] { m_cmd_pool_graphics_present.destroy(); });
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
 
     // TODO: poll events on other thread
@@ -177,7 +178,13 @@ void pvp::App::draw_frame()
     vkResetFences(m_device.get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
 
     uint32_t image_index{};
-    VkResult result = vkAcquireNextImageKHR(m_device.get_device(), m_swapchain->get_swapchain(), UINT64_MAX, m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle, VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(
+        m_device.get_device(),
+        m_swapchain->get_swapchain(),
+        UINT64_MAX,
+        m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle,
+        VK_NULL_HANDLE,
+        &image_index);
 
     // if (result == VK_ERROR_OUT_OF_DATE_KHR)
     // {
@@ -226,9 +233,9 @@ void pvp::App::draw_frame()
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .pNext = nullptr,
             .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-
             .srcAccessMask = VK_ACCESS_2_NONE,
+
+            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -291,9 +298,8 @@ void pvp::App::draw_frame()
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .pNext = nullptr,
             .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
             .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
-
-            .srcAccessMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstAccessMask = VK_ACCESS_2_NONE,
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -332,7 +338,6 @@ void pvp::App::draw_frame()
         .commandBuffer = cmd,
     };
 
-
     VkSemaphoreSubmitInfo semaphore_submit_singled{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle,
@@ -348,56 +353,76 @@ void pvp::App::draw_frame()
         .pSignalSemaphoreInfos = &semaphore_submit_singled
     };
 
-    vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue, 1, )
+    vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
 
-        // VkSubmitInfo submit_info{};
-        // submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        //
-        // VkSemaphore          wait_semaphores[] = { m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle };
-        // VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        // submit_info.waitSemaphoreCount = 1;
-        // submit_info.pWaitSemaphores = wait_semaphores;
-        // submit_info.pWaitDstStageMask = wait_stages;
-        //
-        // submit_info.commandBufferCount = 1;
-        // submit_info.pCommandBuffers = &cmd;
-        //
-        // VkSemaphore signal_semaphores[] = { m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle };
-        // submit_info.signalSemaphoreCount = 1;
-        // submit_info.pSignalSemaphores = signal_semaphores;
-        //
-        // if (vkQueueSubmit(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle) != VK_SUCCESS)
-        // {
-        //     throw std::runtime_error("failed to submit draw command buffer!");
-        // }
-        //
-        // VkPresentInfoKHR present_info{};
-        // present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        // present_info.waitSemaphoreCount = 1;
-        // present_info.pWaitSemaphores = signal_semaphores;
-        //
-        // VkSwapchainKHR swap_chains[] = { m_swapchain->get_swapchain() };
-        // present_info.swapchainCount = 1;
-        // present_info.pSwapchains = swap_chains;
-        // present_info.pImageIndices = &image_index;
-        //
-        // result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
-        //
-        // // if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-        // // {
-        // //     m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
-        // // }
-        // // else if (result != VK_SUCCESS)
-        // // {
-        // //     throw std::runtime_error("failed to present swap chain image!");
-        // // }
-        //
-        m_double_buffer_frame = (m_double_buffer_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    VkPresentInfoKHR present_info{};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = &m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle;
+
+    VkSwapchainKHR swap_chains[] = { m_swapchain->get_swapchain() };
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = swap_chains;
+    present_info.pImageIndices = &image_index;
+
+    result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        // m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
+    }
+    else if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
+
+    // VkSubmitInfo submit_info{};
+    // submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    //
+    // VkSemaphore          wait_semaphores[] = { m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle };
+    // VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    // submit_info.waitSemaphoreCount = 1;
+    // submit_info.pWaitSemaphores = wait_semaphores;
+    // submit_info.pWaitDstStageMask = wait_stages;
+    //
+    // submit_info.commandBufferCount = 1;
+    // submit_info.pCommandBuffers = &cmd;
+    //
+    // VkSemaphore signal_semaphores[] = { m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle };
+    // submit_info.signalSemaphoreCount = 1;
+    // submit_info.pSignalSemaphores = signal_semaphores;
+    //
+    // if (vkQueueSubmit(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle) != VK_SUCCESS)
+    // {
+    //     throw std::runtime_error("failed to submit draw command buffer!");
+    // }
+    //
+    // VkPresentInfoKHR present_info{};
+    // present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    // present_info.waitSemaphoreCount = 1;
+    // present_info.pWaitSemaphores = signal_semaphores;
+    //
+    // VkSwapchainKHR swap_chains[] = { m_swapchain->get_swapchain() };
+    // present_info.swapchainCount = 1;
+    // present_info.pSwapchains = swap_chains;
+    // present_info.pImageIndices = &image_index;
+    //
+    // result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
+    //
+    // // if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    // // {
+    // //     m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
+    // // }
+    // // else if (result != VK_SUCCESS)
+    // // {
+    // //     throw std::runtime_error("failed to present swap chain image!");
+    // // }
+    //
+    m_double_buffer_frame = (m_double_buffer_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
 {
-    // vkCmdBeginRenderPass(graphics_command, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(graphics_command, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 
     VkViewport viewport{};
@@ -429,10 +454,4 @@ void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_
 
     vkCmdBindIndexBuffer(graphics_command, m_index_buffer.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
     vkCmdDrawIndexed(graphics_command, m_model.indices.size(), 1, 0, 0, 0);
-    vkCmdEndRenderPass(graphics_command);
-
-    if (vkEndCommandBuffer(graphics_command) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to record command buffer!");
-    }
 }
