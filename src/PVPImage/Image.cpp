@@ -6,12 +6,14 @@
 
 #include "PVPPhysicalDevice/Context.h"
 
+#include <PVPDevice/Device.h>
+
 namespace pvp
 {
     void Image::destroy(const Context& context)
     {
-        vmaDestroyImage(context.allocator.get_allocator(), m_image, m_allocation);
-        vkDestroyImageView(context.device.get_device(), m_view, nullptr);
+        vmaDestroyImage(context.allocator->get_allocator(), m_image, m_allocation);
+        vkDestroyImageView(context.device->get_device(), m_view, nullptr);
     }
 
     VkImageView Image::get_view() const

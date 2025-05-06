@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "PhysicalDevice.h"
-#include "QueueFamillies.h"
+#include "QueueFamilies.h"
 
 #include <complex.h>
 
@@ -22,8 +22,8 @@ namespace pvp
         void build(const Instance& instance, const WindowSurface& window_surface, PhysicalDevice& physical_device_out, Device& device_out, QueueFamilies& queue_families_out);
 
     private:
-        [[nodiscard]] std::tuple<VkPhysicalDevice, QueueFamilies> get_best_device(const Instance& instance, const WindowSurface& window_surface) const;
-        [[nodiscard]] std::tuple<bool, QueueFamilies>             get_queue_family_indices(const VkPhysicalDevice& physical_device, const WindowSurface& window_surface) const;
-        std::vector<const char*>                                  m_extensions;
+        [[nodiscard]] VkPhysicalDevice get_best_device(const Instance& instance, const WindowSurface& window_surface) const;
+        [[nodiscard]] bool             is_supports_all_queues(const VkPhysicalDevice& physical_device, const WindowSurface& window_surface) const;
+        std::vector<const char*>       m_extensions;
     };
 } // namespace pvp

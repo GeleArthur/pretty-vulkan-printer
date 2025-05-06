@@ -18,14 +18,9 @@ namespace VulkanInstanceExtensions
         return function(std::forward<decltype(args)>(args)...);                                           \
     }
 
-    auto static vkCreateDebugUtilsMessengerEXT(auto&&... args)
-    {
-        using FuncType = PFN_vkCreateDebugUtilsMessengerEXT;
-        static FuncType function = reinterpret_cast<FuncType>(vkGetInstanceProcAddr(my_instance, "vkCreateDebugUtilsMessengerEXT"));
-        return function(std::forward<decltype(args)>(args)...);
-    }
-
-    // VK_DEFINE_INSTANCE_FUNCTION(vkCreateDebugUtilsMessengerEXT)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCreateDebugUtilsMessengerEXT)
     VK_DEFINE_INSTANCE_FUNCTION(vkDestroyDebugUtilsMessengerEXT)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCmdBeginRenderingKHR)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCmdEndRenderingKHR)
 
 }; // namespace VulkanInstanceExtensions

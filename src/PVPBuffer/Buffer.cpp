@@ -3,28 +3,24 @@
 #include <any>
 #include <iostream>
 #include <span>
-#include <PVPCommandBuffer/CommandBuffer.h>
+#include <PVPCommandBuffer/CommandPool.h>
 #include <PVPVMAAllocator/VmaAllocator.h>
 #include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
 
-void pvp::Buffer::copy_from_buffer(pvp::CommandBuffer& command_buffer, Buffer& source) const
+void pvp::Buffer::copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source) const
 {
-    VkCommandBuffer buffer = command_buffer.begin_single_use_transfer_command();
-    {
-        VkBufferCopy copy_region{};
-        copy_region.size = m_allocation_info.size;
-        vkCmdCopyBuffer(buffer, source.m_buffer, m_buffer, 1, &copy_region);
-    }
-    command_buffer.end_single_use_transfer_command(buffer);
+    VkBufferCopy copy_region{};
+    copy_region.size = m_allocation_info.size;
+    vkCmdCopyBuffer(command_buffer, source.m_buffer, m_buffer, 1, &copy_region);
 }
 
 void pvp::Buffer::destroy() const
 {
-    // vmaDestroyBuffer(PvpVmaAllocator::get_allocator(), m_buffer, m_allocation);
+    vmaDestroyBuffer(m_allocator, m_buffer, m_allocation);
 }
 
-void pvp::Buffer::set_mapped_data(std::span<const std::byte> input_data) const
+void pvp::Buffer::copy_data_into_buffer(std::span<const std::byte> input_data) const
 {
     memcpy(m_allocation_info.pMappedData, input_data.data(), input_data.size());
 }

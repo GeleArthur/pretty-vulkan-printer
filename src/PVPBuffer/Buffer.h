@@ -2,7 +2,7 @@
 
 #include <any>
 #include <span>
-#include <PVPCommandBuffer/CommandBuffer.h>
+#include <PVPCommandBuffer/CommandPool.h>
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
@@ -14,7 +14,7 @@ namespace pvp
         explicit Buffer() = default;
         void destroy() const;
 
-        void copy_from_buffer(pvp::CommandBuffer& command_buffer, Buffer& source) const;
+        void copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source) const;
 
         [[nodiscard]] const VkBuffer& get_buffer() const
         {
@@ -31,12 +31,13 @@ namespace pvp
             return m_allocation_info;
         }
 
-        void set_mapped_data(std::span<const std::byte> input_data) const;
+        void copy_data_into_buffer(std::span<const std::byte> input_data) const;
 
     private:
         friend class BufferBuilder;
-        VkBuffer m_buffer{VK_NULL_HANDLE};
-        VmaAllocation m_allocation{VK_NULL_HANDLE};
+        VkBuffer          m_buffer{ VK_NULL_HANDLE };
+        VmaAllocator      m_allocator{ VK_NULL_HANDLE };
+        VmaAllocation     m_allocation{ VK_NULL_HANDLE };
         VmaAllocationInfo m_allocation_info{};
     };
 } // namespace pvp

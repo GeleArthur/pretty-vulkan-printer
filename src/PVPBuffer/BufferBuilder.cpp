@@ -42,5 +42,7 @@ namespace pvp
         {
             throw std::exception("Can't create buffer");
         }
+
+        buffer.m_allocator = allocator;
     }
 } // namespace pvp

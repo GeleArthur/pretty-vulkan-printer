@@ -19,7 +19,7 @@ namespace pvp
         return *this;
     }
 
-    void TextureBuilder::build(const VkDevice device, const CommandBuffer& command_buffer, Image& image_texture) const
+    void TextureBuilder::build(const VkDevice device, const CommandPool& command_buffer, Image& image_texture) const
     {
         // int tex_width, tex_height, tex_channels;
         // stbi_uc* pixels = stbi_load(m_path.generic_string().c_str(), &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha);
@@ -38,7 +38,7 @@ namespace pvp
         //     .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
         //     .build(PvpVmaAllocator::get_allocator(), staging_buffer);
         //
-        // staging_buffer.set_mapped_data(std::as_bytes(std::span(pixels, image_size)));
+        // staging_buffer.copy_data_into_buffer(std::as_bytes(std::span(pixels, image_size)));
         // stbi_image_free(pixels);
         //
         //

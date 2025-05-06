@@ -11,7 +11,7 @@ namespace pvp
     {
     public:
         explicit WindowSurface() = default;
-        const GLFWwindow&   get_window() const;
+        GLFWwindow*         get_window() const;
         const VkSurfaceKHR& get_surface() const;
 
         void destroy(const Instance& instance) const;

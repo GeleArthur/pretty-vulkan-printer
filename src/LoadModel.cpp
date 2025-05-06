@@ -5,7 +5,7 @@
 #include <assimp/scene.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
-void LoadModel::load_file(const std::filesystem::path& path)
+void pvp::LoadModel::load_file(const std::filesystem::path& path)
 {
     const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
 

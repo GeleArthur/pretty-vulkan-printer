@@ -4,9 +4,9 @@ project(pretty-vulkan-printer-libraries)
 include(FetchContent)
 
 find_package(Vulkan REQUIRED)
-if (NOT VULKAN_FOUND)
+if(NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
-endif ()
+endif()
 
 FetchContent_Declare(
         glm
@@ -27,6 +27,8 @@ target_compile_definitions(glm PUBLIC
 
 set(GLFW_INSTALL OFF)
 set(GLFW_BUILD_DOCS OFF)
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
 FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git

@@ -28,8 +28,8 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
 
     vertex_input_info.vertexBindingDescriptionCount = m_input_binding_descriptions.size();
     vertex_input_info.pVertexBindingDescriptions = m_input_binding_descriptions.data();
-    vertex_input_info.vertexAttributeDescriptionCount = m_input_atrribute_descriptions.size();
-    vertex_input_info.pVertexAttributeDescriptions = m_input_atrribute_descriptions.data();
+    vertex_input_info.vertexAttributeDescriptionCount = m_input_attribute_descriptions.size();
+    vertex_input_info.pVertexAttributeDescriptions = m_input_attribute_descriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -105,16 +105,28 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     pipelineInfo.pViewportState = &viewport_state;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = &depth_stencil;
+    // pipelineInfo.pDepthStencilState = &depth_stencil;
     pipelineInfo.pColorBlendState = &color_blending;
     pipelineInfo.pDynamicState = &dynamic_state;
 
     pipelineInfo.layout = m_pipeline_layout;
-    pipelineInfo.renderPass = m_render_pass;
+    pipelineInfo.renderPass = VK_NULL_HANDLE;
     pipelineInfo.subpass = 0;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
+
+    VkPipelineRenderingCreateInfoKHR render_target{};
+    render_target.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    render_target.colorAttachmentCount = m_color_formats.size();
+    render_target.pColorAttachmentFormats = m_color_formats.data();
+    // render_target.depthAttachmentFormat = m_depth_format;
+    // if (m_depth_format != VK_FORMAT_D16_UNORM || m_depth_format != VK_FORMAT_D32_SFLOAT)
+    // {
+    //     render_target.stencilAttachmentFormat = m_depth_format;
+    // }
+
+    pipelineInfo.pNext = &render_target;
 
     VkPipeline graphics_pipeline;
     if (vkCreateGraphicsPipelines(device.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) !=
@@ -140,7 +152,7 @@ pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::add_shader(VkShaderM
 
 pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_attribute_description(const std::vector<VkVertexInputAttributeDescription>& binding_description)
 {
-    m_input_atrribute_descriptions = binding_description;
+    m_input_attribute_descriptions = binding_description;
     return *this;
 }
 
@@ -155,9 +167,8 @@ pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_pipeline_layout(
     m_pipeline_layout = pipeline_layout;
     return *this;
 }
-
-pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_render_pass(VkRenderPass render_pass)
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_depth_buffer(VkFormat format)
 {
-    m_render_pass = render_pass;
+    m_depth_format = format;
     return *this;
 }

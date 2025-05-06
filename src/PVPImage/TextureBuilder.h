@@ -3,7 +3,7 @@
 
 #include <filesystem>
 #include <string_view>
-#include <PVPCommandBuffer/CommandBuffer.h>
+#include <PVPCommandBuffer/CommandPool.h>
 #include <vulkan/vulkan.h>
 
 namespace pvp
@@ -13,8 +13,8 @@ namespace pvp
     public:
         TextureBuilder() = default;
         TextureBuilder& set_path(std::filesystem::path path);
-        
-        void            build(VkDevice device, const CommandBuffer& command_buffer, Image& image) const;
+
+        void build(VkDevice device, const CommandPool& command_buffer, Image& image) const;
 
     private:
         std::filesystem::path m_path;

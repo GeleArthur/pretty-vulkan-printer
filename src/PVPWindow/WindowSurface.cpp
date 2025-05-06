@@ -2,9 +2,9 @@
 
 namespace pvp
 {
-    const GLFWwindow& WindowSurface::get_window() const
+    GLFWwindow* WindowSurface::get_window() const
     {
-        return *m_window;
+        return m_window;
     }
     const VkSurfaceKHR& WindowSurface::get_surface() const
     {

@@ -25,8 +25,8 @@ add_executable(${PROJECT_NAME}
         src/tiny_obj_loader.h
         src/PVPImage/Image.cpp
         src/PVPImage/Image.h
-        src/PVPSwapchain/Swapchain.cpp
-        src/PVPSwapchain/Swapchain.h
+        src/PVPRenderer/Swapchain.cpp
+        src/PVPRenderer/Swapchain.h
         src/PVPInstance/InstanceBuilder.cpp
         src/PVPInstance/InstanceBuilder.h
         src/PVPRenderPass/RenderPassBuilder.cpp
@@ -34,6 +34,8 @@ add_executable(${PROJECT_NAME}
         src/PVPGraphicsPipeline/GraphicsPipelineBuilder.cpp
         src/PVPGraphicsPipeline/GraphicsPipelineBuilder.h
         src/PVPPhysicalDevice/Context.h
+        src/PVPPhysicalDevice/PhysicalDevice.h
+        src/PVPPhysicalDevice/PhysicalDevice.cpp
         src/PVPGraphicsPipeline/ShaderLoader.cpp
         src/PVPGraphicsPipeline/ShaderLoader.h
         src/PVPGraphicsPipeline/PipelineLayoutBuilder.cpp
@@ -49,8 +51,8 @@ add_executable(${PROJECT_NAME}
         src/PVPBuffer/Buffer.h
         src/LoadModel.cpp
         src/LoadModel.h
-        src/PVPCommandBuffer/CommandBuffer.cpp
-        src/PVPCommandBuffer/CommandBuffer.h
+        src/PVPCommandBuffer/CommandPool.cpp
+        src/PVPCommandBuffer/CommandPool.h
         src/PVPSyncManager/SyncBuilder.cpp
         src/PVPSyncManager/SyncBuilder.h
         src/PVPSyncManager/Semaphore.h
@@ -64,15 +66,13 @@ add_executable(${PROJECT_NAME}
         src/PVPDescriptorSets/DescriptorLayout.h
         src/PVPDescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
-        src/PVPModels/GPUModel.cpp
-        src/PVPModels/GPUModel.h
-        src/PVPModels/ModelData.h
+        src/PVPScene/GPUModel.cpp
+        src/PVPScene/GPUModel.h
+        src/PVPScene/ModelData.h
         src/PVPBuffer/BufferBuilder.cpp
         src/PVPBuffer/BufferBuilder.h
         src/PVPUniformBuffers/UniformBuffer.cpp
         src/PVPUniformBuffers/UniformBuffer.h
-        src/PVPFrameContext/FrameContext.cpp
-        src/PVPFrameContext/FrameContext.h
         src/PVPSyncManager/FrameSyncers.cpp
         src/PVPSyncManager/FrameSyncers.h
         src/PVPImage/Sampler.cpp
@@ -81,8 +81,6 @@ add_executable(${PROJECT_NAME}
         src/PVPImage/TextureBuilder.h
         src/PVPImage/ImageBuilder.cpp
         src/PVPImage/ImageBuilder.h
-        src/PVPCommandBuffer/CommandBufferBuilder.cpp
-        src/PVPCommandBuffer/CommandBufferBuilder.h
         src/PVPRenderer/PVPRenderer.cpp
         src/PVPRenderer/PVPRenderer.h
         src/PVPImage/SamplerBuilder.cpp
@@ -95,9 +93,12 @@ add_executable(${PROJECT_NAME}
         src/PVPWindow/WindowSurfaceBuilder.h
         src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.h
         src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.cpp
-        src/PVPPhysicalDevice/QueueFamillies.h
+        src/PVPPhysicalDevice/QueueFamilies.h
         src/PVPDevice/Device.cpp
         src/PVPDevice/Device.h
+        src/PVPPhysicalDevice/QueueFamilies.cpp
+        src/PVPScene/Scene.cpp
+        src/PVPScene/Scene.h
 )
 
 add_subdirectory(libraries)

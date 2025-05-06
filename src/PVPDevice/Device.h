@@ -10,10 +10,10 @@ namespace pvp
         explicit Device() = default;
         void destroy() const;
 
-        VkDevice get_device() const;
+        [[nodiscard]] VkDevice get_device() const;
 
     private:
         friend class LogicPhysicalQueueBuilder;
-        VkDevice m_device;
+        VkDevice m_device{ VK_NULL_HANDLE };
     };
 } // namespace pvp

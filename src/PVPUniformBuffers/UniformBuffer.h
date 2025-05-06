@@ -7,7 +7,7 @@
 
 namespace pvp
 {
-    template <typename T>
+    template<typename T>
     class UniformBuffer
     {
     public:
@@ -16,12 +16,11 @@ namespace pvp
 
         void update(uint32_t frame_index, const T& data);
 
-        const Buffer& get_buffer(uint32_t frame_index) const
+        [[nodiscard]] const Buffer& get_buffer(uint32_t frame_index) const
         {
             return m_buffers[frame_index];
         }
-
-        const std::vector<Buffer>& get_buffers() const
+        [[nodiscard]] const std::vector<Buffer>& get_buffers() const
         {
             return m_buffers;
         }
@@ -30,7 +29,7 @@ namespace pvp
         std::vector<Buffer> m_buffers;
     };
 
-    template <typename T>
+    template<typename T>
     UniformBuffer<T>::UniformBuffer(const VmaAllocator& allocator)
     {
         m_buffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -44,7 +43,7 @@ namespace pvp
         }
     }
 
-    template <typename T>
+    template<typename T>
     UniformBuffer<T>::~UniformBuffer()
     {
         for (auto& buffer : m_buffers)
@@ -53,10 +52,10 @@ namespace pvp
         }
     }
 
-    template <typename T>
+    template<typename T>
     void UniformBuffer<T>::update(uint32_t frame_index, const T& data)
     {
         // TODO: Remove frame_index user should not worry about it
-        m_buffers[frame_index].set_mapped_data(std::as_bytes(std::span(&data, 1)));
+        m_buffers[frame_index].copy_data_into_buffer(std::as_bytes(std::span(&data, 1)));
     }
 } // namespace pvp

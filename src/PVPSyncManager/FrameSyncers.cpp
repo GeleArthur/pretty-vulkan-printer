@@ -1,13 +1,20 @@
 ﻿#include "FrameSyncers.h"
 
 #include <globalconst.h>
-FrameSyncers::FrameSyncers(const pvp::SyncBuilder& builder)
+#include <PVPDevice/Device.h>
+
+FrameSyncers::FrameSyncers(const pvp::Context& context)
 {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
-        image_available_semaphores[i] = builder.create_semaphore();
-        render_finished_semaphores[i] = builder.create_semaphore();
-        in_flight_fences[i] = builder.create_fence(true);
+        VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+
+        vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &image_available_semaphores[i].handle);
+        vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &render_finished_semaphores[i].handle);
+
+        VkFenceCreateInfo fence_info{ .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT };
+
+        vkCreateFence(context.device->get_device(), &fence_info, nullptr, &in_flight_fences[i].handle);
     }
 }
 void FrameSyncers::destroy(const VkDevice device) const
