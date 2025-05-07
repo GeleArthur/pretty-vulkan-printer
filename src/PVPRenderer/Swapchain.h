@@ -3,6 +3,7 @@
 #include "PVPWindow/WindowSurface.h"
 
 #include <DestructorQueue.h>
+#include <globalconst.h>
 #include <PVPImage/Image.h>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -16,6 +17,10 @@ namespace pvp
     {
     public:
         explicit Swapchain(Context& context, WindowSurface& surface);
+
+        DISABLE_COPY(Swapchain);
+        DISABLE_MOVE(Swapchain);
+
         static bool does_device_support_swapchain(VkPhysicalDevice device, VkSurfaceKHR surface);
         void        recreate_swapchain();
 

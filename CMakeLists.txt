@@ -81,8 +81,8 @@ add_executable(${PROJECT_NAME}
         src/PVPImage/TextureBuilder.h
         src/PVPImage/ImageBuilder.cpp
         src/PVPImage/ImageBuilder.h
-        src/PVPRenderer/PVPRenderer.cpp
-        src/PVPRenderer/PVPRenderer.h
+        src/PVPRenderer/Renderer.cpp
+        src/PVPRenderer/Renderer.h
         src/PVPImage/SamplerBuilder.cpp
         src/PVPImage/SamplerBuilder.h
         src/PVPDebugger/Debugger.cpp
@@ -99,6 +99,8 @@ add_executable(${PROJECT_NAME}
         src/PVPPhysicalDevice/QueueFamilies.cpp
         src/PVPScene/Scene.cpp
         src/PVPScene/Scene.h
+        src/PVPRenderer/RenderToSwapchain.cpp
+        src/PVPRenderer/RenderToSwapchain.h
 )
 
 add_subdirectory(libraries)

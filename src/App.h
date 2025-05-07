@@ -6,6 +6,8 @@
 #include <PVPDescriptorSets/DescriptorSetBuilder.h>
 #include <PVPInstance/Instance.h>
 #include <PVPDevice/Device.h>
+#include <PVPRenderer/PVPRenderer.h>
+#include <PVPRenderer/Renderer.h>
 #include <PVPSyncManager/FrameSyncers.h>
 #include <PVPWindow/WindowSurface.h>
 
@@ -44,10 +46,7 @@ namespace pvp
         DescriptorPool                      m_descriptor_pool{};
         uint32_t                            m_double_buffer_frame{ 0 };
         CommandPool                         m_cmd_pool_transfer_buffers{};
-        CommandPool                         m_cmd_pool_graphics_present{};
-        std::vector<VkCommandBuffer>        m_cmds_graphics{};
-
-        FrameSyncers* m_frame_syncers{};
+        Renderer*                           m_renderer;
 
         DestructorQueue m_destructor_queue;
     };

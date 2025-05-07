@@ -8,6 +8,7 @@
 
 struct FrameSyncers
 {
+    explicit FrameSyncers() = default;
     explicit FrameSyncers(const pvp::Context& context);
     void destroy(VkDevice device) const;
 

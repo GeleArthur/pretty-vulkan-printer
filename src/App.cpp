@@ -32,6 +32,7 @@ void pvp::App::run()
         .build(m_instance, m_window_surface);
     m_destructor_queue.add_to_queue([&] { m_window_surface.destroy(m_instance); });
 
+    // TODO: Context builder
     LogicPhysicalQueueBuilder()
         .set_extensions({ VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME })
         .build(m_instance, m_window_surface, m_physical_device, m_device, m_queue_families);
@@ -49,11 +50,6 @@ void pvp::App::run()
     m_swapchain = new Swapchain(m_context, m_window_surface);
     m_destructor_queue.add_to_queue([&] { delete m_swapchain; });
 
-    // m_sync_builder = new SyncBuilder(m_device->get_device());
-    // m_destructor_queue.add_to_queue([&] {
-    //     delete m_sync_builder;
-    // });
-    //
     DescriptorLayout layout = DescriptorLayout(
         m_device.get_device(),
         {
@@ -153,14 +149,6 @@ void pvp::App::run()
     transfer_buffer_index.destroy();
     transfer_buffer.destroy();
 
-    // // Frame synces
-    m_frame_syncers = new FrameSyncers(m_context);
-    m_destructor_queue.add_to_queue([&] {m_frame_syncers->destroy(m_device.get_device()); delete m_frame_syncers; });
-
-    m_cmd_pool_graphics_present = CommandPool(m_context, *m_queue_families.get_queue_family(VK_QUEUE_GRAPHICS_BIT, true), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    m_destructor_queue.add_to_queue([&] { m_cmd_pool_graphics_present.destroy(); });
-    m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
-
     // TODO: poll events on other thread
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
@@ -173,29 +161,6 @@ void pvp::App::run()
 
 void pvp::App::draw_frame()
 {
-    // TODO: Move everything into renderer
-    vkWaitForFences(m_device.get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_device.get_device(), 1, &m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
-
-    uint32_t image_index{};
-    VkResult result = vkAcquireNextImageKHR(
-        m_device.get_device(),
-        m_swapchain->get_swapchain(),
-        UINT64_MAX,
-        m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle,
-        VK_NULL_HANDLE,
-        &image_index);
-
-    // if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    // {
-    //     m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
-    //     return;
-    // }
-    // else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-    // {
-    //     throw std::runtime_error("failed to acquire swap chain image!");
-    // }
-
     // Uniform update
     {
         static auto start_time = std::chrono::high_resolution_clock::now();
@@ -212,213 +177,9 @@ void pvp::App::draw_frame()
         m_uniform_buffer->update(m_double_buffer_frame, ubo);
     }
 
-    VkCommandBuffer          cmd = m_cmds_graphics[m_double_buffer_frame];
-    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    if (vkBeginCommandBuffer(cmd, &begin_info) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    // Color transition
-    {
-        VkImageSubresourceRange range{};
-        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        range.baseMipLevel = 0;
-        range.levelCount = VK_REMAINING_MIP_LEVELS;
-        range.baseArrayLayer = 0;
-        range.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        // VK_PIPELINE_STAGE_2_NONE
-        VkImageMemoryBarrier2 image_memory_barrier{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .pNext = nullptr,
-            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-            .srcAccessMask = VK_ACCESS_2_NONE,
-
-            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = m_swapchain->get_images()[m_double_buffer_frame],
-            .subresourceRange = range
-        };
-
-        VkDependencyInfo dependency_info{
-            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .dependencyFlags = 0,
-            .memoryBarrierCount = 0,
-            .pMemoryBarriers = VK_NULL_HANDLE,
-            .bufferMemoryBarrierCount = 0,
-            .pBufferMemoryBarriers = VK_NULL_HANDLE,
-            .imageMemoryBarrierCount = 1,
-            .pImageMemoryBarriers = &image_memory_barrier
-        };
-
-        vkCmdPipelineBarrier2(cmd, &dependency_info);
-    }
-
-    VkClearValue clear_values{};
-    clear_values.color = { { 0.2f, 0.2f, 0.2f, 1.0f } };
-    clear_values.depthStencil = { 1.0f, 0 };
-
-    VkRenderingAttachmentInfo color_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = m_swapchain->get_views()[m_double_buffer_frame],
-        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue = clear_values
-    };
-
-    VkRenderingInfo render_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .renderArea = VkRect2D{ VkOffset2D{ 0, 0 }, m_swapchain->get_swapchain_extent() },
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &color_info,
-    };
-
-    vkCmdBeginRendering(cmd, &render_info);
+    m_renderer->prepare_frame();
     record_commands(cmd, image_index);
-    vkCmdEndRendering(cmd);
-
-    // Present transition
-    {
-        VkImageSubresourceRange range{};
-        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        range.baseMipLevel = 0;
-        range.levelCount = VK_REMAINING_MIP_LEVELS;
-        range.baseArrayLayer = 0;
-        range.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        // VK_PIPELINE_STAGE_2_NONE
-        VkImageMemoryBarrier2 image_memory_barrier{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .pNext = nullptr,
-            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
-            .dstAccessMask = VK_ACCESS_2_NONE,
-            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = m_swapchain->get_images()[m_double_buffer_frame],
-            .subresourceRange = range
-        };
-
-        VkDependencyInfo dependency_info{
-            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .dependencyFlags = 0,
-            .memoryBarrierCount = 0,
-            .pMemoryBarriers = VK_NULL_HANDLE,
-            .bufferMemoryBarrierCount = 0,
-            .pBufferMemoryBarriers = VK_NULL_HANDLE,
-            .imageMemoryBarrierCount = 1,
-            .pImageMemoryBarriers = &image_memory_barrier
-        };
-
-        vkCmdPipelineBarrier2(cmd, &dependency_info);
-    }
-
-    if (vkEndCommandBuffer(cmd) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    VkSemaphoreSubmitInfo semaphore_submit{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle,
-    };
-
-    VkCommandBufferSubmitInfo cmd_submit_info{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        .commandBuffer = cmd,
-    };
-
-    VkSemaphoreSubmitInfo semaphore_submit_singled{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle,
-    };
-
-    VkSubmitInfo2 submit_info{
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-        .waitSemaphoreInfoCount = 1,
-        .pWaitSemaphoreInfos = &semaphore_submit,
-        .commandBufferInfoCount = 1,
-        .pCommandBufferInfos = &cmd_submit_info,
-        .signalSemaphoreInfoCount = 1,
-        .pSignalSemaphoreInfos = &semaphore_submit_singled
-    };
-
-    vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle);
-
-    VkPresentInfoKHR present_info{};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle;
-
-    VkSwapchainKHR swap_chains[] = { m_swapchain->get_swapchain() };
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = swap_chains;
-    present_info.pImageIndices = &image_index;
-
-    result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-    {
-        // m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
-    }
-    else if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to present swap chain image!");
-    }
-
-    // VkSubmitInfo submit_info{};
-    // submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    //
-    // VkSemaphore          wait_semaphores[] = { m_frame_syncers->image_available_semaphores[m_double_buffer_frame].handle };
-    // VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    // submit_info.waitSemaphoreCount = 1;
-    // submit_info.pWaitSemaphores = wait_semaphores;
-    // submit_info.pWaitDstStageMask = wait_stages;
-    //
-    // submit_info.commandBufferCount = 1;
-    // submit_info.pCommandBuffers = &cmd;
-    //
-    // VkSemaphore signal_semaphores[] = { m_frame_syncers->render_finished_semaphores[m_double_buffer_frame].handle };
-    // submit_info.signalSemaphoreCount = 1;
-    // submit_info.pSignalSemaphores = signal_semaphores;
-    //
-    // if (vkQueueSubmit(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers->in_flight_fences[m_double_buffer_frame].handle) != VK_SUCCESS)
-    // {
-    //     throw std::runtime_error("failed to submit draw command buffer!");
-    // }
-    //
-    // VkPresentInfoKHR present_info{};
-    // present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    // present_info.waitSemaphoreCount = 1;
-    // present_info.pWaitSemaphores = signal_semaphores;
-    //
-    // VkSwapchainKHR swap_chains[] = { m_swapchain->get_swapchain() };
-    // present_info.swapchainCount = 1;
-    // present_info.pSwapchains = swap_chains;
-    // present_info.pImageIndices = &image_index;
-    //
-    // result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
-    //
-    // // if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-    // // {
-    // //     m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
-    // // }
-    // // else if (result != VK_SUCCESS)
-    // // {
-    // //     throw std::runtime_error("failed to present swap chain image!");
-    // // }
-    //
-    m_double_buffer_frame = (m_double_buffer_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    m_renderer->end_frame();
 }
 
 void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
