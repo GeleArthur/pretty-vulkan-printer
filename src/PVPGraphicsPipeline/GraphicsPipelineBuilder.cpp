@@ -8,16 +8,20 @@
 #include <stdexcept>
 #include <vector>
 
-VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
+#include "ShaderLoader.h"
+
+void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipeline)
 {
-    DestructorQueue                              destructor_queue;
+    DestructorQueue destructor_queue;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages;
 
-    for (const auto& shader : m_shader_stages)
+    for (auto& shader : m_shader_stages)
     {
+        std::get<2>(shader) = ShaderLoader::load_shader_from_file(device.get_device(), std::get<0>(shader));
+
         VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
         vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vert_shader_stage_info.module = std::get<0>(shader);
+        vert_shader_stage_info.module = std::get<2>(shader);
         vert_shader_stage_info.stage = std::get<1>(shader);
         vert_shader_stage_info.pName = "main";
         pipeline_shader_stages.push_back(vert_shader_stage_info);
@@ -25,7 +29,6 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
     vertex_input_info.vertexBindingDescriptionCount = m_input_binding_descriptions.size();
     vertex_input_info.pVertexBindingDescriptions = m_input_binding_descriptions.data();
     vertex_input_info.vertexAttributeDescriptionCount = m_input_attribute_descriptions.size();
@@ -55,10 +58,10 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading = 1.0f;          // Optional
-    multisampling.pSampleMask = nullptr;            // Optional
-    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-    multisampling.alphaToOneEnable = VK_FALSE;      // Optional
+    multisampling.minSampleShading = 1.0f;
+    multisampling.pSampleMask = nullptr;
+    multisampling.alphaToCoverageEnable = VK_FALSE;
+    multisampling.alphaToOneEnable = VK_FALSE;
 
     VkPipelineColorBlendAttachmentState color_blend_attachment{};
     color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -75,7 +78,7 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     color_blending.blendConstants[2] = 0.0f;
     color_blending.blendConstants[3] = 0.0f;
 
-    std::vector                      dynamic_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    std::vector dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamic_state{};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
@@ -83,8 +86,8 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil{};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_stencil.depthTestEnable = VK_TRUE;
-    depth_stencil.depthWriteEnable = VK_TRUE;
+    depth_stencil.depthTestEnable = m_read;
+    depth_stencil.depthWriteEnable = m_write;
 
     depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
@@ -105,7 +108,7 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     pipelineInfo.pViewportState = &viewport_state;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    // pipelineInfo.pDepthStencilState = &depth_stencil;
+    pipelineInfo.pDepthStencilState = &depth_stencil;
     pipelineInfo.pColorBlendState = &color_blending;
     pipelineInfo.pDynamicState = &dynamic_state;
 
@@ -116,43 +119,28 @@ VkPipeline pvp::GraphicsPipelineBuilder::build(pvp::Device& device)
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
-    VkPipelineRenderingCreateInfoKHR render_target{};
+    VkPipelineRenderingCreateInfo render_target{};
     render_target.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     render_target.colorAttachmentCount = m_color_formats.size();
     render_target.pColorAttachmentFormats = m_color_formats.data();
-    // render_target.depthAttachmentFormat = m_depth_format;
-    // if (m_depth_format != VK_FORMAT_D16_UNORM || m_depth_format != VK_FORMAT_D32_SFLOAT)
-    // {
-    //     render_target.stencilAttachmentFormat = m_depth_format;
-    // }
+    render_target.depthAttachmentFormat = m_depth_format;
 
     pipelineInfo.pNext = &render_target;
 
-    VkPipeline graphics_pipeline;
-    if (vkCreateGraphicsPipelines(device.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) !=
-        VK_SUCCESS)
+    if (vkCreateGraphicsPipelines(device.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    return graphics_pipeline;
+    for (auto& shader : m_shader_stages)
+    {
+        vkDestroyShaderModule(device.get_device(), std::get<2>(shader), nullptr);
+    }
 }
 
-pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::add_shader(VkShaderModule& shader, VkShaderStageFlagBits stage)
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::add_shader(std::filesystem::path path, VkShaderStageFlagBits stage)
 {
-    m_shader_stages.push_back(std::tuple(shader, stage));
-    return *this;
-}
-
-// pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_binding_description(const std::vector<VkVertexInputBindingDescription>& binding_description)
-// {
-//     m_input_binding_descriptions = binding_description;
-//     return *this;
-// }
-
-pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_input_attribute_description(const std::vector<VkVertexInputAttributeDescription>& binding_description)
-{
-    m_input_attribute_descriptions = binding_description;
+    m_shader_stages.push_back(std::tuple(path, stage, VK_NULL_HANDLE));
     return *this;
 }
 
@@ -167,8 +155,16 @@ pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_pipeline_layout(
     m_pipeline_layout = pipeline_layout;
     return *this;
 }
-pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_depth_buffer(VkFormat format)
+
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_depth_format(VkFormat format)
 {
     m_depth_format = format;
+    return *this;
+}
+
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_depth_access(VkBool32 read, VkBool32 write)
+{
+    m_read = read;
+    m_write = write;
     return *this;
 }

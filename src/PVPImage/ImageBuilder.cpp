@@ -56,7 +56,7 @@ void pvp::ImageBuilder::build(VkDevice device, VmaAllocator allocator, pvp::Imag
     {
         throw std::exception("Failed creating image");
     }
-    image.m_extent = VkExtent3D(m_size.width, m_size.height, 1);
+    image.m_extent = VkExtent2D(m_size.width, m_size.height);
     image.m_debug_create_info = create_info;
     image.m_current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 

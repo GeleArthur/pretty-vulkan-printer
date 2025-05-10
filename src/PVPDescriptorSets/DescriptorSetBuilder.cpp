@@ -29,13 +29,15 @@ namespace pvp
     {
         DescriptorSets descriptor;
 
+        const VkDescriptorSetLayout result = m_descriptor_layout->get_handle();
+
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
             VkDescriptorSetAllocateInfo alloc_info{};
             alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             alloc_info.descriptorPool = pool.get_handle();
             alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &m_descriptor_layout->get_handle();
+            alloc_info.pSetLayouts = &result;
 
             if (vkAllocateDescriptorSets(device, &alloc_info, &descriptor.sets[i]) != VK_SUCCESS)
             {

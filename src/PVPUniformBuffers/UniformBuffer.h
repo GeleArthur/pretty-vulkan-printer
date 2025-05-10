@@ -1,9 +1,8 @@
 ﻿#pragma once
 #include <globalconst.h>
-#include <UniformBufferStruct.h>
+#include <vector>
 #include <PVPBuffer/Buffer.h>
 #include <PVPBuffer/BufferBuilder.h>
-#include <PVPVMAAllocator/VmaAllocator.h>
 
 namespace pvp
 {

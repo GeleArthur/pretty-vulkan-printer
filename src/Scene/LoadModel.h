@@ -1,15 +1,14 @@
 ﻿#pragma once
-#include <PVPGraphicsPipeline/Vertex.h>
 #include <filesystem>
-#include <glm/vec3.hpp>
+#include <PVPGraphicsPipeline/Vertex.h>
 
 namespace pvp
 {
+    struct Vertex;
     struct LoadModel
     {
-        void load_file(const std::filesystem::path& path);
-
         std::vector<pvp::Vertex> verties;
         std::vector<uint32_t>    indices;
     };
+    LoadModel load_model_file(const std::filesystem::path& path);
 } // namespace pvp

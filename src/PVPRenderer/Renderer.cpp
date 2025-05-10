@@ -2,6 +2,7 @@
 
 #include <globalconst.h>
 #include <stdexcept>
+#include <PVPCommandBuffer/CommandPool.h>
 #include <PVPDevice/Device.h>
 
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain)
@@ -16,7 +17,8 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain)
 
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
 }
-void pvp::Renderer::prepare_frame()
+
+pvp::RenderingContext pvp::Renderer::prepare_frame()
 {
     // TODO: Move everything into renderer
     vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
@@ -39,22 +41,23 @@ void pvp::Renderer::prepare_frame()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    
+    return RenderingContext{
+        VK_FORMAT_D32_SFLOAT, VK_FORMAT_B8G8R8A8_SRGB, { 100, 100 }, m_cmds_graphics[m_current_swapchain_index]
+    };
 }
+
 void pvp::Renderer::end_frame()
 {
-    
-
     VkSemaphoreSubmitInfo semaphore_submit{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
     };
 
-    // VkCommandBufferSubmitInfo cmd_submit_info{
-    //     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-    //     .commandBuffer = cmd,
-    // };
-    //
+    VkCommandBufferSubmitInfo cmd_submit_info{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .commandBuffer = m_cmds_graphics[m_current_swapchain_index],
+    };
+
     VkSemaphoreSubmitInfo semaphore_submit_singled{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers.render_finished_semaphores[m_double_buffer_frame].handle,
@@ -86,7 +89,7 @@ void pvp::Renderer::end_frame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        // m_pvp_swapchain->recreate_swapchain(*m_device, *m_command_buffer, m_pvp_render_pass);
+        m_swapchain.recreate_swapchain();
     }
     else if (result != VK_SUCCESS)
     {

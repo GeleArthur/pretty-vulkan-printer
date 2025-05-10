@@ -1,8 +1,7 @@
 ﻿#include "BufferBuilder.h"
 
 #include "Buffer.h"
-
-#include <PVPVMAAllocator/VmaAllocator.h>
+#include <exception>
 
 namespace pvp
 {

@@ -2,20 +2,21 @@
 
 #include <span>
 #include <vector>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_handles.hpp>
 
 namespace pvp
 {
     class DescriptorLayout final
     {
     public:
-        DescriptorLayout(VkDevice device, const std::vector<VkDescriptorSetLayoutBinding>& bindings);
-        ~DescriptorLayout();
-        const VkDescriptorSetLayout& get_handle();
-        void                         destroy() const;
+        explicit DescriptorLayout() = default;
+        const vk::DescriptorSetLayout& get_handle() const;
+
+        void destroy(const vk::Device& device) const;
 
     private:
-        VkDevice              m_device;
-        VkDescriptorSetLayout m_layout;
+        friend class DescriptorLayoutBuilder;
+        vk::DescriptorSetLayout m_layout{};
     };
 } // namespace pvp

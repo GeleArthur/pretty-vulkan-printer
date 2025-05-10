@@ -4,8 +4,8 @@
 
 #include <DestructorQueue.h>
 #include <globalconst.h>
-#include <PVPImage/Image.h>
 #include <vector>
+#include <PVPCommandBuffer/CommandPool.h>
 #include <vulkan/vulkan.h>
 
 namespace pvp

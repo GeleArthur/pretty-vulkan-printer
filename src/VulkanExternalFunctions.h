@@ -22,5 +22,4 @@ namespace VulkanInstanceExtensions
     VK_DEFINE_INSTANCE_FUNCTION(vkDestroyDebugUtilsMessengerEXT)
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdBeginRenderingKHR)
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdEndRenderingKHR)
-
 }; // namespace VulkanInstanceExtensions

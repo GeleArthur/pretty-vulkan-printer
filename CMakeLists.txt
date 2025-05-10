@@ -20,7 +20,6 @@ add_executable(${PROJECT_NAME}
         src/PVPInstance/Instance.cpp
         src/PVPInstance/Instance.h
         src/VulkanExternalFunctions.h
-
         src/stb_image.h
         src/tiny_obj_loader.h
         src/PVPImage/Image.cpp
@@ -49,8 +48,7 @@ add_executable(${PROJECT_NAME}
         src/PVPVMAAllocator/VmaAllocator.h
         src/PVPBuffer/Buffer.cpp
         src/PVPBuffer/Buffer.h
-        src/LoadModel.cpp
-        src/LoadModel.h
+
         src/PVPCommandBuffer/CommandPool.cpp
         src/PVPCommandBuffer/CommandPool.h
         src/PVPSyncManager/SyncBuilder.cpp
@@ -66,9 +64,6 @@ add_executable(${PROJECT_NAME}
         src/PVPDescriptorSets/DescriptorLayout.h
         src/PVPDescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
-        src/PVPScene/GPUModel.cpp
-        src/PVPScene/GPUModel.h
-        src/PVPScene/ModelData.h
         src/PVPBuffer/BufferBuilder.cpp
         src/PVPBuffer/BufferBuilder.h
         src/PVPUniformBuffers/UniformBuffer.cpp
@@ -97,10 +92,18 @@ add_executable(${PROJECT_NAME}
         src/PVPDevice/Device.cpp
         src/PVPDevice/Device.h
         src/PVPPhysicalDevice/QueueFamilies.cpp
-        src/PVPScene/Scene.cpp
-        src/PVPScene/Scene.h
         src/PVPRenderer/RenderToSwapchain.cpp
         src/PVPRenderer/RenderToSwapchain.h
+        src/PVPImage/TransitionLayout.cpp
+        src/PVPImage/TransitionLayout.h
+        src/PVPRenderer/GBuffer.cpp
+        src/PVPRenderer/GBuffer.h
+        src/PVPDescriptorSets/DescriptorLayoutBuilder.cpp
+        src/PVPDescriptorSets/DescriptorLayoutBuilder.h
+        src/Scene/PVPScene.cpp
+        src/Scene/PVPScene.h
+        src/Scene/LoadModel.cpp
+        src/Scene/LoadModel.h
 )
 
 add_subdirectory(libraries)
@@ -112,7 +115,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
 

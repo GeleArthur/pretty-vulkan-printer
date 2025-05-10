@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "GBuffer.h"
 #include "Swapchain.h"
 
 #include <PVPSyncManager/FrameSyncers.h>
@@ -10,8 +11,14 @@ namespace pvp
     public:
         explicit Renderer(const Context& context, Swapchain& swapchain);
 
-        void prepare_frame();
-        void end_frame();
+        [[nodiscard]] pvp::RenderingContext prepare_frame();
+        void draw();
+        void                                end_frame();
+
+        uint32_t get_current_frame_index() const
+        {
+            return m_current_swapchain_index;
+        }
 
     private:
         const Context&               m_context;
@@ -21,6 +28,7 @@ namespace pvp
         FrameSyncers                 m_frame_syncers{};
         CommandPool                  m_cmd_pool_graphics_present{};
         std::vector<VkCommandBuffer> m_cmds_graphics{};
+        GBuffer                      m_geomotry_draw;
 
         DestructorQueue m_destructor_queue{};
     };

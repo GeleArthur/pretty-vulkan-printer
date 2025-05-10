@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <PVPBuffer/Buffer.h>
 #include <PVPInstance/Instance.h>
 #include <PVPPhysicalDevice/QueueFamilies.h>
 #include <PVPVMAAllocator/VmaAllocator.h>
@@ -14,4 +15,13 @@ namespace pvp
         PvpVmaAllocator* allocator;
         QueueFamilies*   queue_families;
     };
+
+    struct RenderingContext
+    {
+        VkFormat        depth_format;
+        VkFormat        color_format;
+        VkExtent2D      image_size;
+        VkCommandBuffer command_buffer;
+    };
+
 } // namespace pvp

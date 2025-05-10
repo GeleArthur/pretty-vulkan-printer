@@ -2,14 +2,15 @@
 #include "PVPPhysicalDevice/PhysicalDevice.h"
 #include "PVPRenderer/Swapchain.h"
 
-#include <LoadModel.h>
+#include <Scene/LoadModel.h>
+#include <PVPCommandBuffer/CommandPool.h>
 #include <PVPDescriptorSets/DescriptorSetBuilder.h>
-#include <PVPInstance/Instance.h>
 #include <PVPDevice/Device.h>
-#include <PVPRenderer/PVPRenderer.h>
+#include <PVPInstance/Instance.h>
 #include <PVPRenderer/Renderer.h>
 #include <PVPSyncManager/FrameSyncers.h>
 #include <PVPWindow/WindowSurface.h>
+#include <Scene/PVPScene.h>
 
 namespace pvp
 {
@@ -38,6 +39,7 @@ namespace pvp
         Buffer           m_vertex_buffer{};
         Buffer           m_index_buffer{};
 
+        PVPScene                            m_scene{};
         UniformBuffer<ModelCameraViewData>* m_uniform_buffer{};
         LoadModel                           m_model{};
         Sampler                             m_sampler{};
@@ -46,7 +48,7 @@ namespace pvp
         DescriptorPool                      m_descriptor_pool{};
         uint32_t                            m_double_buffer_frame{ 0 };
         CommandPool                         m_cmd_pool_transfer_buffers{};
-        Renderer*                           m_renderer;
+        Renderer*                           m_renderer{};
 
         DestructorQueue m_destructor_queue;
     };

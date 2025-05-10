@@ -5,7 +5,7 @@
 class PipelineLayoutBuilder
 {
 public:
-    VkPipelineLayout       build(VkDevice device) const;
+    void                   build(VkDevice device, VkPipelineLayout& pipeline_layout) const;
     PipelineLayoutBuilder& add_push_constant_range(VkPushConstantRange push_constant);
     PipelineLayoutBuilder& add_descriptor_layout(VkDescriptorSetLayout pipeline_layout);
 

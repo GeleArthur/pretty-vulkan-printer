@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-VkPipelineLayout PipelineLayoutBuilder::build(const VkDevice device) const
+void PipelineLayoutBuilder::build(const VkDevice device, VkPipelineLayout& pipeline_layout) const
 {
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -14,14 +14,10 @@ VkPipelineLayout PipelineLayoutBuilder::build(const VkDevice device) const
         pipeline_layout_info.pPushConstantRanges = m_push_constant_ranges.data();
     }
 
-    VkPipelineLayout pipeline_layout;
-
     if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create pipeline layout!");
     }
-
-    return pipeline_layout;
 }
 PipelineLayoutBuilder& PipelineLayoutBuilder::add_push_constant_range(const VkPushConstantRange push_constant)
 {

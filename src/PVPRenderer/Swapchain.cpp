@@ -112,7 +112,7 @@ void pvp::Swapchain::recreate_swapchain()
     }
 
     vkDeviceWaitIdle(m_context.device->get_device());
-    destroy_old_swapchain();
+    // destroy_old_swapchain();
 
     // create_the_swapchain(m_context.device, command_buffer);
     // create_frame_buffers(m_context.device.get_device(), render_pass);
