@@ -25,6 +25,7 @@ namespace pvp
         void        recreate_swapchain();
 
         [[nodiscard]] VkSurfaceFormatKHR get_swapchain_surface_format() const;
+        [[nodiscard]] VkFormat           get_depth_format() const;
         [[nodiscard]] VkExtent2D         get_swapchain_extent() const;
         [[nodiscard]] VkSwapchainKHR     get_swapchain() const;
 
@@ -36,8 +37,6 @@ namespace pvp
         void             create_the_swapchain();
         VkPresentModeKHR get_best_present_mode() const;
 
-        // std::vector<VkImage>     m_depth_buffer_image;
-        // std::vector<VkImageView> m_depth_buffer_image_views;
         std::vector<VkImage>     m_swapchain_images;
         std::vector<VkImageView> m_swapchain_views;
         VkSwapchainKHR           m_swapchain{};
@@ -45,6 +44,7 @@ namespace pvp
 
         WindowSurface&     m_window_surface;
         VkSurfaceFormatKHR m_swapchain_surface_format;
+        VkFormat           m_depth_format;
         CommandPool        m_command_pool;
         Context&           m_context;
 

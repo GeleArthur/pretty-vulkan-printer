@@ -16,12 +16,11 @@ namespace pvp
         QueueFamilies*   queue_families;
     };
 
-    struct RenderingContext
+    struct ImageInfo
     {
-        VkFormat        depth_format;
-        VkFormat        color_format;
-        VkExtent2D      image_size;
-        VkCommandBuffer command_buffer;
+        VkFormat   depth_format;
+        VkFormat   color_format;
+        VkExtent2D image_size;
     };
 
 } // namespace pvp

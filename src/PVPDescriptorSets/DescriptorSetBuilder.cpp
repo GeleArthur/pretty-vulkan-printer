@@ -13,7 +13,7 @@ namespace pvp
     {
     }
 
-    DescriptorSetBuilder& DescriptorSetBuilder::set_layout(DescriptorLayout& layout)
+    DescriptorSetBuilder& DescriptorSetBuilder::set_layout(vk::DescriptorSetLayout& layout)
     {
         m_descriptor_layout = &layout;
         return *this;
@@ -29,7 +29,7 @@ namespace pvp
     {
         DescriptorSets descriptor;
 
-        const VkDescriptorSetLayout result = m_descriptor_layout->get_handle();
+        const VkDescriptorSetLayout result = *m_descriptor_layout;
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {

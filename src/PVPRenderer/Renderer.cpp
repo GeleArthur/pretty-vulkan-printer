@@ -5,7 +5,7 @@
 #include <PVPCommandBuffer/CommandPool.h>
 #include <PVPDevice/Device.h>
 
-pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain)
+pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
 {
@@ -16,11 +16,12 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain)
     m_destructor_queue.add_to_queue([&] { m_cmd_pool_graphics_present.destroy(); });
 
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
+
+    m_geomotry_draw = new GBuffer(m_context, scene, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() });
 }
 
-pvp::RenderingContext pvp::Renderer::prepare_frame()
+void pvp::Renderer::prepare_frame()
 {
-    // TODO: Move everything into renderer
     vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
     vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
 
@@ -40,10 +41,12 @@ pvp::RenderingContext pvp::Renderer::prepare_frame()
     {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
-
-    return RenderingContext{
-        VK_FORMAT_D32_SFLOAT, VK_FORMAT_B8G8R8A8_SRGB, { 100, 100 }, m_cmds_graphics[m_current_swapchain_index]
-    };
+}
+void pvp::Renderer::draw()
+{
+    prepare_frame();
+    m_geomotry_draw->draw();
+    end_frame();
 }
 
 void pvp::Renderer::end_frame()

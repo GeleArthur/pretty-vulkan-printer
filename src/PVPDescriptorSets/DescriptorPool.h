@@ -9,7 +9,7 @@ namespace pvp
     public:
         explicit DescriptorPool() = default;
         explicit DescriptorPool(VkDevice device, const std::vector<VkDescriptorPoolSize>& sizes, uint32_t max_sets);
-        const VkDescriptorPool& get_handle() const
+        VkDescriptorPool get_handle() const
         {
             return m_pool;
         };

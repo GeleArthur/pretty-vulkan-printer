@@ -1,8 +1,4 @@
-﻿//
-// Created by a on 18/04/2025.
-//
-
-#include "RenderPassBuilder.h"
+﻿#include "RenderPassBuilder.h"
 
 #include "PVPRenderer/Swapchain.h"
 

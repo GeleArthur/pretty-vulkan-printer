@@ -1,29 +1,35 @@
 ﻿#include "GBuffer.h"
 
-#include <UniformBufferStruct.h>
 #include <array>
-#include <PVPDescriptorSets/DescriptorLayout.h>
 #include <PVPDescriptorSets/DescriptorLayoutBuilder.h>
 #include <PVPDescriptorSets/DescriptorPool.h>
+#include <PVPDescriptorSets/DescriptorSetBuilder.h>
 #include <PVPGraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <PVPGraphicsPipeline/PipelineLayoutBuilder.h>
 #include <PVPGraphicsPipeline/Vertex.h>
-#include <PVPUniformBuffers/UniformBuffer.h>
+#include <Scene/PVPScene.h>
 
-void pvp::GBuffer::draw(VkCommandBuffer graphics_command)
+pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, const ImageInfo& image_info)
+    : m_context(context)
+    , m_scene(scene)
+    , m_image_info{ image_info }
+    , m_camera_uniform{ context.allocator->get_allocator() }
+{
+    build_pipelines();
+}
+
+void pvp::GBuffer::draw()
 {
 }
 
-void pvp::GBuffer::build_pipelines(const RenderingContext& rendering_context)
+void pvp::GBuffer::build_pipelines()
 {
     vk::DescriptorSetLayout layout;
     DescriptorLayoutBuilder()
         .add_binding(vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
         .build(vk::Device(m_context.device->get_device()), layout);
 
-    // m_descriptor_pool = DescriptorPool(m_device.get_device(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 } }, 2);
-
-    // m_uniform_buffer = new UniformBuffer<ModelCameraViewData>(m_context.allocator->get_allocator());
+    m_camera_uniform = UniformBuffer<ModelCameraViewData>(m_context.allocator->get_allocator());
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(layout)
@@ -32,14 +38,20 @@ void pvp::GBuffer::build_pipelines(const RenderingContext& rendering_context)
     GraphicsPipelineBuilder()
         .add_shader("shaders/gbuffer-albedo.vert.spr", VK_SHADER_STAGE_VERTEX_BIT)
         .add_shader("shaders/gbuffer-albedo.frag.spr", VK_SHADER_STAGE_FRAGMENT_BIT)
-        .set_color_format(std::array{ rendering_context.color_format })
+        .set_color_format(std::array{ m_image_info.color_format })
         .set_pipeline_layout(m_albedo_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
         .set_input_binding_description(Vertex::get_binding_description())
         .build(*m_context.device, m_albedo_pipeline);
+
+    // m_descriptors = DescriptorSetBuilder()
+    //                     .set_layout(VkDescriptorSetLayout(layout.))
+    //                     .bind_buffer(0, *m_uniform_buffer)
+    //                     // .bind_image(1, m_texture, m_sampler)
+    //                     .build(m_device.get_device(), m_descriptor_pool);
 }
 
-void pvp::GBuffer::draw_albedo(const RenderingContext& rendering_context)
+void pvp::GBuffer::draw_albedo(VkCommandBuffer cmd)
 {
     constexpr VkClearValue clear_values{ 0.2f, 0.2f, 0.2f, 1.0f };
 
@@ -59,22 +71,27 @@ void pvp::GBuffer::draw_albedo(const RenderingContext& rendering_context)
         .colorAttachmentCount = 1,
         .pColorAttachments = &color_info,
     };
+    vkCmdBeginRendering(cmd, &render_info);
 
-    vkCmdBindPipeline(rendering_context.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
 
-    // VkBuffer     vertex_buffers[] = { rendering_context.vertex_buffer.get_buffer() };
-    // VkDeviceSize offsets[] = { 0 };
-    // vkCmdBindVertexBuffers(rendering_context.command_buffer, 0, 1, vertex_buffers, offsets);
-    //
-    // vkCmdBindDescriptorSets(rendering_context.command_buffer,
+    VkDeviceSize offsets[] = { 0 };
+
+    // vkCmdBindDescriptorSets(cmd,
     //                         VK_PIPELINE_BIND_POINT_GRAPHICS,
     //                         m_albedo_pipeline_layout,
     //                         0,
     //                         1,
-    //                         &m_descriptors.sets[m_double_buffer_frame],
+    //                         &m_camera_uniform.get_buffer(0),
     //                         0,
     //                         nullptr);
-    //
-    // vkCmdBindIndexBuffer(graphics_command, m_index_buffer.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-    // vkCmdDrawIndexed(graphics_command, m_model.indices.size(), 1, 0, 0, 0);
+
+    for (const Model& model : m_scene.models)
+    {
+        vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), offsets);
+        vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
+    }
+
+    vkCmdEndRendering(cmd);
 }

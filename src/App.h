@@ -39,7 +39,7 @@ namespace pvp
         Buffer           m_vertex_buffer{};
         Buffer           m_index_buffer{};
 
-        PVPScene                            m_scene{};
+        PvpScene                            m_scene{};
         UniformBuffer<ModelCameraViewData>* m_uniform_buffer{};
         LoadModel                           m_model{};
         Sampler                             m_sampler{};

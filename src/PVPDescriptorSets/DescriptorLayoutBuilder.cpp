@@ -1,5 +1,4 @@
 ﻿#include "DescriptorLayoutBuilder.h"
-
 #include <stdexcept>
 
 namespace pvp

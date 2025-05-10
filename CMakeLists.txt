@@ -60,8 +60,6 @@ add_executable(${PROJECT_NAME}
         src/PVPDescriptorSets/DescriptorSetBuilder.h
         src/PVPDescriptorSets/DescriptorPool.h
         src/PVPDescriptorSets/DescriptorPool.cpp
-        src/PVPDescriptorSets/DescriptorLayout.cpp
-        src/PVPDescriptorSets/DescriptorLayout.h
         src/PVPDescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
         src/PVPBuffer/BufferBuilder.cpp

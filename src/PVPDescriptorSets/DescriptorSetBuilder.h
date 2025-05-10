@@ -1,11 +1,9 @@
 ﻿#pragma once
+#include <span>
 #include <PVPBuffer/Buffer.h>
 #include <PVPImage/Image.h>
-#include <span>
-#include <unordered_map>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
-#include "DescriptorLayout.h"
 #include "DescriptorPool.h"
 #include "DescriptorSets.h"
 
@@ -18,7 +16,7 @@ namespace pvp
     {
     public:
         explicit DescriptorSetBuilder();
-        DescriptorSetBuilder& set_layout(DescriptorLayout& layout);
+        DescriptorSetBuilder& set_layout(vk::DescriptorSetLayout& layout);
 
         template<typename T>
         DescriptorSetBuilder& bind_buffer(uint32_t binding, const UniformBuffer<T>& buffer);
@@ -27,7 +25,7 @@ namespace pvp
         DescriptorSets build(VkDevice device, DescriptorPool pool) const;
 
     private:
-        DescriptorLayout*                                                                                             m_descriptor_layout{};
+        vk::DescriptorSetLayout*                                                                                      m_descriptor_layout;
         std::vector<std::tuple<uint32_t, std::reference_wrapper<const std::vector<Buffer>>>>                          m_buffers;
         std::vector<std::tuple<uint32_t, std::reference_wrapper<const Image>, std::reference_wrapper<const Sampler>>> m_images;
     };

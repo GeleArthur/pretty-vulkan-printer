@@ -5,9 +5,9 @@
 #include <PVPBuffer/BufferBuilder.h>
 #include <PVPCommandBuffer/CommandPool.h>
 #include <PVPGraphicsPipeline/Vertex.h>
-pvp::PVPScene pvp::load_scene(const Context& context)
+pvp::PvpScene pvp::load_scene(const Context& context)
 {
-    PVPScene scene{};
+    PvpScene scene{};
 
     std::array models = {
         load_model_file(std::filesystem::absolute("resources/viking_room.obj"))
@@ -23,6 +23,8 @@ pvp::PVPScene pvp::load_scene(const Context& context)
     {
         LoadModel& model = models[i];
         Model&     new_model = scene.models[i];
+
+        new_model.index_count = model.indices.size();
 
         // Vertex loading
         Buffer transfer_buffer{};
@@ -62,12 +64,11 @@ pvp::PVPScene pvp::load_scene(const Context& context)
     }
     cmd_pool_transfer_buffers.end_buffer(cmd);
     transfer_buffer_deleter.destroy_and_clear();
-
     cmd_pool_transfer_buffers.destroy();
 
     return scene;
 }
-void pvp::destroy_scene(PVPScene& scene)
+void pvp::destroy_scene(PvpScene& scene)
 {
     for (Model& model : scene.models)
     {

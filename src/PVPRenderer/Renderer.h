@@ -9,15 +9,15 @@ namespace pvp
     class Renderer
     {
     public:
-        explicit Renderer(const Context& context, Swapchain& swapchain);
+        explicit Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene);
 
-        [[nodiscard]] pvp::RenderingContext prepare_frame();
+        void prepare_frame();
         void draw();
-        void                                end_frame();
+        void end_frame();
 
-        uint32_t get_current_frame_index() const
+        uint32_t get_current_buffer_index() const
         {
-            return m_current_swapchain_index;
+            return m_double_buffer_frame;
         }
 
     private:
@@ -28,7 +28,7 @@ namespace pvp
         FrameSyncers                 m_frame_syncers{};
         CommandPool                  m_cmd_pool_graphics_present{};
         std::vector<VkCommandBuffer> m_cmds_graphics{};
-        GBuffer                      m_geomotry_draw;
+        GBuffer*                     m_geomotry_draw{};
 
         DestructorQueue m_destructor_queue{};
     };

@@ -14,16 +14,17 @@ namespace pvp
     {
         Buffer      vertex_data;
         Buffer      index_data;
+        uint32_t    index_count;
         glm::mat4x4 model_mat;
     };
 
-    struct PVPScene
+    struct PvpScene
     {
         std::vector<Model> models;
         glm::mat4x4        camera_view_projection{};
     };
 
-    PVPScene load_scene(const Context& context);
-    void     destroy_scene(PVPScene& scene);
+    PvpScene load_scene(const Context& context);
+    void     destroy_scene(PvpScene& scene);
 
 } // namespace pvp

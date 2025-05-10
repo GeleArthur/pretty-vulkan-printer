@@ -78,11 +78,7 @@ void pvp::App::run()
     // });
     //
     //
-    // m_descriptors = DescriptorSetBuilder()
-    //                 .set_layout(layout)
-    //                 .bind_buffer(0, *m_uniform_buffer)
-    //                 // .bind_image(1, m_texture, m_sampler)
-    //                 .build(m_device.get_device(), m_descriptor_pool);
+
     //
     // m_graphics_pipeline = GraphicsPipelineBuilder()
     //                       .add_shader("shaders/shader.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
@@ -103,7 +99,7 @@ void pvp::App::run()
     m_scene = load_scene(m_context);
     m_destructor_queue.add_to_queue([&] { destroy_scene(m_scene); });
 
-    m_renderer = new Renderer(m_context, *m_swapchain);
+    m_renderer = new Renderer(m_context, *m_swapchain, m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_renderer; });
 
     // TODO: poll events on other thread
@@ -134,7 +130,8 @@ void pvp::App::draw_frame()
         m_uniform_buffer->update(m_double_buffer_frame, ubo);
     }
 
-    const auto cmd = m_renderer->prepare_frame();
+    m_renderer->prepare_frame();
+    m_renderer->draw();
     // record_commands(cmd, m_renderer->get_current_frame_index());
     m_renderer->end_frame();
 }
