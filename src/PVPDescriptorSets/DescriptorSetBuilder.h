@@ -22,7 +22,7 @@ namespace pvp
         DescriptorSetBuilder& bind_buffer(uint32_t binding, const UniformBuffer<T>& buffer);
         DescriptorSetBuilder& bind_image(uint32_t binding, const Image& image, const Sampler& sampler);
 
-        DescriptorSets build(VkDevice device, DescriptorPool pool) const;
+        DescriptorSets build(const VkDevice device, const DescriptorPool& pool) const;
 
     private:
         vk::DescriptorSetLayout*                                                                                      m_descriptor_layout;

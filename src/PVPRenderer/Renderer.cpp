@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <PVPCommandBuffer/CommandPool.h>
 #include <PVPDevice/Device.h>
+#include <PVPImage/TransitionLayout.h>
+#include <spdlog/spdlog.h>
 
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
     : m_context{ context }
@@ -18,6 +20,9 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpS
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
 
     m_geomotry_draw = new GBuffer(m_context, scene, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() });
+    m_destructor_queue.add_to_queue([&] { delete m_geomotry_draw; });
+    m_light_pass = new LightPass(m_context, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() }, *m_geomotry_draw);
+    m_destructor_queue.add_to_queue([&] { delete m_light_pass; });
 }
 
 void pvp::Renderer::prepare_frame()
@@ -41,16 +46,50 @@ void pvp::Renderer::prepare_frame()
     {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
+
+    VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    vkBeginCommandBuffer(m_cmds_graphics[m_double_buffer_frame], &start_info);
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(m_swapchain.get_swapchain_extent().width);
+    viewport.height = static_cast<float>(m_swapchain.get_swapchain_extent().height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(m_cmds_graphics[m_double_buffer_frame], 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = m_swapchain.get_swapchain_extent();
+    vkCmdSetScissor(m_cmds_graphics[m_double_buffer_frame], 0, 1, &scissor);
 }
 void pvp::Renderer::draw()
 {
     prepare_frame();
-    m_geomotry_draw->draw();
+    m_geomotry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
+    // m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     end_frame();
 }
 
 void pvp::Renderer::end_frame()
 {
+    VkImageSubresourceRange range{
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS
+    };
+
+    image_layout_transition(m_cmds_graphics[m_double_buffer_frame],
+                            m_swapchain.get_images()[m_current_swapchain_index],
+                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                            range);
+
+    vkEndCommandBuffer(m_cmds_graphics[m_double_buffer_frame]);
+
     VkSemaphoreSubmitInfo semaphore_submit{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
@@ -58,7 +97,7 @@ void pvp::Renderer::end_frame()
 
     VkCommandBufferSubmitInfo cmd_submit_info{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        .commandBuffer = m_cmds_graphics[m_current_swapchain_index],
+        .commandBuffer = m_cmds_graphics[m_double_buffer_frame],
     };
 
     VkSemaphoreSubmitInfo semaphore_submit_singled{

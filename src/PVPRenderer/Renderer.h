@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "GBuffer.h"
+#include "LightPass.h"
 #include "Swapchain.h"
 
 #include <PVPSyncManager/FrameSyncers.h>
@@ -29,6 +30,7 @@ namespace pvp
         CommandPool                  m_cmd_pool_graphics_present{};
         std::vector<VkCommandBuffer> m_cmds_graphics{};
         GBuffer*                     m_geomotry_draw{};
+        LightPass*                   m_light_pass{};
 
         DestructorQueue m_destructor_queue{};
     };

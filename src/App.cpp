@@ -39,6 +39,14 @@ void pvp::App::run()
     create_allocator(m_allocator, m_instance, m_device, m_physical_device);
     m_destructor_queue.add_to_queue([&] { m_allocator.destroy(); });
 
+    m_descriptor_pool = DescriptorPool(m_device.get_device(),
+                                       { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
+                                         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
+                                         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 10 } },
+                                       10);
+    m_destructor_queue.add_to_queue([&] { m_descriptor_pool.destroy(); });
+
+    m_context.descriptor_pool = &m_descriptor_pool;
     m_context.instance = &m_instance;
     m_context.physical_device = &m_physical_device;
     m_context.device = &m_device;
@@ -106,7 +114,7 @@ void pvp::App::run()
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
         glfwPollEvents();
-        // draw_frame();
+        draw_frame();
     }
 
     vkDeviceWaitIdle(m_device.get_device());
@@ -115,33 +123,28 @@ void pvp::App::run()
 void pvp::App::draw_frame()
 {
     // Uniform update
-    {
-        static auto start_time = std::chrono::high_resolution_clock::now();
+    // {
+    //     static auto start_time = std::chrono::high_resolution_clock::now();
+    //
+    //     auto  current_time = std::chrono::high_resolution_clock::now();
+    //     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+    //
+    //     ModelCameraViewData ubo{};
+    //     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    //     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    //     ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_swapchain->get_swapchain_extent().width) / static_cast<float>(m_swapchain->get_swapchain_extent().height), 0.1f, 10.0f);
+    //     ubo.proj[1][1] *= -1;
+    //
+    //     m_uniform_buffer->update(m_double_buffer_frame, ubo);
+    // }
 
-        auto  current_time = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-
-        ModelCameraViewData ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_swapchain->get_swapchain_extent().width) / static_cast<float>(m_swapchain->get_swapchain_extent().height), 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
-
-        m_uniform_buffer->update(m_double_buffer_frame, ubo);
-    }
-
-    m_renderer->prepare_frame();
     m_renderer->draw();
     // record_commands(cmd, m_renderer->get_current_frame_index());
-    m_renderer->end_frame();
 }
 
 void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
 {
     VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    vkBeginCommandBuffer(graphics_command, &start_info);
-    vkEndCommandBuffer(graphics_command);
-
     vkBeginCommandBuffer(graphics_command, &start_info);
 
     vkCmdBindPipeline(graphics_command, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);

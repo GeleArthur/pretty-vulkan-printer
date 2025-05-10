@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <PVPBuffer/Buffer.h>
+#include <PVPDescriptorSets/DescriptorPool.h>
 #include <PVPInstance/Instance.h>
 #include <PVPPhysicalDevice/QueueFamilies.h>
 #include <PVPVMAAllocator/VmaAllocator.h>
@@ -14,6 +15,7 @@ namespace pvp
         Device*          device;
         PvpVmaAllocator* allocator;
         QueueFamilies*   queue_families;
+        DescriptorPool*  descriptor_pool;
     };
 
     struct ImageInfo

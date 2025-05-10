@@ -10,7 +10,7 @@
 pvp::LoadModel pvp::load_model_file(const std::filesystem::path& path)
 {
     LoadModel      model;
-    const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
 
     if (scene == nullptr)
     {
@@ -23,7 +23,10 @@ pvp::LoadModel pvp::load_model_file(const std::filesystem::path& path)
     {
         const aiVector3D& vertex = scene->mMeshes[0]->mVertices[i];
         const aiVector3D& uv = scene->mMeshes[0]->mTextureCoords[0][i];
-        model.verties.emplace_back(glm::vec3(vertex.x, vertex.y, vertex.z), glm::vec2(uv.x, uv.y));
+        const aiVector3D& normal = scene->mMeshes[0]->mNormals[i];
+        model.verties.emplace_back(glm::vec3(vertex.x, vertex.y, vertex.z),
+                                   glm::vec2(uv.x, uv.y),
+                                   glm::vec3(normal.x, normal.y, normal.z));
     }
 
     model.indices.reserve(scene->mMeshes[0]->mNumFaces * 3);

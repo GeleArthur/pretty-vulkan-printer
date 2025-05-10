@@ -2,6 +2,7 @@
 
 #include <globalconst.h>
 #include <PVPDevice/Device.h>
+#include <spdlog/spdlog.h>
 
 FrameSyncers::FrameSyncers(const pvp::Context& context)
 {

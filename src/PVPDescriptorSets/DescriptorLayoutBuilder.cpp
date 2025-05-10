@@ -5,7 +5,7 @@ namespace pvp
 {
     DescriptorLayoutBuilder& DescriptorLayoutBuilder::add_binding(vk::DescriptorType type, vk::ShaderStageFlags stage)
     {
-        bindings.push_back(vk::DescriptorSetLayoutBinding{ static_cast<uint32_t>(bindings.size() - 1), type, 1u, stage, VK_NULL_HANDLE });
+        bindings.push_back(vk::DescriptorSetLayoutBinding{ static_cast<uint32_t>(bindings.size()), type, 1u, stage, VK_NULL_HANDLE });
         return *this;
     }
 

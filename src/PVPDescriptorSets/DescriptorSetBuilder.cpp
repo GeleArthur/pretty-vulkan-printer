@@ -25,7 +25,7 @@ namespace pvp
         return *this;
     }
 
-    DescriptorSets DescriptorSetBuilder::build(const VkDevice device, const DescriptorPool pool) const
+    DescriptorSets DescriptorSetBuilder::build(const VkDevice device, const DescriptorPool& pool) const
     {
         DescriptorSets descriptor;
 

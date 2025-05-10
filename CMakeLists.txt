@@ -102,6 +102,8 @@ add_executable(${PROJECT_NAME}
         src/Scene/PVPScene.h
         src/Scene/LoadModel.cpp
         src/Scene/LoadModel.h
+        src/PVPRenderer/LightPass.cpp
+        src/PVPRenderer/LightPass.h
 )
 
 add_subdirectory(libraries)

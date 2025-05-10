@@ -1,7 +1,6 @@
 #pragma once
-
-#include <vulkan/vulkan.h>
 #include "Sampler.h"
+#include <vulkan/vulkan.h>
 
 class SamplerBuilder
 {

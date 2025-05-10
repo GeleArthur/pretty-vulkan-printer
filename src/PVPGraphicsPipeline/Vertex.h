@@ -10,31 +10,38 @@ namespace pvp
     {
         glm::vec3 pos;
         glm::vec2 uv;
+        glm::vec3 normal;
 
         static constexpr auto get_attribute_descriptions()
         {
             return std::vector<VkVertexInputAttributeDescription>(
-            { {
-              .location = 0,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(Vertex, pos),
-              },
-              {
-              .location = 1,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32_SFLOAT,
-              .offset = offsetof(Vertex, uv),
-              } });
+                { {
+                      .location = 0,
+                      .binding = 0,
+                      .format = VK_FORMAT_R32G32B32_SFLOAT,
+                      .offset = offsetof(Vertex, pos),
+                  },
+                  {
+                      .location = 1,
+                      .binding = 0,
+                      .format = VK_FORMAT_R32G32_SFLOAT,
+                      .offset = offsetof(Vertex, uv),
+                  },
+                  {
+                      .location = 2,
+                      .binding = 0,
+                      .format = VK_FORMAT_R32G32B32_SFLOAT,
+                      .offset = offsetof(Vertex, normal),
+                  } });
         };
         static constexpr auto get_binding_description()
         {
             return std::vector<VkVertexInputBindingDescription>(
-            { {
-            .binding = 0,
-            .stride = sizeof(Vertex),
-            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-            } });
+                { {
+                    .binding = 0,
+                    .stride = sizeof(Vertex),
+                    .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+                } });
         }
     };
 } // namespace pvp
