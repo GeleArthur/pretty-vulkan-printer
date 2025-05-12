@@ -21,34 +21,6 @@ namespace pvp
     }
     void LightPass::draw(VkCommandBuffer cmd)
     {
-        // VkDescriptorImageInfo image_info{};
-        // image_info.imageView = m_gemotry_pass.get_albedo_image().get_view();
-        // image_info.sampler = m_sampler.handle;
-        // image_info.imageLayout = m_gemotry_pass.get_albedo_image().get_layout();
-        //
-        // VkWriteDescriptorSet write{};
-        // write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        // write.dstSet = m_descriptor_binding.sets[0];
-        // write.dstBinding = 0;
-        // write.dstArrayElement = 0;
-        // write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // write.descriptorCount = 1;
-        // write.pImageInfo = &image_info;
-        // vkUpdateDescriptorSets(m_context.device->get_device(), 1, &write, 0, nullptr);
-        //
-        // image_info.imageView = m_gemotry_pass.get_normal_image().get_view();
-        // image_info.sampler = m_sampler.handle;
-        // image_info.imageLayout = m_gemotry_pass.get_normal_image().get_layout();
-        //
-        // write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        // write.dstSet = m_descriptor_binding.sets[0];
-        // write.dstBinding = 1;
-        // write.dstArrayElement = 0;
-        // write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // write.descriptorCount = 1;
-        // write.pImageInfo = &image_info;
-        // vkUpdateDescriptorSets(m_context.device->get_device(), 1, &write, 0, nullptr);
-
         m_light_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_NONE,
@@ -110,6 +82,7 @@ namespace pvp
 
         m_screensize_buffer = new UniformBuffer<glm::vec2>(m_context.allocator->get_allocator());
         m_screensize_buffer->update(0, glm::vec2(m_image_info.image_size.width, m_image_info.image_size.height));
+        m_destructor_queue.add_to_queue([&] { delete m_screensize_buffer; });
     }
     void LightPass::create_images()
     {
