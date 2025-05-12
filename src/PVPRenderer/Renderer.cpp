@@ -68,7 +68,7 @@ void pvp::Renderer::draw()
 {
     prepare_frame();
     m_geomotry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
-    // m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
+    m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     end_frame();
 }
 

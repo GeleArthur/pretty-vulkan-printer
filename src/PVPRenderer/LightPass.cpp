@@ -1,9 +1,12 @@
 ﻿#include "LightPass.h"
 
+#include "RenderInfoBuilder.h"
+
 #include <PVPDescriptorSets/DescriptorLayoutBuilder.h>
 #include <PVPGraphicsPipeline/PipelineLayoutBuilder.h>
 #include <PVPImage/ImageBuilder.h>
 #include <PVPImage/SamplerBuilder.h>
+#include <Scene/PVPScene.h>
 #include <glm/gtx/rotate_vector.hpp>
 
 namespace pvp
@@ -16,19 +19,67 @@ namespace pvp
         build_pipelines();
         create_images();
     }
-    void LightPass::draw(VkCommandBuffer command_buffer)
+    void LightPass::draw(VkCommandBuffer cmd)
     {
-        m_descriptor_binding = DescriptorSetBuilder()
-                                   .bind_image(0, m_gemotry_pass.get_albedo_image(), m_sampler)
-                                   .bind_image(0, m_gemotry_pass.get_normal_image(), m_sampler)
-                                   .set_layout(m_desciptor_layout)
-                                   .build(m_context.device->get_device(), *m_context.descriptor_pool);
+        // VkDescriptorImageInfo image_info{};
+        // image_info.imageView = m_gemotry_pass.get_albedo_image().get_view();
+        // image_info.sampler = m_sampler.handle;
+        // image_info.imageLayout = m_gemotry_pass.get_albedo_image().get_layout();
+        //
+        // VkWriteDescriptorSet write{};
+        // write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        // write.dstSet = m_descriptor_binding.sets[0];
+        // write.dstBinding = 0;
+        // write.dstArrayElement = 0;
+        // write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        // write.descriptorCount = 1;
+        // write.pImageInfo = &image_info;
+        // vkUpdateDescriptorSets(m_context.device->get_device(), 1, &write, 0, nullptr);
+        //
+        // image_info.imageView = m_gemotry_pass.get_normal_image().get_view();
+        // image_info.sampler = m_sampler.handle;
+        // image_info.imageLayout = m_gemotry_pass.get_normal_image().get_layout();
+        //
+        // write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        // write.dstSet = m_descriptor_binding.sets[0];
+        // write.dstBinding = 1;
+        // write.dstArrayElement = 0;
+        // write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        // write.descriptorCount = 1;
+        // write.pImageInfo = &image_info;
+        // vkUpdateDescriptorSets(m_context.device->get_device(), 1, &write, 0, nullptr);
+
+        m_light_image.transition_layout(cmd,
+                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                        VK_PIPELINE_STAGE_2_NONE,
+                                        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        VK_ACCESS_2_NONE,
+                                        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
+
+        const auto render_color_info = RenderInfoBuilder().set_image(&m_light_image).build();
+
+        vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
+        {
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline);
+            vkCmdDrawIndexed(cmd, 3, 1, 0, 0, 0);
+        }
+        vkCmdEndRendering(cmd);
+
+        m_light_image.transition_layout(cmd,
+                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                        VK_ACCESS_2_TRANSFER_READ_BIT);
     }
     void LightPass::build_pipelines()
     {
         DescriptorLayoutBuilder()
             .add_binding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
             .add_binding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+            // .add_binding(vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
             .build(vk::Device(m_context.device->get_device()), m_desciptor_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_desciptor_layout, nullptr); });
 
@@ -36,6 +87,13 @@ namespace pvp
             .set_filter(VK_FILTER_NEAREST)
             .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
             .build(m_context.device->get_device(), m_sampler);
+        m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });
+
+        m_descriptor_binding = DescriptorSetBuilder()
+                                   .bind_image(0, m_gemotry_pass.get_albedo_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                   .bind_image(1, m_gemotry_pass.get_normal_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                   .set_layout(m_desciptor_layout)
+                                   .build(m_context.device->get_device(), *m_context.descriptor_pool);
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_desciptor_layout)
@@ -47,10 +105,11 @@ namespace pvp
             .add_shader("shaders/lightpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
             .set_color_format(std::array{ m_image_info.color_format })
             .set_pipeline_layout(m_light_pipeline_layout)
-            // .set_input_attribute_description(Vertex::get_attribute_descriptions())
-            // .set_input_binding_description(Vertex::get_binding_description())
             .build(*m_context.device, m_light_pipeline);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_light_pipeline, nullptr); });
+
+        m_screensize_buffer = new UniformBuffer<glm::vec2>(m_context.allocator->get_allocator());
+        m_screensize_buffer->update(0, glm::vec2(m_image_info.image_size.width, m_image_info.image_size.height));
     }
     void LightPass::create_images()
     {

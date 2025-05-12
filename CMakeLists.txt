@@ -41,8 +41,6 @@ add_executable(${PROJECT_NAME}
         src/PVPGraphicsPipeline/PipelineLayoutBuilder.h
         src/PVPGraphicsPipeline/Vertex.cpp
         src/PVPGraphicsPipeline/Vertex.h
-        src/PVPGraphicsPipeline/DescriptorSetLayoutBuilder.cpp
-        src/PVPGraphicsPipeline/DescriptorSetLayoutBuilder.h
         src/PVPVMAAllocator/VmaAllocator.cpp
         src/PVPVMAAllocator/VmaAllocator.cpp
         src/PVPVMAAllocator/VmaAllocator.h
@@ -104,6 +102,8 @@ add_executable(${PROJECT_NAME}
         src/Scene/LoadModel.h
         src/PVPRenderer/LightPass.cpp
         src/PVPRenderer/LightPass.h
+        src/PVPRenderer/RenderInfoBuilder.cpp
+        src/PVPRenderer/RenderInfoBuilder.h
 )
 
 add_subdirectory(libraries)

@@ -27,6 +27,8 @@ namespace pvp
         DescriptorSets          m_descriptor_binding;
         vk::DescriptorSetLayout m_desciptor_layout;
 
+        UniformBuffer<glm::vec2>* m_screensize_buffer;
+
         VkPipelineLayout m_light_pipeline_layout{};
         VkPipeline       m_light_pipeline{};
 

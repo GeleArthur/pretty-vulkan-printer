@@ -1,5 +1,7 @@
 ﻿#include "GBuffer.h"
 
+#include "RenderInfoBuilder.h"
+
 #include <array>
 #include <PVPDescriptorSets/DescriptorLayoutBuilder.h>
 #include <PVPDescriptorSets/DescriptorSetBuilder.h>
@@ -81,7 +83,7 @@ void pvp::GBuffer::create_images()
     m_destructor_queue.add_to_queue([&] { m_albedo_image.destroy(m_context); });
 
     ImageBuilder()
-        .set_format(VK_FORMAT_R8G8B8A8_UNORM)
+        .set_format(m_image_info.color_format)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
         .set_size(m_image_info.image_size)
@@ -92,8 +94,6 @@ void pvp::GBuffer::create_images()
 
 void pvp::GBuffer::draw(VkCommandBuffer cmd)
 {
-    constexpr VkClearValue clear_values{ 0.2f, 0.2f, 0.2f, 1.0f };
-
     m_albedo_image.transition_layout(cmd,
                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                      VK_PIPELINE_STAGE_2_NONE,
@@ -107,50 +107,11 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                                      VK_ACCESS_2_NONE,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-    VkRenderingAttachmentInfo color_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = m_albedo_image.get_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue = clear_values
-    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
 
-    VkRenderingAttachmentInfo normal_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = m_albedo_image.get_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue = clear_values
-    };
+    const auto color_info = RenderInfoBuilder().set_image(&m_albedo_image).build();
 
-    VkRenderingInfo render_color_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .renderArea = VkRect2D{ VkOffset2D{ 0, 0 }, m_albedo_image.get_size() },
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &color_info,
-    };
-
-    VkRenderingInfo render_normal_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .renderArea = VkRect2D{ VkOffset2D{ 0, 0 }, m_normal_image.get_size() },
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &normal_info,
-    };
-
-    vkCmdBindDescriptorSets(cmd,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            m_albedo_pipeline_layout,
-                            0,
-                            1,
-                            &m_descriptor_binding.sets[0],
-                            0,
-                            nullptr);
-
-    vkCmdBeginRendering(cmd, &render_color_info);
+    vkCmdBeginRendering(cmd, &color_info.rendering_info);
     {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
 
@@ -164,7 +125,9 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
     }
     vkCmdEndRendering(cmd);
 
-    vkCmdBeginRendering(cmd, &render_normal_info);
+    const auto normal_info = RenderInfoBuilder().set_image(&m_normal_image).build();
+
+    vkCmdBeginRendering(cmd, &normal_info.rendering_info);
     {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_normal_pipeline);
 
