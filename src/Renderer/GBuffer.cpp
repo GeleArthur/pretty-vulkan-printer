@@ -2,6 +2,7 @@
 
 #include "RenderInfoBuilder.h"
 
+#include <UniformBufferStruct.h>
 #include <array>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
@@ -25,9 +26,9 @@ pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, const Image
 
 void pvp::GBuffer::build_pipelines()
 {
-    vk::DescriptorSetLayout layout;
+    VkDescriptorSetLayout layout;
     DescriptorLayoutBuilder()
-        .add_binding(vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
         .build(vk::Device(m_context.device->get_device()), layout);
     m_destructor_queue.add_to_queue([&, layout] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), layout, nullptr); });
 

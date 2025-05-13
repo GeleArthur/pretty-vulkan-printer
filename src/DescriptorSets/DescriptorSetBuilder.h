@@ -7,7 +7,6 @@
 #include "DescriptorPool.h"
 #include "DescriptorSets.h"
 
-#include <UniformBufferStruct.h>
 #include <UniformBuffers/UniformBuffer.h>
 
 namespace pvp
@@ -16,7 +15,7 @@ namespace pvp
     {
     public:
         explicit DescriptorSetBuilder();
-        DescriptorSetBuilder& set_layout(vk::DescriptorSetLayout& layout);
+        DescriptorSetBuilder& set_layout(VkDescriptorSetLayout& layout);
 
         template<typename T>
         DescriptorSetBuilder& bind_buffer(uint32_t binding, const UniformBuffer<T>& buffer);
@@ -27,7 +26,7 @@ namespace pvp
     private:
         using image_info = std::tuple<uint32_t, std::reference_wrapper<const Image>, std::reference_wrapper<const Sampler>, VkImageLayout>;
         using buffer_info = std::tuple<uint32_t, std::reference_wrapper<const std::vector<Buffer>>>;
-        vk::DescriptorSetLayout* m_descriptor_layout;
+        VkDescriptorSetLayout*   m_descriptor_layout;
         std::vector<buffer_info> m_buffers;
         std::vector<image_info>  m_images;
     };

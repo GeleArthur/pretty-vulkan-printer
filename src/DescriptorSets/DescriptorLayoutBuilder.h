@@ -7,10 +7,10 @@ namespace pvp
     class DescriptorLayoutBuilder
     {
     public:
-        DescriptorLayoutBuilder& add_binding(vk::DescriptorType type, vk::ShaderStageFlags stage);
-        void                     build(const vk::Device& device, vk::DescriptorSetLayout& layout);
+        DescriptorLayoutBuilder& add_binding(VkDescriptorType type, VkShaderStageFlags stage);
+        void                     build(const VkDevice& device, VkDescriptorSetLayout& layout);
 
     private:
-        std::vector<vk::DescriptorSetLayoutBinding> bindings;
+        std::vector<VkDescriptorSetLayoutBinding> m_bindings;
     };
 } // namespace pvp

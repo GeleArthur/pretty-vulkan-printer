@@ -2,11 +2,12 @@
 #include "GBuffer.h"
 
 #include <DestructorQueue.h>
+#include <Context/Context.h>
 #include <DescriptorSets/DescriptorSets.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <Image/Image.h>
-#include <Context/Context.h>
 #include <UniformBuffers/UniformBuffer.h>
+#include <glm/vec2.hpp>
 namespace pvp
 {
     class LightPass
@@ -28,8 +29,8 @@ namespace pvp
         Sampler         m_sampler{};
         const ImageInfo m_image_info;
 
-        DescriptorSets          m_descriptor_binding;
-        vk::DescriptorSetLayout m_desciptor_layout;
+        DescriptorSets        m_descriptor_binding;
+        VkDescriptorSetLayout m_desciptor_layout;
 
         UniformBuffer<glm::vec2>* m_screensize_buffer;
 

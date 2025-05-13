@@ -104,16 +104,19 @@ add_executable(${PROJECT_NAME}
         src/Renderer/LightPass.h
         src/Renderer/RenderInfoBuilder.cpp
         src/Renderer/RenderInfoBuilder.h
+        src/Renderer/DepthPrePass.cpp
+        src/Renderer/DepthPrePass.h
 )
 
 add_subdirectory(libraries)
 
 # needs to be different as it doesn't run when source files don't change
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+        COMMAND ${CMAKE_COMMAND} -E create_symlink # TODO: WHEN HANDING IN CHANGE create_symlink TO copy_directory_if_different. ( I need a fallback)
         "${CMAKE_SOURCE_DIR}/resources"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
 )
+
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 

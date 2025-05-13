@@ -51,9 +51,9 @@ namespace pvp
     void LightPass::build_pipelines()
     {
         DescriptorLayoutBuilder()
-            .add_binding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-            .add_binding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-            .build(vk::Device(m_context.device->get_device()), m_desciptor_layout);
+            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .build(m_context.device->get_device(), m_desciptor_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_desciptor_layout, nullptr); });
 
         SamplerBuilder()

@@ -10,8 +10,10 @@ pvp::PvpScene pvp::load_scene(const Context& context)
     PvpScene scene{};
 
     std::array models = {
-        load_model_file(std::filesystem::absolute("resources/viking_room.obj"))
+        load_model_file(std::filesystem::absolute("resources/viking_room.obj")),
+        load_model_file(std::filesystem::absolute("resources/cube.obj"))
     };
+
     scene.models.resize(models.size());
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -35,7 +37,7 @@ pvp::PvpScene pvp::load_scene(const Context& context)
             .build(context.allocator->get_allocator(), transfer_buffer);
 
         transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(model.verties)));
-        transfer_buffer_deleter.add_to_queue([&] { transfer_buffer.destroy(); });
+        transfer_buffer_deleter.add_to_queue([=] { transfer_buffer.destroy(); });
 
         BufferBuilder()
             .set_size(model.verties.size() * sizeof(Vertex))
@@ -53,7 +55,7 @@ pvp::PvpScene pvp::load_scene(const Context& context)
             .build(context.allocator->get_allocator(), transfer_buffer_index);
 
         transfer_buffer_index.copy_data_into_buffer(std::as_bytes(std::span(model.indices)));
-        transfer_buffer_deleter.add_to_queue([&] { transfer_buffer_index.destroy(); });
+        transfer_buffer_deleter.add_to_queue([=] { transfer_buffer_index.destroy(); });
 
         BufferBuilder()
             .set_size(model.indices.size() * sizeof(uint32_t))

@@ -67,12 +67,19 @@ namespace pvp
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
             .pNext = nullptr,
             .synchronization2 = VK_TRUE,
-            .dynamicRendering = VK_TRUE
+            .dynamicRendering = VK_TRUE,
         };
 
         VkPhysicalDeviceVulkan12Features features12 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-            .pNext = &features13
+            .pNext = &features13,
+            .descriptorIndexing = VK_TRUE,
+            .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+            .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+            .descriptorBindingPartiallyBound = VK_TRUE,
+            .descriptorBindingVariableDescriptorCount = VK_TRUE,
+            .runtimeDescriptorArray = VK_TRUE,
+
         };
 
         VkPhysicalDeviceVulkan11Features features11 = {

@@ -13,7 +13,7 @@ namespace pvp
     {
     }
 
-    DescriptorSetBuilder& DescriptorSetBuilder::set_layout(vk::DescriptorSetLayout& layout)
+    DescriptorSetBuilder& DescriptorSetBuilder::set_layout(VkDescriptorSetLayout& layout)
     {
         m_descriptor_layout = &layout;
         return *this;
@@ -29,15 +29,13 @@ namespace pvp
     {
         DescriptorSets descriptor;
 
-        const VkDescriptorSetLayout result = *m_descriptor_layout;
-
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
             VkDescriptorSetAllocateInfo alloc_info{};
             alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             alloc_info.descriptorPool = pool.get_handle();
             alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &result;
+            alloc_info.pSetLayouts = m_descriptor_layout;
 
             if (vkAllocateDescriptorSets(device, &alloc_info, &descriptor.sets[i]) != VK_SUCCESS)
             {
