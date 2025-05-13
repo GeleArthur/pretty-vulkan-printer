@@ -14,7 +14,8 @@
 void pvp::App::run()
 {
     glfwInit();
-    m_destructor_queue.add_to_queue([&] {
+    m_destructor_queue.add_to_queue([&]
+    {
         glfwTerminate();
     });
 
@@ -32,7 +33,7 @@ void pvp::App::run()
 
     // TODO: Context builder
     LogicPhysicalQueueBuilder()
-        .set_extensions({ VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME })
+        .set_extensions({VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME})
         .build(m_instance, m_window_surface, m_physical_device, m_device, m_queue_families);
     m_destructor_queue.add_to_queue([&] { m_device.destroy(); });
 
@@ -40,9 +41,11 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { m_allocator.destroy(); });
 
     m_descriptor_pool = DescriptorPool(m_device.get_device(),
-                                       { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
-                                         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
-                                         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 10 } },
+                                       {
+                                           {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
+                                           {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10},
+                                           {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 10}
+                                       },
                                        10);
     m_destructor_queue.add_to_queue([&] { m_descriptor_pool.destroy(); });
 
@@ -114,70 +117,9 @@ void pvp::App::run()
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
         glfwPollEvents();
-        draw_frame();
+        m_renderer->draw();
     }
 
     vkDeviceWaitIdle(m_device.get_device());
 }
 
-void pvp::App::draw_frame()
-{
-    // Uniform update
-    // {
-    //     static auto start_time = std::chrono::high_resolution_clock::now();
-    //
-    //     auto  current_time = std::chrono::high_resolution_clock::now();
-    //     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-    //
-    //     ModelCameraViewData ubo{};
-    //     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //     ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_swapchain->get_swapchain_extent().width) / static_cast<float>(m_swapchain->get_swapchain_extent().height), 0.1f, 10.0f);
-    //     ubo.proj[1][1] *= -1;
-    //
-    //     m_uniform_buffer->update(m_double_buffer_frame, ubo);
-    // }
-
-    m_renderer->draw();
-    // record_commands(cmd, m_renderer->get_current_frame_index());
-}
-
-void pvp::App::record_commands(VkCommandBuffer graphics_command, uint32_t image_index)
-{
-    VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    vkBeginCommandBuffer(graphics_command, &start_info);
-
-    vkCmdBindPipeline(graphics_command, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
-
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(m_swapchain->get_swapchain_extent().width);
-    viewport.height = static_cast<float>(m_swapchain->get_swapchain_extent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(graphics_command, 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = m_swapchain->get_swapchain_extent();
-    vkCmdSetScissor(graphics_command, 0, 1, &scissor);
-
-    VkBuffer     vertex_buffers[] = { m_vertex_buffer.get_buffer() };
-    VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(graphics_command, 0, 1, vertex_buffers, offsets);
-
-    vkCmdBindDescriptorSets(graphics_command,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            m_pipeline_layout,
-                            0,
-                            1,
-                            &m_descriptors.sets[m_double_buffer_frame],
-                            0,
-                            nullptr);
-
-    vkCmdBindIndexBuffer(graphics_command, m_index_buffer.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(graphics_command, m_model.indices.size(), 1, 0, 0, 0);
-
-    vkEndCommandBuffer(graphics_command);
-}

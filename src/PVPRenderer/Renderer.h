@@ -7,6 +7,11 @@
 
 namespace pvp
 {
+    class BlitToSwapchain;
+}
+
+namespace pvp
+{
     class Renderer
     {
     public:
@@ -31,6 +36,7 @@ namespace pvp
         std::vector<VkCommandBuffer> m_cmds_graphics{};
         GBuffer*                     m_geomotry_draw{};
         LightPass*                   m_light_pass{};
+        BlitToSwapchain*             m_blit_to_swapchain{};
 
         DestructorQueue m_destructor_queue{};
     };

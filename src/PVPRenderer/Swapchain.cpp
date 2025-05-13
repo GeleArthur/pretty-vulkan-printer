@@ -172,7 +172,7 @@ void pvp::Swapchain::create_the_swapchain()
     create_info.imageColorSpace = m_swapchain_surface_format.colorSpace;
     create_info.imageExtent = m_swapchain_extent;
     create_info.imageArrayLayers = 1;
-    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     Queue*     graphics = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false);
     Queue*     present = m_context.queue_families->get_queue_family(static_cast<VkQueueFlagBits>(0x00000000), true);

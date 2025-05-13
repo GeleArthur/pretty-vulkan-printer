@@ -88,8 +88,8 @@ add_executable(${PROJECT_NAME}
         src/PVPDevice/Device.cpp
         src/PVPDevice/Device.h
         src/PVPPhysicalDevice/QueueFamilies.cpp
-        src/PVPRenderer/RenderToSwapchain.cpp
-        src/PVPRenderer/RenderToSwapchain.h
+        src/PVPRenderer/BlitToSwapchain.cpp
+        src/PVPRenderer/BlitToSwapchain.h
         src/PVPImage/TransitionLayout.cpp
         src/PVPImage/TransitionLayout.h
         src/PVPRenderer/GBuffer.cpp

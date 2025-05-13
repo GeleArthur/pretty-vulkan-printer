@@ -7,6 +7,8 @@
 #include <PVPImage/TransitionLayout.h>
 #include <spdlog/spdlog.h>
 
+#include "BlitToSwapchain.h"
+
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
@@ -23,6 +25,7 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpS
     m_destructor_queue.add_to_queue([&] { delete m_geomotry_draw; });
     m_light_pass = new LightPass(m_context, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() }, *m_geomotry_draw);
     m_destructor_queue.add_to_queue([&] { delete m_light_pass; });
+    m_blit_to_swapchain = new BlitToSwapchain(m_context, swapchain, m_light_pass->get_light_image());
 }
 
 void pvp::Renderer::prepare_frame()
@@ -64,30 +67,18 @@ void pvp::Renderer::prepare_frame()
     scissor.extent = m_swapchain.get_swapchain_extent();
     vkCmdSetScissor(m_cmds_graphics[m_double_buffer_frame], 0, 1, &scissor);
 }
+
 void pvp::Renderer::draw()
 {
     prepare_frame();
     m_geomotry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
+    m_blit_to_swapchain->draw(m_cmds_graphics[m_double_buffer_frame], m_current_swapchain_index);
     end_frame();
 }
 
 void pvp::Renderer::end_frame()
 {
-    VkImageSubresourceRange range{
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .baseMipLevel = 0,
-        .levelCount = VK_REMAINING_MIP_LEVELS,
-        .baseArrayLayer = 0,
-        .layerCount = VK_REMAINING_ARRAY_LAYERS
-    };
-
-    image_layout_transition(m_cmds_graphics[m_double_buffer_frame],
-                            m_swapchain.get_images()[m_current_swapchain_index],
-                            VK_IMAGE_LAYOUT_UNDEFINED,
-                            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                            range);
-
     vkEndCommandBuffer(m_cmds_graphics[m_double_buffer_frame]);
 
     VkSemaphoreSubmitInfo semaphore_submit{

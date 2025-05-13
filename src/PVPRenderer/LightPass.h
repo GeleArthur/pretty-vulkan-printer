@@ -13,7 +13,11 @@ namespace pvp
     {
     public:
         explicit LightPass(const Context& context, const ImageInfo& image_info, GBuffer& gbuffer);
-        void draw(VkCommandBuffer command_buffer);
+        void   draw(VkCommandBuffer command_buffer);
+        Image& get_light_image()
+        {
+            return m_light_image;
+        };
 
     private:
         void            build_pipelines();

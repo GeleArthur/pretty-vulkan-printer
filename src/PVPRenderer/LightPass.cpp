@@ -19,6 +19,7 @@ namespace pvp
         build_pipelines();
         create_images();
     }
+
     void LightPass::draw(VkCommandBuffer cmd)
     {
         m_light_image.transition_layout(cmd,
@@ -46,12 +47,12 @@ namespace pvp
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                         VK_ACCESS_2_TRANSFER_READ_BIT);
     }
+
     void LightPass::build_pipelines()
     {
         DescriptorLayoutBuilder()
             .add_binding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
             .add_binding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-            // .add_binding(vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
             .build(vk::Device(m_context.device->get_device()), m_desciptor_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_desciptor_layout, nullptr); });
 
@@ -84,6 +85,7 @@ namespace pvp
         m_screensize_buffer->update(0, glm::vec2(m_image_info.image_size.width, m_image_info.image_size.height));
         m_destructor_queue.add_to_queue([&] { delete m_screensize_buffer; });
     }
+
     void LightPass::create_images()
     {
         ImageBuilder()
