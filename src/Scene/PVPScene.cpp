@@ -2,9 +2,9 @@
 #include "LoadModel.h"
 
 #include <array>
-#include <PVPBuffer/BufferBuilder.h>
-#include <PVPCommandBuffer/CommandPool.h>
-#include <PVPGraphicsPipeline/Vertex.h>
+#include <Buffer/BufferBuilder.h>
+#include <CommandBuffer/CommandPool.h>
+#include <GraphicsPipeline/Vertex.h>
 pvp::PvpScene pvp::load_scene(const Context& context)
 {
     PvpScene scene{};

@@ -1,21 +1,20 @@
 ﻿#include "App.h"
 
-#include "PVPPhysicalDevice/LogicPhysicalQueueBuilder.h"
+#include "Context/LogicPhysicalQueueBuilder.h"
 
 #include <GLFW/glfw3.h>
-#include <PVPDescriptorSets/DescriptorLayoutBuilder.h>
-#include <PVPGraphicsPipeline/GraphicsPipelineBuilder.h>
-#include <PVPInstance/InstanceBuilder.h>
-#include <PVPRenderer/Swapchain.h>
-#include <PVPSyncManager/FrameSyncers.h>
-#include <PVPWindow/WindowSurfaceBuilder.h>
+#include <DescriptorSets/DescriptorLayoutBuilder.h>
+#include <GraphicsPipeline/GraphicsPipelineBuilder.h>
+#include <Context/InstanceBuilder.h>
+#include <Renderer/Swapchain.h>
+#include <SyncManager/FrameSyncers.h>
+#include <Window/WindowSurfaceBuilder.h>
 #include <glm/gtx/quaternion.hpp>
 
 void pvp::App::run()
 {
     glfwInit();
-    m_destructor_queue.add_to_queue([&]
-    {
+    m_destructor_queue.add_to_queue([&] {
         glfwTerminate();
     });
 
@@ -33,7 +32,7 @@ void pvp::App::run()
 
     // TODO: Context builder
     LogicPhysicalQueueBuilder()
-        .set_extensions({VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME})
+        .set_extensions({ VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME })
         .build(m_instance, m_window_surface, m_physical_device, m_device, m_queue_families);
     m_destructor_queue.add_to_queue([&] { m_device.destroy(); });
 
@@ -41,11 +40,9 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { m_allocator.destroy(); });
 
     m_descriptor_pool = DescriptorPool(m_device.get_device(),
-                                       {
-                                           {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
-                                           {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10},
-                                           {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 10}
-                                       },
+                                       { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
+                                         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
+                                         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 10 } },
                                        10);
     m_destructor_queue.add_to_queue([&] { m_descriptor_pool.destroy(); });
 
@@ -122,4 +119,3 @@ void pvp::App::run()
 
     vkDeviceWaitIdle(m_device.get_device());
 }
-

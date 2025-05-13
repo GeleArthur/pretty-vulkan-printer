@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <filesystem>
-#include <PVPGraphicsPipeline/Vertex.h>
+#include <GraphicsPipeline/Vertex.h>
 
 namespace pvp
 {

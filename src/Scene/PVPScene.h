@@ -3,8 +3,8 @@
 
 #include <filesystem>
 #include <vector>
-#include <PVPBuffer/Buffer.h>
-#include <PVPPhysicalDevice/Context.h>
+#include <Buffer/Buffer.h>
+#include <Context/Context.h>
 #include <glm/mat4x4.hpp>
 #include <glm/detail/func_packing_simd.inl>
 

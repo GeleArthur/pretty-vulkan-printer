@@ -17,93 +17,93 @@ add_executable(${PROJECT_NAME}
         src/App.h
         src/DestructorQueue.cpp
         src/DestructorQueue.h
-        src/PVPInstance/Instance.cpp
-        src/PVPInstance/Instance.h
-        src/VulkanExternalFunctions.h
         src/stb_image.h
+        src/VulkanExternalFunctions.h
         src/tiny_obj_loader.h
-        src/PVPImage/Image.cpp
-        src/PVPImage/Image.h
-        src/PVPRenderer/Swapchain.cpp
-        src/PVPRenderer/Swapchain.h
-        src/PVPInstance/InstanceBuilder.cpp
-        src/PVPInstance/InstanceBuilder.h
-        src/PVPRenderPass/RenderPassBuilder.cpp
-        src/PVPRenderPass/RenderPassBuilder.h
-        src/PVPGraphicsPipeline/GraphicsPipelineBuilder.cpp
-        src/PVPGraphicsPipeline/GraphicsPipelineBuilder.h
-        src/PVPPhysicalDevice/Context.h
-        src/PVPPhysicalDevice/PhysicalDevice.h
-        src/PVPPhysicalDevice/PhysicalDevice.cpp
-        src/PVPGraphicsPipeline/ShaderLoader.cpp
-        src/PVPGraphicsPipeline/ShaderLoader.h
-        src/PVPGraphicsPipeline/PipelineLayoutBuilder.cpp
-        src/PVPGraphicsPipeline/PipelineLayoutBuilder.h
-        src/PVPGraphicsPipeline/Vertex.cpp
-        src/PVPGraphicsPipeline/Vertex.h
-        src/PVPVMAAllocator/VmaAllocator.cpp
-        src/PVPVMAAllocator/VmaAllocator.cpp
-        src/PVPVMAAllocator/VmaAllocator.h
-        src/PVPBuffer/Buffer.cpp
-        src/PVPBuffer/Buffer.h
-
-        src/PVPCommandBuffer/CommandPool.cpp
-        src/PVPCommandBuffer/CommandPool.h
-        src/PVPSyncManager/SyncBuilder.cpp
-        src/PVPSyncManager/SyncBuilder.h
-        src/PVPSyncManager/Semaphore.h
-        src/PVPSyncManager/Fence.h
         src/globalconst.h
-        src/PVPDescriptorSets/DescriptorSetBuilder.cpp
-        src/PVPDescriptorSets/DescriptorSetBuilder.h
-        src/PVPDescriptorSets/DescriptorPool.h
-        src/PVPDescriptorSets/DescriptorPool.cpp
-        src/PVPDescriptorSets/DescriptorSets.h
+
+        src/Debugger/Debugger.cpp
+        src/Debugger/Debugger.h
+        src/Context/Instance.cpp
+        src/Context/Instance.h
+        src/Context/InstanceBuilder.cpp
+        src/Context/InstanceBuilder.h
+        src/Context/Context.h
+        src/Context/PhysicalDevice.h
+        src/Context/PhysicalDevice.cpp
+        src/Context/LogicPhysicalQueueBuilder.h
+        src/Context/LogicPhysicalQueueBuilder.cpp
+        src/Context/QueueFamilies.h
+        src/Context/Device.cpp
+        src/Context/Device.h
+        src/Context/QueueFamilies.cpp
+        src/Image/Image.cpp
+        src/Image/Image.h
+        src/Image/Sampler.cpp
+        src/Image/Sampler.h
+        src/Image/TextureBuilder.cpp
+        src/Image/TextureBuilder.h
+        src/Image/ImageBuilder.cpp
+        src/Image/ImageBuilder.h
+        src/Image/SamplerBuilder.cpp
+        src/Image/SamplerBuilder.h
+        src/Image/TransitionLayout.cpp
+        src/Image/TransitionLayout.h
+        src/Renderer/Swapchain.cpp
+        src/Renderer/Swapchain.h
+        src/Renderer/Renderer.cpp
+        src/Renderer/Renderer.h
+        src/Renderer/BlitToSwapchain.cpp
+        src/Renderer/BlitToSwapchain.h
+        src/Renderer/GBuffer.cpp
+        src/Renderer/GBuffer.h
+        src/RenderPassOLD/RenderPassBuilder.cpp
+        src/RenderPassOLD/RenderPassBuilder.h
+        src/GraphicsPipeline/GraphicsPipelineBuilder.cpp
+        src/GraphicsPipeline/GraphicsPipelineBuilder.h
+        src/GraphicsPipeline/ShaderLoader.cpp
+        src/GraphicsPipeline/ShaderLoader.h
+        src/GraphicsPipeline/PipelineLayoutBuilder.cpp
+        src/GraphicsPipeline/PipelineLayoutBuilder.h
+        src/GraphicsPipeline/Vertex.cpp
+        src/GraphicsPipeline/Vertex.h
+        src/VMAAllocator/VmaAllocator.cpp
+        src/VMAAllocator/VmaAllocator.cpp
+        src/VMAAllocator/VmaAllocator.h
+        src/Buffer/Buffer.cpp
+        src/Buffer/Buffer.h
+        src/Buffer/BufferBuilder.cpp
+        src/Buffer/BufferBuilder.h
+        src/CommandBuffer/CommandPool.cpp
+        src/CommandBuffer/CommandPool.h
+        src/SyncManager/SyncBuilder.cpp
+        src/SyncManager/SyncBuilder.h
+        src/SyncManager/Semaphore.h
+        src/SyncManager/Fence.h
+        src/SyncManager/FrameSyncers.cpp
+        src/SyncManager/FrameSyncers.h
+        src/DescriptorSets/DescriptorSetBuilder.cpp
+        src/DescriptorSets/DescriptorSetBuilder.h
+        src/DescriptorSets/DescriptorPool.h
+        src/DescriptorSets/DescriptorPool.cpp
+        src/DescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
-        src/PVPBuffer/BufferBuilder.cpp
-        src/PVPBuffer/BufferBuilder.h
-        src/PVPUniformBuffers/UniformBuffer.cpp
-        src/PVPUniformBuffers/UniformBuffer.h
-        src/PVPSyncManager/FrameSyncers.cpp
-        src/PVPSyncManager/FrameSyncers.h
-        src/PVPImage/Sampler.cpp
-        src/PVPImage/Sampler.h
-        src/PVPImage/TextureBuilder.cpp
-        src/PVPImage/TextureBuilder.h
-        src/PVPImage/ImageBuilder.cpp
-        src/PVPImage/ImageBuilder.h
-        src/PVPRenderer/Renderer.cpp
-        src/PVPRenderer/Renderer.h
-        src/PVPImage/SamplerBuilder.cpp
-        src/PVPImage/SamplerBuilder.h
-        src/PVPDebugger/Debugger.cpp
-        src/PVPDebugger/Debugger.h
-        src/PVPWindow/WindowSurface.cpp
-        src/PVPWindow/WindowSurface.h
-        src/PVPWindow/WindowSurfaceBuilder.cpp
-        src/PVPWindow/WindowSurfaceBuilder.h
-        src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.h
-        src/PVPPhysicalDevice/LogicPhysicalQueueBuilder.cpp
-        src/PVPPhysicalDevice/QueueFamilies.h
-        src/PVPDevice/Device.cpp
-        src/PVPDevice/Device.h
-        src/PVPPhysicalDevice/QueueFamilies.cpp
-        src/PVPRenderer/BlitToSwapchain.cpp
-        src/PVPRenderer/BlitToSwapchain.h
-        src/PVPImage/TransitionLayout.cpp
-        src/PVPImage/TransitionLayout.h
-        src/PVPRenderer/GBuffer.cpp
-        src/PVPRenderer/GBuffer.h
-        src/PVPDescriptorSets/DescriptorLayoutBuilder.cpp
-        src/PVPDescriptorSets/DescriptorLayoutBuilder.h
+        src/UniformBuffers/UniformBuffer.cpp
+        src/UniformBuffers/UniformBuffer.h
+        src/Window/WindowSurface.cpp
+        src/Window/WindowSurface.h
+        src/Window/WindowSurfaceBuilder.cpp
+        src/Window/WindowSurfaceBuilder.h
+        src/DescriptorSets/DescriptorLayoutBuilder.cpp
+        src/DescriptorSets/DescriptorLayoutBuilder.h
         src/Scene/PVPScene.cpp
         src/Scene/PVPScene.h
         src/Scene/LoadModel.cpp
         src/Scene/LoadModel.h
-        src/PVPRenderer/LightPass.cpp
-        src/PVPRenderer/LightPass.h
-        src/PVPRenderer/RenderInfoBuilder.cpp
-        src/PVPRenderer/RenderInfoBuilder.h
+        src/Renderer/LightPass.cpp
+        src/Renderer/LightPass.h
+        src/Renderer/RenderInfoBuilder.cpp
+        src/Renderer/RenderInfoBuilder.h
 )
 
 add_subdirectory(libraries)
