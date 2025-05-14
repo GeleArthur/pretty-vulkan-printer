@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Camera.h"
 #include "LoadModel.h"
 
 #include <filesystem>
@@ -31,12 +32,24 @@ namespace pvp
         ~PvpScene();
         void update();
 
-        Context&           context;
-        std::vector<Model> models;
-        glm::mat4x4        camera_view;
-        glm::mat4x4        camera_projection;
+        std::vector<Model> get_models() const
+        {
+            return m_models;
+        };
 
-        UniformBuffer<SceneGlobals>* scene_globals_gpu{};
+        UniformBuffer<SceneGlobals>* get_scene_globals() const
+        {
+            return m_scene_globals_gpu;
+        };
+
+    private:
+        Context&           m_context;
+        std::vector<Model> m_models;
+        Camera             m_camera;
+
+        std::chrono::high_resolution_clock::time_point m_last_frame_time;
+
+        UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
     };
 
 } // namespace pvp

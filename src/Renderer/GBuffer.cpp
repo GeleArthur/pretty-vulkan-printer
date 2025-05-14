@@ -31,18 +31,18 @@ void pvp::GBuffer::build_pipelines()
         .build(0);
 
     m_scene_binding = DescriptorSetBuilder()
-                          .bind_buffer(0, *m_scene.scene_globals_gpu)
                           .set_layout(m_context.descriptor_creator->get_layout(0))
+                          .bind_buffer(0, *m_scene.get_scene_globals())
                           .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
-    float               time = 0;
-    ModelCameraViewData ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_image_info.image_size.width) / static_cast<float>(m_image_info.image_size.height), 0.1f, 10.0f);
-    ubo.proj[1][1] *= -1;
-
-    m_camera_uniform.update(0, ubo);
+    // float               time = 0;
+    // ModelCameraViewData ubo{};
+    // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    // ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_image_info.image_size.width) / static_cast<float>(m_image_info.image_size.height), 0.1f, 10.0f);
+    // ubo.proj[1][1] *= -1;
+    //
+    // m_camera_uniform.update(0, ubo);
 
     // m_descriptor_binding = DescriptorSetBuilder()
     //                            .bind_buffer(0, m_camera_uniform)
@@ -111,7 +111,7 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
     vkCmdBeginRendering(cmd, &color_info.rendering_info);
     {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
-        for (const Model& model : m_scene.models)
+        for (const Model& model : m_scene.get_models())
         {
             VkDeviceSize offset{ 0 };
             vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);

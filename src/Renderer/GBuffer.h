@@ -35,11 +35,9 @@ namespace pvp
 
         UniformBuffer<ModelCameraViewData> m_camera_uniform;
         DescriptorSets                     m_scene_binding;
-        // DescriptorSets                     m_descriptor_binding;
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};
-        // VkPipeline       m_normal_pipeline{};
 
         DestructorQueue m_destructor_queue{};
     };

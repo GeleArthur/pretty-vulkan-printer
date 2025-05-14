@@ -106,6 +106,8 @@ add_executable(${PROJECT_NAME}
         src/Renderer/RenderInfoBuilder.h
         src/Renderer/DepthPrePass.cpp
         src/Renderer/DepthPrePass.h
+        src/Scene/Camera.cpp
+        src/Scene/Camera.h
 )
 
 add_subdirectory(libraries)
