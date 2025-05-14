@@ -11,6 +11,7 @@ namespace pvp
     {
     public:
         explicit DescriptorCreator(const Context& context);
+        ~DescriptorCreator();
         DescriptorLayoutBuilder create_layout();
         void                    add_layout(uint32_t index, VkDescriptorSetLayout layout);
 
@@ -23,7 +24,6 @@ namespace pvp
         {
             return m_pool;
         };
-        void destroy() const;
 
     private:
         const Context&   m_context;

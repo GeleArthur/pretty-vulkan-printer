@@ -50,11 +50,10 @@ namespace pvp
 
     void LightPass::build_pipelines()
     {
-        // DescriptorLayoutBuilder()
-        //     .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-        //     .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-        //     .build(m_context.device->get_device(), m_desciptor_layout);
-        // m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_desciptor_layout, nullptr); });
+        m_context.descriptor_creator->create_layout()
+            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .build(11);
 
         SamplerBuilder()
             .set_filter(VK_FILTER_NEAREST)
@@ -65,11 +64,11 @@ namespace pvp
         m_descriptor_binding = DescriptorSetBuilder()
                                    .bind_image(0, m_gemotry_pass.get_albedo_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                                    .bind_image(1, m_gemotry_pass.get_normal_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                                   .set_layout(m_desciptor_layout)
+                                   .set_layout(m_context.descriptor_creator->get_layout(11))
                                    .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
         PipelineLayoutBuilder()
-            .add_descriptor_layout(m_desciptor_layout)
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout(11))
             .build(m_context.device->get_device(), m_light_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_light_pipeline_layout, nullptr); });
 

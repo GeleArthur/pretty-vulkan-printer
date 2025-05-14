@@ -26,10 +26,21 @@ pvp::DescriptorCreator::DescriptorCreator(const Context& context)
         throw std::runtime_error("failed to create descriptor pool!");
     }
 }
+
+pvp::DescriptorCreator::~DescriptorCreator()
+{
+    for (auto& layout : m_layouts)
+    {
+        vkDestroyDescriptorSetLayout(m_context.device->get_device(), layout.second, nullptr);
+    }
+    vkDestroyDescriptorPool(m_context.device->get_device(), m_pool, nullptr);
+}
+
 pvp::DescriptorLayoutBuilder pvp::DescriptorCreator::create_layout()
 {
     return DescriptorLayoutBuilder{ m_context, *this };
 }
+
 void pvp::DescriptorCreator::add_layout(uint32_t index, VkDescriptorSetLayout layout)
 {
     if (m_layouts.contains(index))
@@ -38,14 +49,4 @@ void pvp::DescriptorCreator::add_layout(uint32_t index, VkDescriptorSetLayout la
     }
 
     m_layouts[index] = layout;
-}
-
-void pvp::DescriptorCreator::destroy() const
-{
-    for (auto& layout : m_layouts)
-    {
-        vkDestroyDescriptorSetLayout(m_context.device->get_device(), layout.second, nullptr);
-    }
-
-    vkDestroyDescriptorPool(m_context.device->get_device(), m_pool, nullptr);
 }

@@ -29,8 +29,7 @@ namespace pvp
         Sampler         m_sampler{};
         const ImageInfo m_image_info;
 
-        DescriptorSets        m_descriptor_binding;
-        VkDescriptorSetLayout m_desciptor_layout;
+        DescriptorSets m_descriptor_binding;
 
         UniformBuffer<glm::vec2>* m_screensize_buffer;
 

@@ -98,7 +98,10 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
 
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
 
-    const auto color_info = RenderInfoBuilder().add_image(&m_albedo_image).build();
+    const auto color_info = RenderInfoBuilder()
+                                .add_image(&m_albedo_image)
+                                .add_image(&m_normal_image)
+                                .build();
 
     vkCmdBeginRendering(cmd, &color_info.rendering_info);
     {
