@@ -12,11 +12,13 @@
 
 namespace pvp
 {
+
     struct Model
     {
-        Buffer   vertex_data;
-        Buffer   index_data;
-        uint32_t index_count;
+        Buffer      vertex_data;
+        Buffer      index_data;
+        uint32_t    index_count;
+        glm::mat4x4 transform;
     };
 
     struct SceneGlobals

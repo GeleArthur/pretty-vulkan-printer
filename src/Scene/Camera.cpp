@@ -17,7 +17,7 @@ void pvp::Camera::update(float delta_time)
 
     if (glfwGetMouseButton(m_context.window_surface->get_window(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
     {
-        float xoffset = m_prev_mouse_x - xpos;
+        float xoffset = xpos - m_prev_mouse_x;
         float yoffset = m_prev_mouse_y - ypos;
 
         xoffset *= m_sensitivity;
@@ -32,8 +32,8 @@ void pvp::Camera::update(float delta_time)
 
     glm::vec3 direction;
     direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    direction.y = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    direction.z = sin(glm::radians(m_pitch));
+    direction.y = sin(glm::radians(m_pitch));
+    direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
     m_front = glm::normalize(direction);
 
     if (glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_W) == GLFW_PRESS)

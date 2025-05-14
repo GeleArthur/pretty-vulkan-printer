@@ -35,22 +35,9 @@ void pvp::GBuffer::build_pipelines()
                           .bind_buffer(0, *m_scene.get_scene_globals())
                           .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
-    // float               time = 0;
-    // ModelCameraViewData ubo{};
-    // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    // ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(m_image_info.image_size.width) / static_cast<float>(m_image_info.image_size.height), 0.1f, 10.0f);
-    // ubo.proj[1][1] *= -1;
-    //
-    // m_camera_uniform.update(0, ubo);
-
-    // m_descriptor_binding = DescriptorSetBuilder()
-    //                            .bind_buffer(0, m_camera_uniform)
-    //                            .set_layout(m_context.descriptor_creator->get_layout(0))
-    //                            .build(m_context.device->get_device(), *m_context.descriptor_creator);
-
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4) })
         .build(m_context.device->get_device(), m_pipeline_layout);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
@@ -116,6 +103,7 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
             VkDeviceSize offset{ 0 };
             vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
             vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model.transform);
             vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
         }
     }

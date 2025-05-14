@@ -2,26 +2,22 @@
 #include "LoadModel.h"
 
 #include <DestructorQueue.h>
-#include <array>
 #include <Buffer/BufferBuilder.h>
 #include <CommandBuffer/CommandPool.h>
 #include <GLFW/glfw3.h>
 #include <GraphicsPipeline/Vertex.h>
 #include <Renderer/Swapchain.h>
 #include <VMAAllocator/VmaAllocator.h>
-#include <Window/WindowSurface.h>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
-#include <spdlog/spdlog.h>
-#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <spdlog/spdlog.h>
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
     , m_camera(context)
 {
-    // auto models_loaded = load_model_file(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    auto models_loaded = load_model_file(std::filesystem::absolute("resources/viking_room.obj"));
+    auto models_loaded = load_model_file(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
@@ -34,6 +30,7 @@ pvp::PvpScene::PvpScene(Context& context)
         LoadModel& model = models_loaded[i];
         Model&     new_model = m_models[i];
 
+        new_model.transform = model.transform;
         new_model.index_count = model.indices.size();
 
         // Vertex loading

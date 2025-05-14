@@ -41,16 +41,13 @@ std::vector<pvp::LoadModel> pvp::load_model_file(const std::filesystem::path& pa
             LoadModel model;
             model.vertices.reserve(mesh->mNumVertices);
             model.indices.reserve(mesh->mNumFaces * 3);
-            model.transform = node_transform; // Store transform *separately*
+            model.transform = node_transform;
 
             for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
             {
                 const aiVector3D& pos = mesh->mVertices[v];
                 const aiVector3D& norm = mesh->mNormals[v];
-                aiVector3D        texcoord(0.0f, 0.0f, 0.0f);
-
-                if (mesh->HasTextureCoords(0))
-                    texcoord = mesh->mTextureCoords[0][v];
+                const aiVector3D& texcoord = mesh->mTextureCoords[0][v];
 
                 model.vertices.emplace_back(glm::vec3(pos.x, pos.y, pos.z),
                                             glm::vec2(texcoord.x, texcoord.y),
