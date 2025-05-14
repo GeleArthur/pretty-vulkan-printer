@@ -7,6 +7,7 @@ pvp::Camera::Camera(const Context& context)
     : m_context(context)
 {
     m_perspective = glm::perspective(glm::radians(45.0f), static_cast<float>(context.swapchain->get_swapchain_extent().width) / static_cast<float>(context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
+    m_perspective[1][1] *= -1;
     glfwGetCursorPos(m_context.window_surface->get_window(), &m_prev_mouse_x, &m_prev_mouse_y);
 }
 void pvp::Camera::update(float delta_time)
@@ -16,8 +17,8 @@ void pvp::Camera::update(float delta_time)
 
     if (glfwGetMouseButton(m_context.window_surface->get_window(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
     {
-        float xoffset = xpos - m_prev_mouse_x;
-        float yoffset = ypos - m_prev_mouse_y;
+        float xoffset = m_prev_mouse_x - xpos;
+        float yoffset = m_prev_mouse_y - ypos;
 
         xoffset *= m_sensitivity;
         yoffset *= m_sensitivity;
@@ -31,8 +32,8 @@ void pvp::Camera::update(float delta_time)
 
     glm::vec3 direction;
     direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    direction.y = sin(glm::radians(m_pitch));
-    direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    direction.y = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    direction.z = sin(glm::radians(m_pitch));
     m_front = glm::normalize(direction);
 
     if (glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_W) == GLFW_PRESS)
