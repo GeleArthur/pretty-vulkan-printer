@@ -34,7 +34,7 @@ namespace pvp
     template<typename T>
     DescriptorSetBuilder& DescriptorSetBuilder::bind_buffer(uint32_t binding, const UniformBuffer<T>& buffer)
     {
-        m_buffers.push_back({ binding, buffer.get_buffers() });
+        m_buffers.emplace_back(binding, buffer.get_buffers());
         return *this;
     }
 } // namespace pvp

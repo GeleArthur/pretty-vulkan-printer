@@ -4,6 +4,7 @@
 
 namespace pvp
 {
+    class WindowSurface;
     class Swapchain;
     class Device;
     class PvpVmaAllocator;
@@ -20,6 +21,7 @@ namespace pvp
         QueueFamilies*     queue_families;
         DescriptorCreator* descriptor_creator;
         Swapchain*         swapchain;
+        WindowSurface*     window_surface;
     };
 
     struct ImageInfo

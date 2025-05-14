@@ -29,6 +29,11 @@ namespace pvp
             return m_allocation_info;
         }
 
+        [[nodiscard]] VkDeviceSize get_size() const
+        {
+            return m_buffer_size;
+        }
+
         void copy_data_into_buffer(std::span<const std::byte> input_data) const;
 
     private:
@@ -37,5 +42,6 @@ namespace pvp
         VmaAllocator      m_allocator{ VK_NULL_HANDLE };
         VmaAllocation     m_allocation{ VK_NULL_HANDLE };
         VmaAllocationInfo m_allocation_info{};
+        VkDeviceSize      m_buffer_size{};
     };
 } // namespace pvp

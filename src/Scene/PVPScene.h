@@ -27,11 +27,16 @@ namespace pvp
     class PvpScene
     {
     public:
-        explicit PvpScene(const Context& context);
+        explicit PvpScene(Context& context);
         ~PvpScene();
+        void update();
 
-        std::vector<Model>           models;
-        UniformBuffer<SceneGlobals>* scene_globals{};
+        Context&           context;
+        std::vector<Model> models;
+        glm::mat4x4        camera_view;
+        glm::mat4x4        camera_projection;
+
+        UniformBuffer<SceneGlobals>* scene_globals_gpu{};
     };
 
 } // namespace pvp

@@ -46,6 +46,7 @@ void pvp::App::run()
     m_context.device = &m_device;
     m_context.allocator = &m_allocator;
     m_context.queue_families = &m_queue_families;
+    m_context.window_surface = &m_window_surface;
 
     m_context.descriptor_creator = new DescriptorCreator(m_context);
     m_destructor_queue.add_to_queue([&] { delete m_context.descriptor_creator; });
@@ -64,6 +65,7 @@ void pvp::App::run()
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
         glfwPollEvents();
+        m_scene->update();
         m_renderer->draw();
     }
 

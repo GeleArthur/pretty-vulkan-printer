@@ -47,7 +47,7 @@ namespace pvp
                 VkDescriptorBufferInfo buffer_info{};
                 buffer_info.buffer = std::get<1>(buffer).get()[i].get_buffer();
                 buffer_info.offset = 0;
-                buffer_info.range = std::get<1>(buffer).get()[i].get_allocation_info().size;
+                buffer_info.range = std::get<1>(buffer).get()[i].get_size();
 
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

@@ -34,9 +34,10 @@ namespace pvp
         const ImageInfo m_image_info;
 
         UniformBuffer<ModelCameraViewData> m_camera_uniform;
-        DescriptorSets                     m_descriptor_binding;
+        DescriptorSets                     m_scene_binding;
+        // DescriptorSets                     m_descriptor_binding;
 
-        VkPipelineLayout m_albedo_pipeline_layout{};
+        VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};
         // VkPipeline       m_normal_pipeline{};
 

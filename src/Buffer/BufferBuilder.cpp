@@ -43,5 +43,6 @@ namespace pvp
         }
 
         buffer.m_allocator = allocator;
+        buffer.m_buffer_size = m_buffer_size;
     }
 } // namespace pvp

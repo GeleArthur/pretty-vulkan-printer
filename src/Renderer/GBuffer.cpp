@@ -28,7 +28,12 @@ void pvp::GBuffer::build_pipelines()
 {
     m_context.descriptor_creator->create_layout()
         .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-        .build(10);
+        .build(0);
+
+    m_scene_binding = DescriptorSetBuilder()
+                          .bind_buffer(0, *m_scene.scene_globals_gpu)
+                          .set_layout(m_context.descriptor_creator->get_layout(0))
+                          .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
     float               time = 0;
     ModelCameraViewData ubo{};
@@ -39,21 +44,21 @@ void pvp::GBuffer::build_pipelines()
 
     m_camera_uniform.update(0, ubo);
 
-    m_descriptor_binding = DescriptorSetBuilder()
-                               .bind_buffer(0, m_camera_uniform)
-                               .set_layout(m_context.descriptor_creator->get_layout(10))
-                               .build(m_context.device->get_device(), *m_context.descriptor_creator);
+    // m_descriptor_binding = DescriptorSetBuilder()
+    //                            .bind_buffer(0, m_camera_uniform)
+    //                            .set_layout(m_context.descriptor_creator->get_layout(0))
+    //                            .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
     PipelineLayoutBuilder()
-        .add_descriptor_layout(m_context.descriptor_creator->get_layout(10))
-        .build(m_context.device->get_device(), m_albedo_pipeline_layout);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_albedo_pipeline_layout, nullptr); });
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
+        .build(m_context.device->get_device(), m_pipeline_layout);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
     GraphicsPipelineBuilder()
-        .add_shader("shaders/gbuffer-albedo.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
-        .add_shader("shaders/gbuffer-albedo.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        .add_shader("shaders/gpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
+        .add_shader("shaders/gpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_color_format(std::array{ m_image_info.color_format, m_image_info.color_format })
-        .set_pipeline_layout(m_albedo_pipeline_layout)
+        .set_pipeline_layout(m_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
         .set_input_binding_description(Vertex::get_binding_description())
         .build(*m_context.device, m_albedo_pipeline);
@@ -96,7 +101,7 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                                      VK_ACCESS_2_NONE,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene_binding.sets[0], 0, nullptr);
 
     const auto color_info = RenderInfoBuilder()
                                 .add_image(&m_albedo_image)

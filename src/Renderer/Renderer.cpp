@@ -9,6 +9,9 @@
 
 #include "BlitToSwapchain.h"
 
+#include <DescriptorSets/DescriptorLayoutBuilder.h>
+#include <Scene/PVPScene.h>
+
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
