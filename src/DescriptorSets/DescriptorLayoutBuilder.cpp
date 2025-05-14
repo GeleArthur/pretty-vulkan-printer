@@ -1,27 +1,42 @@
 ﻿#include "DescriptorLayoutBuilder.h"
+
+#include "DescriptorCreator.h"
+
 #include <stdexcept>
+#include <Context/Device.h>
 
 namespace pvp
 {
+    DescriptorLayoutBuilder::DescriptorLayoutBuilder(const Context& context, DescriptorCreator& creator)
+        : m_creator(creator)
+        , m_context(context)
+    {
+    }
     DescriptorLayoutBuilder& DescriptorLayoutBuilder::add_binding(VkDescriptorType type, VkShaderStageFlags stage)
     {
         m_bindings.push_back(VkDescriptorSetLayoutBinding{ static_cast<uint32_t>(m_bindings.size()), type, 1u, stage, VK_NULL_HANDLE });
         return *this;
     }
 
-    void DescriptorLayoutBuilder::build(const VkDevice& device, VkDescriptorSetLayout& layout)
+    DescriptorCreator& DescriptorLayoutBuilder::build(uint32_t index)
     {
         const VkDescriptorSetLayoutCreateInfo layout_info{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            nullptr,
-            0,
-            static_cast<uint32_t>(m_bindings.size()),
-            m_bindings.data()
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .bindingCount = static_cast<uint32_t>(m_bindings.size()),
+            .pBindings = m_bindings.data()
         };
 
-        if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &layout) != VK_SUCCESS)
+        VkDescriptorSetLayout result;
+
+        if (vkCreateDescriptorSetLayout(m_context.device->get_device(), &layout_info, nullptr, &result) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create descriptor set layout!");
         }
+
+        m_creator.add_layout(index, result);
+
+        return m_creator;
     }
 } // namespace pvp

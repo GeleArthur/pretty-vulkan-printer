@@ -1,20 +1,25 @@
 ﻿#pragma once
 
-#include <Context/Instance.h>
-#include <Context/QueueFamilies.h>
-#include <DescriptorSets/DescriptorPool.h>
-#include <VMAAllocator/VmaAllocator.h>
+#include <vulkan/vulkan.h>
 
 namespace pvp
 {
+    class Swapchain;
+    class Device;
+    class PvpVmaAllocator;
+    class PhysicalDevice;
+    class Instance;
+    class QueueFamilies;
+    class DescriptorCreator;
     struct Context
     {
-        Instance*        instance;
-        PhysicalDevice*  physical_device;
-        Device*          device;
-        PvpVmaAllocator* allocator;
-        QueueFamilies*   queue_families;
-        DescriptorPool*  descriptor_pool;
+        Instance*          instance;
+        PhysicalDevice*    physical_device;
+        Device*            device;
+        PvpVmaAllocator*   allocator;
+        QueueFamilies*     queue_families;
+        DescriptorCreator* descriptor_creator;
+        Swapchain*         swapchain;
     };
 
     struct ImageInfo

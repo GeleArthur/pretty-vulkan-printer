@@ -2,6 +2,8 @@
 
 #include "Image.h"
 
+#include <exception>
+
 pvp::ImageBuilder& pvp::ImageBuilder::set_size(const VkExtent2D& size)
 {
     m_size = size;

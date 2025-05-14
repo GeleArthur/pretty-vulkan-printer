@@ -12,6 +12,7 @@
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
+    , m_scene{ scene }
 {
     m_frame_syncers = FrameSyncers(m_context);
     m_destructor_queue.add_to_queue([&] { m_frame_syncers.destroy(m_context.device->get_device()); });
@@ -21,9 +22,9 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpS
 
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
 
-    m_geomotry_draw = new GBuffer(m_context, scene, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() });
-    m_destructor_queue.add_to_queue([&] { delete m_geomotry_draw; });
-    m_light_pass = new LightPass(m_context, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() }, *m_geomotry_draw);
+    m_geometry_draw = new GBuffer(m_context, scene, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() });
+    m_destructor_queue.add_to_queue([&] { delete m_geometry_draw; });
+    m_light_pass = new LightPass(m_context, ImageInfo{ m_swapchain.get_depth_format(), m_swapchain.get_swapchain_surface_format().format, m_swapchain.get_swapchain_extent() }, *m_geometry_draw);
     m_destructor_queue.add_to_queue([&] { delete m_light_pass; });
     m_blit_to_swapchain = new BlitToSwapchain(m_context, swapchain, m_light_pass->get_light_image());
 }
@@ -72,7 +73,7 @@ void pvp::Renderer::prepare_frame()
 void pvp::Renderer::draw()
 {
     prepare_frame();
-    m_geomotry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
+    m_geometry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_blit_to_swapchain->draw(m_cmds_graphics[m_double_buffer_frame], m_current_swapchain_index);
     end_frame();

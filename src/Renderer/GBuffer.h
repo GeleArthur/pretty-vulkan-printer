@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <DestructorQueue.h>
 #include <Buffer/Buffer.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <Image/Image.h>
@@ -37,7 +38,7 @@ namespace pvp
 
         VkPipelineLayout m_albedo_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};
-        VkPipeline       m_normal_pipeline{};
+        // VkPipeline       m_normal_pipeline{};
 
         DestructorQueue m_destructor_queue{};
     };

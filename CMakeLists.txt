@@ -84,8 +84,8 @@ add_executable(${PROJECT_NAME}
         src/SyncManager/FrameSyncers.h
         src/DescriptorSets/DescriptorSetBuilder.cpp
         src/DescriptorSets/DescriptorSetBuilder.h
-        src/DescriptorSets/DescriptorPool.h
-        src/DescriptorSets/DescriptorPool.cpp
+        src/DescriptorSets/DescriptorCreator.h
+        src/DescriptorSets/DescriptorCreator.cpp
         src/DescriptorSets/DescriptorSets.h
         src/UniformBufferStruct.h
         src/UniformBuffers/UniformBuffer.cpp

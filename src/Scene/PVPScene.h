@@ -5,6 +5,7 @@
 #include <vector>
 #include <Buffer/Buffer.h>
 #include <Context/Context.h>
+#include <UniformBuffers/UniformBuffer.h>
 #include <glm/mat4x4.hpp>
 #include <glm/detail/func_packing_simd.inl>
 
@@ -12,19 +13,25 @@ namespace pvp
 {
     struct Model
     {
-        Buffer      vertex_data;
-        Buffer      index_data;
-        uint32_t    index_count;
-        glm::mat4x4 model_mat;
+        Buffer   vertex_data;
+        Buffer   index_data;
+        uint32_t index_count;
     };
 
-    struct PvpScene
+    struct SceneGlobals
     {
-        std::vector<Model> models;
-        glm::mat4x4        camera_view_projection{};
+        glm::mat4x4 camera_view_projection;
+        glm::vec3   lights[1];
     };
 
-    PvpScene load_scene(const Context& context);
-    void     destroy_scene(PvpScene& scene);
+    class PvpScene
+    {
+    public:
+        explicit PvpScene(const Context& context);
+        ~PvpScene();
+
+        std::vector<Model>           models;
+        UniformBuffer<SceneGlobals>* scene_globals{};
+    };
 
 } // namespace pvp

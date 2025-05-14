@@ -26,11 +26,9 @@ pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, const Image
 
 void pvp::GBuffer::build_pipelines()
 {
-    VkDescriptorSetLayout layout;
-    DescriptorLayoutBuilder()
+    m_context.descriptor_creator->create_layout()
         .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-        .build(vk::Device(m_context.device->get_device()), layout);
-    m_destructor_queue.add_to_queue([&, layout] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), layout, nullptr); });
+        .build(10);
 
     float               time = 0;
     ModelCameraViewData ubo{};
@@ -43,33 +41,23 @@ void pvp::GBuffer::build_pipelines()
 
     m_descriptor_binding = DescriptorSetBuilder()
                                .bind_buffer(0, m_camera_uniform)
-                               .set_layout(layout)
-                               .build(m_context.device->get_device(), *m_context.descriptor_pool);
+                               .set_layout(m_context.descriptor_creator->get_layout(10))
+                               .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
     PipelineLayoutBuilder()
-        .add_descriptor_layout(layout)
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout(10))
         .build(m_context.device->get_device(), m_albedo_pipeline_layout);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_albedo_pipeline_layout, nullptr); });
 
     GraphicsPipelineBuilder()
         .add_shader("shaders/gbuffer-albedo.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
         .add_shader("shaders/gbuffer-albedo.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
-        .set_color_format(std::array{ m_image_info.color_format })
+        .set_color_format(std::array{ m_image_info.color_format, m_image_info.color_format })
         .set_pipeline_layout(m_albedo_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
         .set_input_binding_description(Vertex::get_binding_description())
         .build(*m_context.device, m_albedo_pipeline);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_albedo_pipeline, nullptr); });
-
-    GraphicsPipelineBuilder()
-        .add_shader("shaders/gbuffer-normal.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
-        .add_shader("shaders/gbuffer-normal.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
-        .set_color_format(std::array{ m_image_info.color_format })
-        .set_pipeline_layout(m_albedo_pipeline_layout)
-        .set_input_attribute_description(Vertex::get_attribute_descriptions())
-        .set_input_binding_description(Vertex::get_binding_description())
-        .build(*m_context.device, m_normal_pipeline);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_normal_pipeline, nullptr); });
 }
 
 void pvp::GBuffer::create_images()
@@ -110,28 +98,11 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
 
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
 
-    const auto color_info = RenderInfoBuilder().set_image(&m_albedo_image).build();
+    const auto color_info = RenderInfoBuilder().add_image(&m_albedo_image).build();
 
     vkCmdBeginRendering(cmd, &color_info.rendering_info);
     {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
-
-        for (const Model& model : m_scene.models)
-        {
-            VkDeviceSize offset{ 0 };
-            vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
-            vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
-        }
-    }
-    vkCmdEndRendering(cmd);
-
-    const auto normal_info = RenderInfoBuilder().set_image(&m_normal_image).build();
-
-    vkCmdBeginRendering(cmd, &normal_info.rendering_info);
-    {
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_normal_pipeline);
-
         for (const Model& model : m_scene.models)
         {
             VkDeviceSize offset{ 0 };

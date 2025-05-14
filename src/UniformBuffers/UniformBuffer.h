@@ -10,6 +10,8 @@ namespace pvp
     class UniformBuffer
     {
     public:
+        explicit UniformBuffer() = default;
+
         explicit UniformBuffer(const VmaAllocator& allocator);
         ~UniformBuffer();
 
@@ -41,7 +43,6 @@ namespace pvp
                 .build(allocator, m_buffers[i]);
         }
     }
-
     template<typename T>
     UniformBuffer<T>::~UniformBuffer()
     {

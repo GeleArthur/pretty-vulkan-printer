@@ -20,7 +20,7 @@ namespace pvp
     void WindowSurfaceBuilder::build(const Instance& instance, WindowSurface& window_surface) const
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         window_surface.m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 

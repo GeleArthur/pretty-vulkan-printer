@@ -7,6 +7,10 @@
 
 namespace pvp
 {
+    class DepthPrePass;
+}
+namespace pvp
+{
     class BlitToSwapchain;
 }
 
@@ -27,16 +31,21 @@ namespace pvp
         }
 
     private:
-        const Context&               m_context;
-        Swapchain&                   m_swapchain;
-        uint32_t                     m_double_buffer_frame{ 0 };
-        uint32_t                     m_current_swapchain_index{};
-        FrameSyncers                 m_frame_syncers{};
+        const Context&  m_context;
+        Swapchain&      m_swapchain;
+        const PvpScene& m_scene;
+
+        uint32_t     m_double_buffer_frame{ 0 };
+        uint32_t     m_current_swapchain_index{};
+        FrameSyncers m_frame_syncers{};
+
         CommandPool                  m_cmd_pool_graphics_present{};
         std::vector<VkCommandBuffer> m_cmds_graphics{};
-        GBuffer*                     m_geomotry_draw{};
-        LightPass*                   m_light_pass{};
-        BlitToSwapchain*             m_blit_to_swapchain{};
+
+        DepthPrePass*    m_depth_pre_pass{};
+        GBuffer*         m_geometry_draw{};
+        LightPass*       m_light_pass{};
+        BlitToSwapchain* m_blit_to_swapchain{};
 
         DestructorQueue m_destructor_queue{};
     };

@@ -31,12 +31,12 @@ namespace pvp
 
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
 
-        const auto render_color_info = RenderInfoBuilder().set_image(&m_light_image).build();
+        const auto render_color_info = RenderInfoBuilder().add_image(&m_light_image).build();
 
         vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
         {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline);
-            vkCmdDrawIndexed(cmd, 3, 1, 0, 0, 0);
+            vkCmdDraw(cmd, 3, 1, 0, 0);
         }
         vkCmdEndRendering(cmd);
 
@@ -50,11 +50,11 @@ namespace pvp
 
     void LightPass::build_pipelines()
     {
-        DescriptorLayoutBuilder()
-            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .build(m_context.device->get_device(), m_desciptor_layout);
-        m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_desciptor_layout, nullptr); });
+        // DescriptorLayoutBuilder()
+        //     .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        //     .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        //     .build(m_context.device->get_device(), m_desciptor_layout);
+        // m_destructor_queue.add_to_queue([&] { vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_desciptor_layout, nullptr); });
 
         SamplerBuilder()
             .set_filter(VK_FILTER_NEAREST)
@@ -66,7 +66,7 @@ namespace pvp
                                    .bind_image(0, m_gemotry_pass.get_albedo_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                                    .bind_image(1, m_gemotry_pass.get_normal_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                                    .set_layout(m_desciptor_layout)
-                                   .build(m_context.device->get_device(), *m_context.descriptor_pool);
+                                   .build(m_context.device->get_device(), *m_context.descriptor_creator);
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_desciptor_layout)

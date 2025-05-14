@@ -1,19 +1,22 @@
 ﻿#pragma once
-#include "Context/PhysicalDevice.h"
-#include "Renderer/Swapchain.h"
-
-#include <Scene/LoadModel.h>
+#include <Context/PhysicalDevice.h>
+#include <Context/QueueFamilies.h>
+#include <Buffer/Buffer.h>
 #include <CommandBuffer/CommandPool.h>
-#include <DescriptorSets/DescriptorSetBuilder.h>
+#include <Context/Context.h>
 #include <Context/Device.h>
 #include <Context/Instance.h>
+#include <DescriptorSets/DescriptorSets.h>
+#include <Image/Image.h>
+#include <Image/Sampler.h>
 #include <Renderer/Renderer.h>
-#include <SyncManager/FrameSyncers.h>
+#include <Scene/LoadModel.h>
+#include <VMAAllocator/VmaAllocator.h>
 #include <Window/WindowSurface.h>
-#include <Scene/PVPScene.h>
 
 namespace pvp
 {
+    class Swapchain;
     class App final
     {
     public:
@@ -28,8 +31,6 @@ namespace pvp
         PvpVmaAllocator m_allocator{};
         Context         m_context{};
 
-        // TODO: Move to renderer below
-
         Swapchain* m_swapchain{};
 
         VkPipelineLayout m_pipeline_layout{};
@@ -37,16 +38,14 @@ namespace pvp
         Buffer           m_vertex_buffer{};
         Buffer           m_index_buffer{};
 
-        PvpScene                            m_scene{};
-        UniformBuffer<ModelCameraViewData>* m_uniform_buffer{};
-        LoadModel                           m_model{};
-        Sampler                             m_sampler{};
-        Image                               m_texture{};
-        DescriptorSets                      m_descriptors{};
-        DescriptorPool                      m_descriptor_pool{};
-        uint32_t                            m_double_buffer_frame{ 0 };
-        CommandPool                         m_cmd_pool_transfer_buffers{};
-        Renderer*                           m_renderer{};
+        PvpScene*      m_scene{};
+        LoadModel      m_model{};
+        Sampler        m_sampler{};
+        Image          m_texture{};
+        DescriptorSets m_descriptors{};
+        uint32_t       m_double_buffer_frame{ 0 };
+        CommandPool    m_cmd_pool_transfer_buffers{};
+        Renderer*      m_renderer{};
 
         DestructorQueue m_destructor_queue;
     };

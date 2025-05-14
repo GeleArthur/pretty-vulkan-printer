@@ -63,16 +63,19 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     multisampling.alphaToCoverageEnable = VK_FALSE;
     multisampling.alphaToOneEnable = VK_FALSE;
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment{};
-    color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    color_blend_attachment.blendEnable = VK_FALSE;
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment(m_color_formats.size());
+    for (auto& blend : color_blend_attachment)
+    {
+        blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        blend.blendEnable = VK_FALSE;
+    }
 
     VkPipelineColorBlendStateCreateInfo color_blending{};
     color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blending.logicOpEnable = VK_FALSE;
     color_blending.logicOp = VK_LOGIC_OP_COPY;
-    color_blending.attachmentCount = 1;
-    color_blending.pAttachments = &color_blend_attachment;
+    color_blending.attachmentCount = static_cast<uint32_t>(color_blend_attachment.size());
+    color_blending.pAttachments = color_blend_attachment.data();
     color_blending.blendConstants[0] = 0.0f;
     color_blending.blendConstants[1] = 0.0f;
     color_blending.blendConstants[2] = 0.0f;
@@ -98,36 +101,36 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     depth_stencil.front = {};
     depth_stencil.back = {};
 
-    VkGraphicsPipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = pipeline_shader_stages.size();
-    pipelineInfo.pStages = pipeline_shader_stages.data();
+    VkGraphicsPipelineCreateInfo pipeline_info{};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.stageCount = pipeline_shader_stages.size();
+    pipeline_info.pStages = pipeline_shader_stages.data();
 
-    pipelineInfo.pVertexInputState = &vertex_input_info;
-    pipelineInfo.pInputAssemblyState = &input_assembly;
-    pipelineInfo.pViewportState = &viewport_state;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = &depth_stencil;
-    pipelineInfo.pColorBlendState = &color_blending;
-    pipelineInfo.pDynamicState = &dynamic_state;
+    pipeline_info.pVertexInputState = &vertex_input_info;
+    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pViewportState = &viewport_state;
+    pipeline_info.pRasterizationState = &rasterizer;
+    pipeline_info.pMultisampleState = &multisampling;
+    pipeline_info.pDepthStencilState = &depth_stencil;
+    pipeline_info.pColorBlendState = &color_blending;
+    pipeline_info.pDynamicState = &dynamic_state;
 
-    pipelineInfo.layout = m_pipeline_layout;
-    pipelineInfo.renderPass = VK_NULL_HANDLE;
-    pipelineInfo.subpass = 0;
+    pipeline_info.layout = m_pipeline_layout;
+    pipeline_info.renderPass = VK_NULL_HANDLE;
+    pipeline_info.subpass = 0;
 
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-    pipelineInfo.basePipelineIndex = -1;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
 
     VkPipelineRenderingCreateInfo render_target{};
     render_target.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-    render_target.colorAttachmentCount = m_color_formats.size();
+    render_target.colorAttachmentCount = static_cast<uint32_t>(m_color_formats.size());
     render_target.pColorAttachmentFormats = m_color_formats.data();
     render_target.depthAttachmentFormat = m_depth_format;
 
-    pipelineInfo.pNext = &render_target;
+    pipeline_info.pNext = &render_target;
 
-    if (vkCreateGraphicsPipelines(device.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+    if (vkCreateGraphicsPipelines(device.get_device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
