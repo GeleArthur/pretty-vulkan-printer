@@ -49,8 +49,6 @@ namespace pvp
         std::vector<Model> m_models;
         Camera             m_camera;
 
-        std::chrono::high_resolution_clock::time_point m_last_frame_time;
-
         UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
     };
 

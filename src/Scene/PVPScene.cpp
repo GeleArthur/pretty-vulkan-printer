@@ -87,9 +87,13 @@ pvp::PvpScene::~PvpScene()
 }
 void pvp::PvpScene::update()
 {
-    const auto  now = std::chrono::high_resolution_clock::now();
-    const float delta_time = std::chrono::duration<float>(now - m_last_frame_time).count();
-    m_last_frame_time = now;
+    static auto start_time = std::chrono::high_resolution_clock::now();
+    static auto last_time = std::chrono::high_resolution_clock::now();
+    const auto  current_time = std::chrono::high_resolution_clock::now();
+    const float delta_time = std::chrono::duration<float>(current_time - last_time).count();
+    const float time = std::chrono::duration<float>(current_time - start_time).count();
+
+    last_time = current_time;
 
     m_camera.update(delta_time);
 
