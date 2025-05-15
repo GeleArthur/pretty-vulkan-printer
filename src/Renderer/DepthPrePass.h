@@ -12,9 +12,9 @@ namespace pvp
         explicit DepthPrePass(const Context& context, const PvpScene& scene);
         void draw(VkCommandBuffer cmd);
 
-        const Image& get_depth_image() const
+        Image* get_depth_image()
         {
-            return m_depth_image;
+            return &m_depth_image;
         };
 
     private:

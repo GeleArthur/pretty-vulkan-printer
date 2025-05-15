@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include <globalconst.h>
+#include <memory>
+#include <tuple>
 #include <vector>
 #include <Image/Image.h>
-#include <Context/Context.h>
 #include <vulkan/vulkan.h>
-#include <memory>
 
 struct RenderInfo
 {
@@ -23,16 +23,17 @@ namespace pvp
         DISABLE_MOVE(RenderInfoBuilder);
 
         RenderInfoBuilder& set_layout(VkImageLayout layout);
-        RenderInfoBuilder& add_color(Image* image);
-        RenderInfoBuilder& set_depth(Image* image);
+        RenderInfoBuilder& add_color(Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
+        RenderInfoBuilder& set_depth(Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
         RenderInfoBuilder& set_size(VkExtent2D size);
 
         RenderInfo build() const;
 
     private:
-        std::vector<Image*> m_colors;
-        Image*              m_depth{ nullptr };
-        VkImageLayout       m_layout{ VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-        VkExtent2D          m_size{};
+        using ImageLoadStore = std::tuple<Image*, VkAttachmentLoadOp, VkAttachmentStoreOp>;
+        std::vector<ImageLoadStore> m_colors;
+        ImageLoadStore              m_depth{};
+        VkImageLayout               m_layout{ VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        VkExtent2D                  m_size{};
     };
 } // namespace pvp

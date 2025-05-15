@@ -24,7 +24,7 @@ namespace pvp
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene_binding.sets[0], 0, nullptr);
 
         const auto depth_info = RenderInfoBuilder()
-                                    .set_depth(&m_depth_image)
+                                    .set_depth(&m_depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
                                     .set_size(m_depth_image.get_size())
                                     .build();
 
@@ -44,7 +44,7 @@ namespace pvp
 
         m_depth_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                                        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+                                        VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
                                         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT);

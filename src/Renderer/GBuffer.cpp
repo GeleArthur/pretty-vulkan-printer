@@ -1,5 +1,6 @@
 ﻿#include "GBuffer.h"
 
+#include "DepthPrePass.h"
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
 
@@ -15,9 +16,10 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene)
+pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& depth)
     : m_context(context)
     , m_scene(scene)
+    , m_depth_pre_pass(depth)
 {
     build_pipelines();
     create_images();
@@ -44,6 +46,7 @@ void pvp::GBuffer::build_pipelines()
         .add_shader("shaders/gpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
         .add_shader("shaders/gpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format, m_context.swapchain->get_swapchain_surface_format().format })
+        .set_depth_format(VK_FORMAT_D32_SFLOAT)
         .set_pipeline_layout(m_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
         .set_input_binding_description(Vertex::get_binding_description())
@@ -91,8 +94,9 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene_binding.sets[0], 0, nullptr);
 
     const auto color_info = RenderInfoBuilder()
-                                .add_color(&m_albedo_image)
-                                .add_color(&m_normal_image)
+                                .add_color(&m_albedo_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+                                .add_color(&m_normal_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+                                .set_depth(m_depth_pre_pass.get_depth_image(), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE)
                                 .set_size(m_albedo_image.get_size())
                                 .build();
 

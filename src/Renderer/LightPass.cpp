@@ -81,7 +81,7 @@ namespace pvp
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
 
         const auto render_color_info = RenderInfoBuilder()
-                                           .add_color(&m_light_image)
+                                           .add_color(&m_light_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
                                            .set_size(m_light_image.get_size())
                                            .build();
 
