@@ -1,6 +1,7 @@
 ﻿#include "GBuffer.h"
 
 #include "RenderInfoBuilder.h"
+#include "Swapchain.h"
 
 #include <UniformBufferStruct.h>
 #include <array>
@@ -14,11 +15,9 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, const ImageInfo& image_info)
+pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene)
     : m_context(context)
     , m_scene(scene)
-    , m_image_info{ image_info }
-    , m_camera_uniform{ context.allocator->get_allocator() }
 {
     build_pipelines();
     create_images();
@@ -44,10 +43,11 @@ void pvp::GBuffer::build_pipelines()
     GraphicsPipelineBuilder()
         .add_shader("shaders/gpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
         .add_shader("shaders/gpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
-        .set_color_format(std::array{ m_image_info.color_format, m_image_info.color_format })
+        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format, m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
         .set_input_binding_description(Vertex::get_binding_description())
+        .set_depth_access(VK_TRUE, VK_FALSE)
         .build(*m_context.device, m_albedo_pipeline);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_albedo_pipeline, nullptr); });
 }
@@ -55,19 +55,19 @@ void pvp::GBuffer::build_pipelines()
 void pvp::GBuffer::create_images()
 {
     ImageBuilder()
-        .set_format(m_image_info.color_format)
+        .set_format(m_context.swapchain->get_swapchain_surface_format().format)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .set_size(m_image_info.image_size)
+        .set_size(m_context.swapchain->get_swapchain_extent())
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_albedo_image);
     m_destructor_queue.add_to_queue([&] { m_albedo_image.destroy(m_context); });
 
     ImageBuilder()
-        .set_format(m_image_info.color_format)
+        .set_format(m_context.swapchain->get_swapchain_surface_format().format)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .set_size(m_image_info.image_size)
+        .set_size(m_context.swapchain->get_swapchain_extent())
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_normal_image);
     m_destructor_queue.add_to_queue([&] { m_normal_image.destroy(m_context); });
@@ -91,8 +91,9 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene_binding.sets[0], 0, nullptr);
 
     const auto color_info = RenderInfoBuilder()
-                                .add_image(&m_albedo_image)
-                                .add_image(&m_normal_image)
+                                .add_color(&m_albedo_image)
+                                .add_color(&m_normal_image)
+                                .set_size(m_albedo_image.get_size())
                                 .build();
 
     vkCmdBeginRendering(cmd, &color_info.rendering_info);

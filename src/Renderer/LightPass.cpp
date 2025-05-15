@@ -1,6 +1,7 @@
 ﻿#include "LightPass.h"
 
 #include "RenderInfoBuilder.h"
+#include "Swapchain.h"
 
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
@@ -11,41 +12,12 @@
 
 namespace pvp
 {
-    LightPass::LightPass(const Context& context, const ImageInfo& image_info, GBuffer& gbuffer)
+    LightPass::LightPass(const Context& context, GBuffer& gbuffer)
         : m_context{ context }
         , m_gemotry_pass{ gbuffer }
-        , m_image_info{ image_info }
     {
         build_pipelines();
         create_images();
-    }
-
-    void LightPass::draw(VkCommandBuffer cmd)
-    {
-        m_light_image.transition_layout(cmd,
-                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                        VK_PIPELINE_STAGE_2_NONE,
-                                        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                        VK_ACCESS_2_NONE,
-                                        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
-
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
-
-        const auto render_color_info = RenderInfoBuilder().add_image(&m_light_image).build();
-
-        vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
-        {
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline);
-            vkCmdDraw(cmd, 3, 1, 0, 0);
-        }
-        vkCmdEndRendering(cmd);
-
-        m_light_image.transition_layout(cmd,
-                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                        VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                                        VK_ACCESS_2_TRANSFER_READ_BIT);
     }
 
     void LightPass::build_pipelines()
@@ -75,25 +47,56 @@ namespace pvp
         GraphicsPipelineBuilder()
             .add_shader("shaders/lightpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
             .add_shader("shaders/lightpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
-            .set_color_format(std::array{ m_image_info.color_format })
+            .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
             .set_pipeline_layout(m_light_pipeline_layout)
             .build(*m_context.device, m_light_pipeline);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_light_pipeline, nullptr); });
 
-        m_screensize_buffer = new UniformBuffer<glm::vec2>(m_context.allocator->get_allocator());
-        m_screensize_buffer->update(0, glm::vec2(m_image_info.image_size.width, m_image_info.image_size.height));
-        m_destructor_queue.add_to_queue([&] { delete m_screensize_buffer; });
+        // m_screensize_buffer = new UniformBuffer<glm::vec2>(m_context.allocator->get_allocator());
+        // m_screensize_buffer->update(0, glm::vec2(m_image_info.image_size.width, m_image_info.image_size.height));
+        // m_destructor_queue.add_to_queue([&] { delete m_screensize_buffer; });
     }
 
     void LightPass::create_images()
     {
         ImageBuilder()
-            .set_format(m_image_info.color_format)
+            .set_format(m_context.swapchain->get_swapchain_surface_format().format)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-            .set_size(m_image_info.image_size)
+            .set_size(m_context.swapchain->get_swapchain_extent())
             .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
             .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_light_image);
         m_destructor_queue.add_to_queue([&] { m_light_image.destroy(m_context); });
+    }
+
+    void LightPass::draw(VkCommandBuffer cmd)
+    {
+        m_light_image.transition_layout(cmd,
+                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                        VK_PIPELINE_STAGE_2_NONE,
+                                        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        VK_ACCESS_2_NONE,
+                                        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
+
+        const auto render_color_info = RenderInfoBuilder()
+                                           .add_color(&m_light_image)
+                                           .set_size(m_light_image.get_size())
+                                           .build();
+
+        vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
+        {
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline);
+            vkCmdDraw(cmd, 3, 1, 0, 0);
+        }
+        vkCmdEndRendering(cmd);
+
+        m_light_image.transition_layout(cmd,
+                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                        VK_ACCESS_2_TRANSFER_READ_BIT);
     }
 } // namespace pvp

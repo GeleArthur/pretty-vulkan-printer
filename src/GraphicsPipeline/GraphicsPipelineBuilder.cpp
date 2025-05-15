@@ -92,7 +92,7 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     depth_stencil.depthTestEnable = m_read;
     depth_stencil.depthWriteEnable = m_write;
 
-    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
     depth_stencil.minDepthBounds = 0.0f;
     depth_stencil.maxDepthBounds = 1.0f;
@@ -123,7 +123,7 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     pipeline_info.basePipelineIndex = -1;
 
     VkPipelineRenderingCreateInfo render_target{};
-    render_target.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    render_target.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     render_target.colorAttachmentCount = static_cast<uint32_t>(m_color_formats.size());
     render_target.pColorAttachmentFormats = m_color_formats.data();
     render_target.depthAttachmentFormat = m_depth_format;

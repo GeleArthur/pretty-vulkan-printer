@@ -12,7 +12,7 @@ namespace pvp
     class GBuffer final
     {
     public:
-        explicit GBuffer(const Context& context, const PvpScene& scene, const ImageInfo& image_info);
+        explicit GBuffer(const Context& context, const PvpScene& scene);
         void draw(VkCommandBuffer cmd);
 
         const Image& get_albedo_image() const
@@ -31,10 +31,8 @@ namespace pvp
         const PvpScene& m_scene;
         Image           m_albedo_image{};
         Image           m_normal_image{};
-        const ImageInfo m_image_info;
 
-        UniformBuffer<ModelCameraViewData> m_camera_uniform;
-        DescriptorSets                     m_scene_binding;
+        DescriptorSets m_scene_binding;
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};

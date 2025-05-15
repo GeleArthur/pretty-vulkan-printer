@@ -15,7 +15,7 @@ void pvp::Camera::update(float delta_time)
     double xpos, ypos;
     glfwGetCursorPos(m_context.window_surface->get_window(), &xpos, &ypos);
 
-    if (glfwGetMouseButton(m_context.window_surface->get_window(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+    if (glfwGetMouseButton(m_context.window_surface->get_window(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
         float xoffset = xpos - m_prev_mouse_x;
         float yoffset = m_prev_mouse_y - ypos;

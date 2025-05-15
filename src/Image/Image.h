@@ -27,12 +27,13 @@ namespace pvp
     private:
         friend class ImageBuilder;
 
-        VmaAllocation     m_allocation{};
-        VmaAllocationInfo m_allocation_info{};
-        VkImageCreateInfo m_debug_create_info;
-        VkImage           m_image{ VK_NULL_HANDLE };
-        VkImageView       m_view{ VK_NULL_HANDLE };
-        VkImageLayout     m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
-        VkExtent2D        m_extent{};
+        VmaAllocation      m_allocation{};
+        VmaAllocationInfo  m_allocation_info{};
+        VkImageCreateInfo  m_debug_create_info;
+        VkImage            m_image{ VK_NULL_HANDLE };
+        VkImageView        m_view{ VK_NULL_HANDLE };
+        VkImageLayout      m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
+        VkExtent2D         m_extent{};
+        VkImageAspectFlags m_aspect_flags{};
     };
 } // namespace pvp

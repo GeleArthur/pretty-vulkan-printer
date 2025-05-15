@@ -73,6 +73,8 @@ void pvp::ImageBuilder::build(VkDevice device, VmaAllocator allocator, pvp::Imag
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
+    image.m_aspect_flags = m_aspect_flags;
+
     if (vkCreateImageView(device, &view_info, nullptr, &image.m_view) != VK_SUCCESS)
     {
         throw std::exception("Failed creating image view");
