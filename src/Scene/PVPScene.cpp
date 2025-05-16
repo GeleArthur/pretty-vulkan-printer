@@ -6,6 +6,7 @@
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
 #include <CommandBuffer/CommandPool.h>
+#include <Context/Device.h>
 #include <DescriptorSets/DescriptorCreator.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
@@ -189,6 +190,8 @@ pvp::PvpScene::~PvpScene()
     }
 
     delete m_scene_globals_gpu;
+
+    m_shadered_sampler.destroy(m_context.device->get_device());
 }
 void pvp::PvpScene::update()
 {
