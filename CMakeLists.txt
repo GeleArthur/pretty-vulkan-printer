@@ -98,8 +98,8 @@ add_executable(${PROJECT_NAME}
         src/DescriptorSets/DescriptorLayoutBuilder.h
         src/Scene/PVPScene.cpp
         src/Scene/PVPScene.h
-        src/Scene/LoadModel.cpp
-        src/Scene/LoadModel.h
+        src/Scene/ModelData.cpp
+        src/Scene/ModelData.h
         src/Renderer/LightPass.cpp
         src/Renderer/LightPass.h
         src/Renderer/RenderInfoBuilder.cpp

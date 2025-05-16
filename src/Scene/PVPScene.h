@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Camera.h"
-#include "LoadModel.h"
+#include "ModelData.h"
 
 #include <filesystem>
 #include <vector>
@@ -13,12 +13,20 @@
 namespace pvp
 {
 
+    struct MaterialTransform
+    {
+        glm::mat4x4 transform;
+        uint32_t    diffuse_texture_index;
+        uint32_t    normal_texture_index;
+        uint32_t    metalness_texture_index;
+    };
+
     struct Model
     {
-        Buffer      vertex_data;
-        Buffer      index_data;
-        uint32_t    index_count;
-        glm::mat4x4 transform;
+        Buffer            vertex_data;
+        Buffer            index_data;
+        uint32_t          index_count;
+        MaterialTransform material;
     };
 
     struct SceneGlobals
@@ -36,7 +44,7 @@ namespace pvp
 
         std::vector<Model> get_models() const
         {
-            return m_models;
+            return m_gpu_models;
         };
 
         UniformBuffer<SceneGlobals>* get_scene_globals() const
@@ -45,8 +53,11 @@ namespace pvp
         };
 
     private:
+        void load_textures(std::vector<ModelData> models);
+
         Context&           m_context;
-        std::vector<Model> m_models;
+        std::vector<Model> m_gpu_models;
+        std::vector<Image> m_gpu_textures;
         Camera             m_camera;
 
         UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};

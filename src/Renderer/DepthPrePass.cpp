@@ -7,6 +7,7 @@
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
+#include <GraphicsPipeline/Vertex.h>
 #include <Image/ImageBuilder.h>
 
 namespace pvp
@@ -36,7 +37,7 @@ namespace pvp
                 VkDeviceSize offset{ 0 };
                 vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
                 vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-                vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model.transform);
+                vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model.material.transform);
                 vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
             }
         }
@@ -58,7 +59,7 @@ namespace pvp
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4) })
+            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MaterialTransform) })
             .build(m_context.device->get_device(), m_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
@@ -80,7 +81,7 @@ namespace pvp
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .set_size(m_context.swapchain->get_swapchain_extent())
             .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
-            .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_depth_image);
+            .build(m_context, m_depth_image);
         m_destructor_queue.add_to_queue([&] { m_depth_image.destroy(m_context); });
     }
 } // namespace pvp

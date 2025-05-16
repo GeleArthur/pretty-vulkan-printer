@@ -18,7 +18,7 @@ namespace pvp
         ImageBuilder& set_aspect_flags(VkImageAspectFlags aspect_flags);
         ImageBuilder& set_memory_usage(VmaMemoryUsage memory_usage);
 
-        void build(VkDevice device, VmaAllocator allocator, pvp::Image& image) const;
+        void build(const Context& context, pvp::Image& image) const;
 
     private:
         VkExtent2D         m_size{};

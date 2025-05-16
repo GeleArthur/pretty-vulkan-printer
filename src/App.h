@@ -10,7 +10,7 @@
 #include <Image/Image.h>
 #include <Image/Sampler.h>
 #include <Renderer/Renderer.h>
-#include <Scene/LoadModel.h>
+#include <Scene/ModelData.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <Window/WindowSurface.h>
 
@@ -39,7 +39,6 @@ namespace pvp
         Buffer           m_index_buffer{};
 
         PvpScene*      m_scene{};
-        LoadModel      m_model{};
         Sampler        m_sampler{};
         Image          m_texture{};
         DescriptorSets m_descriptors{};

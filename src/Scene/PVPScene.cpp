@@ -1,13 +1,17 @@
 ﻿#include "PVPScene.h"
-#include "LoadModel.h"
+#include "ModelData.h"
 
 #include <DestructorQueue.h>
+#include <set>
+#include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
 #include <CommandBuffer/CommandPool.h>
 #include <GLFW/glfw3.h>
 #include <GraphicsPipeline/Vertex.h>
+#include <Image/ImageBuilder.h>
 #include <Renderer/Swapchain.h>
 #include <VMAAllocator/VmaAllocator.h>
+#include <assimp/material.h>
 #include <glm/mat4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -16,71 +20,141 @@ pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
     , m_camera(context)
 {
-    auto models_loaded = load_model_file(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
 
-    DestructorQueue transfer_buffer_deleter{};
+    m_gpu_textures.reserve(loaded_scene.textures.size());
+    std::vector<std::string> gpu_texture_names;
+    gpu_texture_names.reserve(loaded_scene.textures.size());
+    DestructorQueue transfer_image_deleter{};
 
-    m_models.resize(models_loaded.size());
-    for (int i = 0; i < models_loaded.size(); ++i)
+    for (const TextureData& texture : loaded_scene.textures)
     {
-        LoadModel& model = models_loaded[i];
-        Model&     new_model = m_models[i];
+        VkDeviceSize image_size = texture.width * texture.height * 4;
 
-        new_model.transform = model.transform;
-        new_model.index_count = model.indices.size();
+        Buffer staging_buffer{};
+        BufferBuilder()
+            .set_size(image_size)
+            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+            .build(context.allocator->get_allocator(), staging_buffer);
+
+        transfer_image_deleter.add_to_queue([=] { staging_buffer.destroy(); });
+        staging_buffer.copy_data_into_buffer(std::as_bytes(std::span(texture.pixels, image_size)));
+
+        VkFormat format;
+        switch (texture.type)
+        {
+            case aiTextureType_NORMALS:
+                format = VK_FORMAT_R8G8B8A8_UNORM;
+                break;
+            default:
+                format = VK_FORMAT_R8G8B8A8_SRGB;
+        }
+
+        Image gpu_image;
+        ImageBuilder()
+            .set_format(format)
+            .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+            .set_size({ texture.width, texture.height })
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+            .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
+            .build(m_context, gpu_image);
+
+        gpu_image.transition_layout(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        gpu_image.copy_from_buffer(cmd, staging_buffer);
+        gpu_image.transition_layout(cmd, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        stbi_image_free(texture.pixels);
+
+        m_gpu_textures.push_back(gpu_image);
+        gpu_texture_names.push_back(texture.name);
+    }
+
+    DestructorQueue transfer_buffer_deleter{};
+    m_gpu_models.resize(loaded_scene.models.size());
+    for (int i = 0; i < loaded_scene.models.size(); ++i)
+    {
+        ModelData& cpu_model = loaded_scene.models[i];
+        Model&     gpu_model = m_gpu_models[i];
+
+        gpu_model.index_count = cpu_model.indices.size();
 
         // Vertex loading
         Buffer transfer_buffer{};
         BufferBuilder()
-            .set_size(model.vertices.size() * sizeof(Vertex))
+            .set_size(cpu_model.vertices.size() * sizeof(Vertex))
             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
             .build(context.allocator->get_allocator(), transfer_buffer);
 
-        transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(model.vertices)));
+        transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(cpu_model.vertices)));
         transfer_buffer_deleter.add_to_queue([=] { transfer_buffer.destroy(); });
 
         BufferBuilder()
-            .set_size(model.vertices.size() * sizeof(Vertex))
+            .set_size(cpu_model.vertices.size() * sizeof(Vertex))
             .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-            .build(context.allocator->get_allocator(), new_model.vertex_data);
+            .build(context.allocator->get_allocator(), gpu_model.vertex_data);
 
-        new_model.vertex_data.copy_from_buffer(cmd, transfer_buffer);
+        gpu_model.vertex_data.copy_from_buffer(cmd, transfer_buffer);
 
         // Index loading
         Buffer transfer_buffer_index{};
         BufferBuilder()
-            .set_size(model.vertices.size() * sizeof(Vertex))
+            .set_size(cpu_model.vertices.size() * sizeof(Vertex))
             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
             .build(context.allocator->get_allocator(), transfer_buffer_index);
 
-        transfer_buffer_index.copy_data_into_buffer(std::as_bytes(std::span(model.indices)));
+        transfer_buffer_index.copy_data_into_buffer(std::as_bytes(std::span(cpu_model.indices)));
         transfer_buffer_deleter.add_to_queue([=] { transfer_buffer_index.destroy(); });
 
         BufferBuilder()
-            .set_size(model.indices.size() * sizeof(uint32_t))
+            .set_size(cpu_model.indices.size() * sizeof(uint32_t))
             .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-            .build(context.allocator->get_allocator(), new_model.index_data);
+            .build(context.allocator->get_allocator(), gpu_model.index_data);
 
-        new_model.index_data.copy_from_buffer(cmd, transfer_buffer_index);
+        gpu_model.index_data.copy_from_buffer(cmd, transfer_buffer_index);
+
+        gpu_model.material.transform = cpu_model.transform;
+
+        // :(
+        if (cpu_model.diffuse_path.empty())
+            gpu_model.material.diffuse_texture_index = 0;
+        else
+            gpu_model.material.diffuse_texture_index = std::ranges::find(gpu_texture_names, cpu_model.diffuse_path) - gpu_texture_names.begin();
+
+        if (cpu_model.normal_path.empty())
+            gpu_model.material.normal_texture_index = 0;
+        else
+            gpu_model.material.normal_texture_index = std::ranges::find(gpu_texture_names, cpu_model.normal_path) - gpu_texture_names.begin();
+
+        if (cpu_model.metallic_path.empty())
+            gpu_model.material.metalness_texture_index = 0;
+        else
+            gpu_model.material.metalness_texture_index = std::ranges::find(gpu_texture_names, cpu_model.metallic_path) - gpu_texture_names.begin();
     }
     cmd_pool_transfer_buffers.end_buffer(cmd);
     transfer_buffer_deleter.destroy_and_clear();
+    transfer_image_deleter.destroy_and_clear();
     cmd_pool_transfer_buffers.destroy();
 
     m_scene_globals_gpu = new UniformBuffer<SceneGlobals>(context.allocator->get_allocator());
 }
 pvp::PvpScene::~PvpScene()
 {
-    for (Model& model : m_models)
+    for (Model& model : m_gpu_models)
     {
         model.vertex_data.destroy();
         model.index_data.destroy();
+    }
+
+    for (Image& gpu_texture : m_gpu_textures)
+    {
+        gpu_texture.destroy(m_context);
     }
 
     delete m_scene_globals_gpu;

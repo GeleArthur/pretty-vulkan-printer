@@ -3,6 +3,7 @@
 #include "Image.h"
 
 #include <exception>
+#include <Context/Device.h>
 
 pvp::ImageBuilder& pvp::ImageBuilder::set_size(const VkExtent2D& size)
 {
@@ -34,7 +35,7 @@ pvp::ImageBuilder& pvp::ImageBuilder::set_aspect_flags(VkImageAspectFlags aspect
     return *this;
 }
 
-void pvp::ImageBuilder::build(VkDevice device, VmaAllocator allocator, pvp::Image& image) const
+void pvp::ImageBuilder::build(const Context& context, pvp::Image& image) const
 {
     VkImageCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -54,7 +55,7 @@ void pvp::ImageBuilder::build(VkDevice device, VmaAllocator allocator, pvp::Imag
     VmaAllocationCreateInfo allocation_info{};
     allocation_info.usage = m_memory_usage;
 
-    if (vmaCreateImage(allocator, &create_info, &allocation_info, &image.m_image, &image.m_allocation, &image.m_allocation_info) != VK_SUCCESS)
+    if (vmaCreateImage(context.allocator->get_allocator(), &create_info, &allocation_info, &image.m_image, &image.m_allocation, &image.m_allocation_info) != VK_SUCCESS)
     {
         throw std::exception("Failed creating image");
     }
@@ -75,7 +76,7 @@ void pvp::ImageBuilder::build(VkDevice device, VmaAllocator allocator, pvp::Imag
 
     image.m_aspect_flags = m_aspect_flags;
 
-    if (vkCreateImageView(device, &view_info, nullptr, &image.m_view) != VK_SUCCESS)
+    if (vkCreateImageView(context.device->get_device(), &view_info, nullptr, &image.m_view) != VK_SUCCESS)
     {
         throw std::exception("Failed creating image view");
     }

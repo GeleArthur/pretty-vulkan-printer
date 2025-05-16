@@ -38,7 +38,7 @@ void pvp::GBuffer::build_pipelines()
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4) })
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MaterialTransform) })
         .build(m_context.device->get_device(), m_pipeline_layout);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
@@ -63,7 +63,7 @@ void pvp::GBuffer::create_images()
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
-        .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_albedo_image);
+        .build(m_context, m_albedo_image);
     m_destructor_queue.add_to_queue([&] { m_albedo_image.destroy(m_context); });
 
     ImageBuilder()
@@ -72,7 +72,7 @@ void pvp::GBuffer::create_images()
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
-        .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_normal_image);
+        .build(m_context, m_normal_image);
     m_destructor_queue.add_to_queue([&] { m_normal_image.destroy(m_context); });
 }
 
@@ -108,7 +108,7 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
             VkDeviceSize offset{ 0 };
             vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
             vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model.transform);
+            vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MaterialTransform), &model.material);
             vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
         }
     }

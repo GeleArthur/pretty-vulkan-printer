@@ -7,6 +7,9 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
 
 layout(push_constant) uniform PushConstant {
     mat4 model;
+    uint    diffuse_texture_index;
+    uint    normal_texture_index;
+    uint    metalness_texture_index;
 } pc;
 
 layout (location = 0) in vec3 inPosition;

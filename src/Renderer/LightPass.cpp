@@ -8,7 +8,6 @@
 #include <Image/ImageBuilder.h>
 #include <Image/SamplerBuilder.h>
 #include <Scene/PVPScene.h>
-#include <glm/gtx/rotate_vector.hpp>
 
 namespace pvp
 {
@@ -65,7 +64,7 @@ namespace pvp
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .set_size(m_context.swapchain->get_swapchain_extent())
             .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
-            .build(m_context.device->get_device(), m_context.allocator->get_allocator(), m_light_image);
+            .build(m_context, m_light_image);
         m_destructor_queue.add_to_queue([&] { m_light_image.destroy(m_context); });
     }
 
