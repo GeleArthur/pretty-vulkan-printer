@@ -46,6 +46,8 @@ namespace pvp
         GBuffer*         m_geometry_draw{};
         LightPass*       m_light_pass{};
         BlitToSwapchain* m_blit_to_swapchain{};
+        DescriptorSets   m_scene_binding;
+        DescriptorSets   m_all_textures;
 
         DestructorQueue m_destructor_queue{};
     };

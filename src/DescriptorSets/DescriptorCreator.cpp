@@ -5,6 +5,7 @@
 #include <array>
 #include <stdexcept>
 #include <Context/Device.h>
+#include <spdlog/spdlog.h>
 
 pvp::DescriptorCreator::DescriptorCreator(const Context& context)
     : m_context{ context }
@@ -45,6 +46,7 @@ void pvp::DescriptorCreator::add_layout(uint32_t index, VkDescriptorSetLayout la
 {
     if (m_layouts.contains(index))
     {
+        spdlog::warn("Overwriting descriptor set layout: {} ", index);
         vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
     }
 

@@ -6,9 +6,13 @@
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
 #include <CommandBuffer/CommandPool.h>
+#include <DescriptorSets/DescriptorCreator.h>
+#include <DescriptorSets/DescriptorLayoutBuilder.h>
+#include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GLFW/glfw3.h>
 #include <GraphicsPipeline/Vertex.h>
 #include <Image/ImageBuilder.h>
+#include <Image/SamplerBuilder.h>
 #include <Renderer/Swapchain.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <assimp/material.h>
@@ -143,6 +147,33 @@ pvp::PvpScene::PvpScene(Context& context)
     cmd_pool_transfer_buffers.destroy();
 
     m_scene_globals_gpu = new UniformBuffer<SceneGlobals>(context.allocator->get_allocator());
+
+    context.descriptor_creator->create_layout()
+        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+        .build(0);
+
+    context.descriptor_creator->create_layout()
+        .add_flag(0)
+        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
+        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 1000)
+        .build(1);
+
+    SamplerBuilder()
+        .set_filter(VK_FILTER_NEAREST)
+        .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        .build(m_context, m_shadered_sampler);
+
+    m_scene_binding = DescriptorSetBuilder()
+                          .set_layout(m_context.descriptor_creator->get_layout(0))
+                          .bind_buffer(0, *m_scene_globals_gpu)
+                          .build(m_context);
+
+    m_all_textures = DescriptorSetBuilder()
+                         .set_layout(m_context.descriptor_creator->get_layout(1))
+                         .bind_sampler(0, m_shadered_sampler)
+                         .bind_image_array(1, m_gpu_textures)
+                         .build(context);
 }
 pvp::PvpScene::~PvpScene()
 {

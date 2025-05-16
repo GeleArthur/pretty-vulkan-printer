@@ -24,7 +24,6 @@ namespace pvp
         const PvpScene& m_scene;
         Image           m_depth_image{};
 
-        DescriptorSets   m_scene_binding;
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_pipeline{};
 

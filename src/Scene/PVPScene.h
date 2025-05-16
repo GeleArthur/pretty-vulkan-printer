@@ -6,10 +6,16 @@
 #include <vector>
 #include <Buffer/Buffer.h>
 #include <Context/Context.h>
+#include <DescriptorSets/DescriptorSets.h>
+#include <Image/Sampler.h>
 #include <UniformBuffers/UniformBuffer.h>
 #include <glm/mat4x4.hpp>
 #include <glm/detail/func_packing_simd.inl>
 
+namespace pvp
+{
+    struct Sampler;
+}
 namespace pvp
 {
 
@@ -42,9 +48,14 @@ namespace pvp
         ~PvpScene();
         void update();
 
-        std::vector<Model> get_models() const
+        const std::vector<Model>& get_models() const
         {
             return m_gpu_models;
+        };
+
+        const std::vector<Image>& get_textures() const
+        {
+            return m_gpu_textures;
         };
 
         UniformBuffer<SceneGlobals>* get_scene_globals() const
@@ -52,13 +63,23 @@ namespace pvp
             return m_scene_globals_gpu;
         };
 
-    private:
-        void load_textures(std::vector<ModelData> models);
+        const DescriptorSets& get_scene_descriptor() const
+        {
+            return m_scene_binding;
+        }
+        const DescriptorSets& get_textures_descriptor() const
+        {
+            return m_all_textures;
+        }
 
+    private:
         Context&           m_context;
         std::vector<Model> m_gpu_models;
         std::vector<Image> m_gpu_textures;
         Camera             m_camera;
+        DescriptorSets     m_scene_binding;
+        DescriptorSets     m_all_textures;
+        Sampler            m_shadered_sampler;
 
         UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
     };

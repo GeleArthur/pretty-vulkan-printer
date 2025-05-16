@@ -34,8 +34,6 @@ namespace pvp
         Image           m_albedo_image{};
         Image           m_normal_image{};
 
-        DescriptorSets m_scene_binding;
-
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};
 

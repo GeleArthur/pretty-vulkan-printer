@@ -29,14 +29,14 @@ namespace pvp
         SamplerBuilder()
             .set_filter(VK_FILTER_NEAREST)
             .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
-            .build(m_context.device->get_device(), m_sampler);
+            .build(m_context, m_sampler);
         m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });
 
         m_descriptor_binding = DescriptorSetBuilder()
                                    .bind_image(0, m_gemotry_pass.get_albedo_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                                    .bind_image(1, m_gemotry_pass.get_normal_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                                    .set_layout(m_context.descriptor_creator->get_layout(11))
-                                   .build(m_context.device->get_device(), *m_context.descriptor_creator);
+                                   .build(m_context);
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(11))

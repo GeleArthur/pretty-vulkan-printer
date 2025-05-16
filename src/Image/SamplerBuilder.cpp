@@ -5,20 +5,23 @@
 
 #include "Sampler.h"
 
-SamplerBuilder& SamplerBuilder::set_filter(const VkFilter filter)
+#include <Context/Context.h>
+#include <Context/Device.h>
+
+pvp::SamplerBuilder& pvp::SamplerBuilder::set_filter(const VkFilter filter)
 {
     m_sampler_info.magFilter = filter;
     m_sampler_info.minFilter = filter;
     return *this;
 }
 
-SamplerBuilder& SamplerBuilder::set_mipmap(const VkSamplerMipmapMode mode)
+pvp::SamplerBuilder& pvp::SamplerBuilder::set_mipmap(const VkSamplerMipmapMode mode)
 {
     m_sampler_info.mipmapMode = mode;
     return *this;
 }
 
-SamplerBuilder& SamplerBuilder::set_address_mode(const VkSamplerAddressMode mode)
+pvp::SamplerBuilder& pvp::SamplerBuilder::set_address_mode(const VkSamplerAddressMode mode)
 {
     m_sampler_info.addressModeU = mode;
     m_sampler_info.addressModeV = mode;
@@ -26,9 +29,9 @@ SamplerBuilder& SamplerBuilder::set_address_mode(const VkSamplerAddressMode mode
     return *this;
 }
 
-void SamplerBuilder::build(VkDevice device, pvp::Sampler& sampler) const
+void pvp::SamplerBuilder::build(const Context& context, Sampler& sampler) const
 {
-    if (vkCreateSampler(device, &m_sampler_info, nullptr, &sampler.handle) != VK_SUCCESS)
+    if (vkCreateSampler(context.device->get_device(), &m_sampler_info, nullptr, &sampler.handle) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create texture sampler!");
     }

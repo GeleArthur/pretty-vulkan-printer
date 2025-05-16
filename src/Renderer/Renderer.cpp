@@ -26,15 +26,6 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpS
 
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
 
-    m_context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-        .build(0);
-
-    m_context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_VERTEX_BIT, 1000)
-        .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)
-        .build(1);
-
     m_depth_pre_pass = new DepthPrePass(m_context, m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_depth_pre_pass; });
     m_geometry_draw = new GBuffer(m_context, scene, *m_depth_pre_pass);

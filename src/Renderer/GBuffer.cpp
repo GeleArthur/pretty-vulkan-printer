@@ -27,18 +27,10 @@ pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, DepthPrePas
 
 void pvp::GBuffer::build_pipelines()
 {
-    m_context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-        .build(0);
-
-    m_scene_binding = DescriptorSetBuilder()
-                          .set_layout(m_context.descriptor_creator->get_layout(0))
-                          .bind_buffer(0, *m_scene.get_scene_globals())
-                          .build(m_context.device->get_device(), *m_context.descriptor_creator);
-
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MaterialTransform) })
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout(1))
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_ALL, 0, sizeof(MaterialTransform) })
         .build(m_context.device->get_device(), m_pipeline_layout);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
@@ -91,7 +83,8 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                                      VK_ACCESS_2_NONE,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene_binding.sets[0], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &m_scene.get_textures_descriptor().sets[0], 0, nullptr);
 
     const auto color_info = RenderInfoBuilder()
                                 .add_color(&m_albedo_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
@@ -108,7 +101,7 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
             VkDeviceSize offset{ 0 };
             vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
             vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MaterialTransform), &model.material);
+            vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(MaterialTransform), &model.material);
             vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
         }
     }

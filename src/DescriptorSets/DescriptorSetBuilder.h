@@ -20,15 +20,22 @@ namespace pvp
         template<typename T>
         DescriptorSetBuilder& bind_buffer(uint32_t binding, const UniformBuffer<T>& buffer);
         DescriptorSetBuilder& bind_image(uint32_t binding, const Image& image, const Sampler& sampler, VkImageLayout layout = VK_IMAGE_LAYOUT_MAX_ENUM);
+        DescriptorSetBuilder& bind_image_array(uint32_t binding, const std::vector<Image>& image_array);
+        DescriptorSetBuilder& bind_sampler(uint32_t binding, const Sampler& sampler);
 
-        DescriptorSets build(VkDevice device, const DescriptorCreator& pool) const;
+        DescriptorSets build(const Context& context) const;
 
     private:
         using image_info = std::tuple<uint32_t, std::reference_wrapper<const Image>, std::reference_wrapper<const Sampler>, VkImageLayout>;
         using buffer_info = std::tuple<uint32_t, std::reference_wrapper<const std::vector<Buffer>>>;
-        VkDescriptorSetLayout    m_descriptor_layout;
-        std::vector<buffer_info> m_buffers;
-        std::vector<image_info>  m_images;
+        using image_array_info = std::unique_ptr<std::tuple<uint32_t, std::vector<Image>>>;
+        using sampler_info = std::tuple<uint32_t, std::reference_wrapper<const Sampler>>;
+
+        VkDescriptorSetLayout     m_descriptor_layout;
+        std::vector<buffer_info>  m_buffers;
+        std::vector<image_info>   m_images;
+        std::vector<sampler_info> m_samplers;
+        image_array_info          m_image_array{};
     };
 
     template<typename T>
