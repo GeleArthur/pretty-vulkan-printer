@@ -43,20 +43,6 @@ namespace pvp
         return m_extent;
     }
 
-    void Image::transition_layout(VkCommandBuffer cmd, VkImageLayout new_layout)
-    {
-        VkImageSubresourceRange range{
-            .aspectMask = m_aspect_flags,
-            .baseMipLevel = 0,
-            .levelCount = VK_REMAINING_MIP_LEVELS,
-            .baseArrayLayer = 0,
-            .layerCount = VK_REMAINING_ARRAY_LAYERS
-        };
-
-        image_layout_transition(cmd, m_image, m_current_layout, new_layout, range);
-        m_current_layout = new_layout;
-    }
-
     void Image::transition_layout(VkCommandBuffer       command_buffer,
                                   VkImageLayout         new_layout,
                                   VkPipelineStageFlags2 src_stage_mask,

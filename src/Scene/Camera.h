@@ -29,7 +29,7 @@ namespace pvp
 
         float m_yaw{ 0 };
         float m_pitch{ 0 };
-        float m_speed{ 1 };
+        float m_speed{ 3 };
         float m_sensitivity{ 0.4f };
 
         double m_prev_mouse_x{};

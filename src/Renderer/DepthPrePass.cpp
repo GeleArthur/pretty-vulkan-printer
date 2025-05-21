@@ -21,7 +21,12 @@ namespace pvp
     }
     void DepthPrePass::draw(VkCommandBuffer cmd)
     {
-        m_depth_image.transition_layout(cmd, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+        m_depth_image.transition_layout(cmd,
+                                        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                        VK_PIPELINE_STAGE_2_NONE,
+                                        VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                                        VK_ACCESS_2_NONE,
+                                        VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
 
         const auto depth_info = RenderInfoBuilder()

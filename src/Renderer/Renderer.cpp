@@ -12,6 +12,7 @@
 
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <Scene/PVPScene.h>
+#include <VMAAllocator/VmaAllocator.h>
 
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
     : m_context{ context }
@@ -39,6 +40,8 @@ void pvp::Renderer::prepare_frame()
 {
     vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
     vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
+
+    m_scene.update_render();
 
     VkResult result = vkAcquireNextImageKHR(
         m_context.device->get_device(),
@@ -90,9 +93,10 @@ void pvp::Renderer::end_frame()
 {
     vkEndCommandBuffer(m_cmds_graphics[m_double_buffer_frame]);
 
-    VkSemaphoreSubmitInfo semaphore_submit{
+    VkSemaphoreSubmitInfo semaphore_wait_for{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
+        .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
     VkCommandBufferSubmitInfo cmd_submit_info{
@@ -100,19 +104,23 @@ void pvp::Renderer::end_frame()
         .commandBuffer = m_cmds_graphics[m_double_buffer_frame],
     };
 
-    VkSemaphoreSubmitInfo semaphore_submit_singled{
+    VkSemaphoreSubmitInfo semaphore_singled{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers.render_finished_semaphores[m_double_buffer_frame].handle,
+        .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT
     };
 
     VkSubmitInfo2 submit_info{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
         .waitSemaphoreInfoCount = 1,
-        .pWaitSemaphoreInfos = &semaphore_submit,
+        .pWaitSemaphoreInfos = &semaphore_wait_for,
+
         .commandBufferInfoCount = 1,
         .pCommandBufferInfos = &cmd_submit_info,
+
         .signalSemaphoreInfoCount = 1,
-        .pSignalSemaphoreInfos = &semaphore_submit_singled
+        .pSignalSemaphoreInfos = &semaphore_singled,
+
     };
 
     vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);

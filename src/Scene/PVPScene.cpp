@@ -69,9 +69,19 @@ pvp::PvpScene::PvpScene(Context& context)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
             .build(m_context, gpu_image);
 
-        gpu_image.transition_layout(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_NONE,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_ACCESS_2_NONE,
+                                    VK_ACCESS_2_TRANSFER_WRITE_BIT);
         gpu_image.copy_from_buffer(cmd, staging_buffer);
-        gpu_image.transition_layout(cmd, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                    VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                    VK_ACCESS_2_SHADER_READ_BIT);
 
         stbi_image_free(texture.pixels);
 
@@ -207,10 +217,12 @@ void pvp::PvpScene::update()
 
     glm::mat4x4 model = glm::rotate(glm::mat4(1.0f), 0.0f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    SceneGlobals scene_globals{
+    m_scene_globals = {
         m_camera.get_perspective_matrix() * m_camera.get_view_matrix() * model,
         glm::vec3{ 0, 0, 0 }
     };
-
-    m_scene_globals_gpu->update(0, scene_globals);
+}
+void pvp::PvpScene::update_render() const
+{
+    m_scene_globals_gpu->update(0, m_scene_globals);
 }

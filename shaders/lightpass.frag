@@ -32,5 +32,5 @@ void main() {
 
     vec3 normal = DecodeNormalOcta(normalAndOthers.xy);
 
-    outColor = dot(normal, normalize(vec3(-0.3, 0.5, 0))) * texture(albedoImage, gl_FragCoord.xy / vec2(800, 600));
+    outColor = /*dot(normal, normalize(vec3(-0.3, 0.5, 0))) **/ texture(albedoImage, gl_FragCoord.xy / vec2(800, 600));
 }

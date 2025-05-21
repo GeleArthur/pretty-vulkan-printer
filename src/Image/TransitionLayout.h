@@ -14,12 +14,12 @@ namespace pvp
                                  VkImageLayout                  new_layout,
                                  VkImageSubresourceRange const& subresource_range);
 
-    void image_layout_transition(VkCommandBuffer                command_buffer,
-                                 VkImage                        image,
-                                 VkImageLayout                  old_layout,
-                                 VkImageLayout                  new_layout,
-                                 VkImageSubresourceRange const& subresource_range);
+    // void image_layout_transition(VkCommandBuffer                command_buffer,
+    //                              VkImage                        image,
+    //                              VkImageLayout                  old_layout,
+    //                              VkImageLayout                  new_layout,
+    //                              VkImageSubresourceRange const& subresource_range);
 
-    VkPipelineStageFlags2 get_pipeline_stage_flags(VkImageLayout layout);
-    VkAccessFlags2        get_access_flags(VkImageLayout layout);
+    // VkPipelineStageFlags2 get_pipeline_stage_flags(VkImageLayout layout);
+    // VkAccessFlags2        get_access_flags(VkImageLayout layout);
 } // namespace pvp

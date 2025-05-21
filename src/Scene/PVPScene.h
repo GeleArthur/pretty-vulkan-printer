@@ -47,6 +47,7 @@ namespace pvp
         explicit PvpScene(Context& context);
         ~PvpScene();
         void update();
+        void update_render() const;
 
         const std::vector<Model>& get_models() const
         {
@@ -80,6 +81,7 @@ namespace pvp
         DescriptorSets     m_scene_binding;
         DescriptorSets     m_all_textures;
         Sampler            m_shadered_sampler;
+        SceneGlobals       m_scene_globals;
 
         UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
     };

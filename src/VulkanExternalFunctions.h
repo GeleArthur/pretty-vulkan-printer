@@ -20,6 +20,9 @@ namespace VulkanInstanceExtensions
 
     VK_DEFINE_INSTANCE_FUNCTION(vkCreateDebugUtilsMessengerEXT)
     VK_DEFINE_INSTANCE_FUNCTION(vkDestroyDebugUtilsMessengerEXT)
-    VK_DEFINE_INSTANCE_FUNCTION(vkCmdBeginRenderingKHR)
-    VK_DEFINE_INSTANCE_FUNCTION(vkCmdEndRenderingKHR)
+
+    VK_DEFINE_INSTANCE_FUNCTION(vkSetDebugUtilsObjectNameEXT)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCmdEndDebugUtilsLabelEXT)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT)
 }; // namespace VulkanInstanceExtensions
