@@ -27,7 +27,7 @@ namespace pvp
             .build(11);
 
         SamplerBuilder()
-            .set_filter(VK_FILTER_NEAREST)
+            .set_filter(VK_FILTER_LINEAR)
             .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
             .build(m_context, m_sampler);
         m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });

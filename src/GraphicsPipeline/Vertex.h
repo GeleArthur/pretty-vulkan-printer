@@ -11,6 +11,7 @@ namespace pvp
         glm::vec3 pos;
         glm::vec2 uv;
         glm::vec3 normal;
+        glm::vec3 tangent;
 
         static constexpr auto get_attribute_descriptions()
         {
@@ -32,7 +33,15 @@ namespace pvp
                       .binding = 0,
                       .format = VK_FORMAT_R32G32B32_SFLOAT,
                       .offset = offsetof(Vertex, normal),
-                  } });
+                  },
+                  {
+                      .location = 3,
+                      .binding = 0,
+                      .format = VK_FORMAT_R32G32B32_SFLOAT,
+                      .offset = offsetof(Vertex, tangent),
+                  }
+
+                });
         };
         static constexpr auto get_binding_description()
         {

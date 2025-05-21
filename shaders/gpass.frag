@@ -38,8 +38,10 @@ vec2 EncodeNormalOcta(vec3 n) {
 void main() {
 
     vec4 color = texture(sampler2D(textures[pc.diffuse_texture_index], shardedSampler), fragTexCoord).rgba;
-
     outColor = color;
+
+    vec4 normalTexture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgba;
+    
 
     vec2 normalEncoded = EncodeNormalOcta(objectNormal);
     outNormal = vec4(normalEncoded.x, normalEncoded.y, 0.0, 0.0);

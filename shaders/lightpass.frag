@@ -27,10 +27,8 @@ vec3 DecodeNormalOcta(vec2 f) {
 }
 
 void main() {
-
-    vec4 normalAndOthers = texture(normalImage, gl_FragCoord.xy / vec2(800, 600));
-
+    vec4 normalAndOthers = texelFetch(normalImage, ivec2(gl_FragCoord.xy), 0);
     vec3 normal = DecodeNormalOcta(normalAndOthers.xy);
 
-    outColor = /*dot(normal, normalize(vec3(-0.3, 0.5, 0))) **/ texture(albedoImage, gl_FragCoord.xy / vec2(800, 600));
+    outColor = dot(normal, normalize(vec3(0.577, -0.577, -0.577))) *  texelFetch(albedoImage, ivec2(gl_FragCoord.xy), 0);
 }

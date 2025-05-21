@@ -171,7 +171,8 @@ pvp::PvpScene::PvpScene(Context& context)
         .build(1);
 
     SamplerBuilder()
-        .set_filter(VK_FILTER_NEAREST)
+        .set_filter(VK_FILTER_LINEAR)
+        .set_mipmap(VK_SAMPLER_MIPMAP_MODE_LINEAR)
         .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
         .build(m_context, m_shadered_sampler);
 
