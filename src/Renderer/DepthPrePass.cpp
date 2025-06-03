@@ -64,7 +64,7 @@ namespace pvp
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
         GraphicsPipelineBuilder()
-            .add_shader("shaders/depthpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
+            .add_shader("shaders/depthpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
             .set_depth_format(VK_FORMAT_D32_SFLOAT)
             .set_pipeline_layout(m_pipeline_layout)
             .set_input_attribute_description(Vertex::get_attribute_descriptions())

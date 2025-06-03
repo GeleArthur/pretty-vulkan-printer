@@ -119,12 +119,17 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
 )
 
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink # TODO: WHEN HANDING IN CHANGE create_symlink TO copy_directory_if_different. ( I need a fallback)
+        "${CMAKE_SOURCE_DIR}/shaders"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
+)
+
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
 
-include(shaders/compile_shaders.cmake)
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
 #        $<$<CXX_COMPILER_ID:MSVC>:/W4>

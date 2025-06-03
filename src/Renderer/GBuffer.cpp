@@ -35,8 +35,8 @@ void pvp::GBuffer::build_pipelines()
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
     GraphicsPipelineBuilder()
-        .add_shader("shaders/gpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
-        .add_shader("shaders/gpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        .add_shader("shaders/gpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
+        .add_shader("shaders/gpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format, m_context.swapchain->get_swapchain_surface_format().format })
         .set_depth_format(VK_FORMAT_D32_SFLOAT)
         .set_pipeline_layout(m_pipeline_layout)

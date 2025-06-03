@@ -1,4 +1,5 @@
 #version 450
+#pragma shader_stage(fragment)
 
 layout (location = 0) in vec2 fragTexCoord;
 //layout (binding = 1) uniform sampler2D texSampler;

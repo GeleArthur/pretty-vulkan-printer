@@ -1,4 +1,5 @@
 #version 450
+#pragma shader_stage(fragment)
 #extension GL_EXT_nonuniform_qualifier : enable
 
 layout(set = 1, binding = 0) uniform sampler shardedSampler;
@@ -8,7 +9,7 @@ layout (location = 0) in vec2 fragTexCoord;
 layout (location = 1) in vec3 objectNormal;
 
 layout (location = 0) out vec4 outColor;
-layout (location = 1) out vec4 outNormal;
+layout (location = 1) out vec4 outNormalAndMetalRougness;
 
 layout(push_constant) uniform PushConstant {
     mat4 model;
@@ -38,11 +39,10 @@ vec2 EncodeNormalOcta(vec3 n) {
 void main() {
 
     vec4 color = texture(sampler2D(textures[pc.diffuse_texture_index], shardedSampler), fragTexCoord).rgba;
+    vec4 metal_rougness = texture(sampler2D(textures[pc.metalness_texture_index], shardedSampler), fragTexCoord).rgba;
+
     outColor = color;
 
-    vec4 normalTexture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgba;
-    
-
     vec2 normalEncoded = EncodeNormalOcta(objectNormal);
-    outNormal = vec4(normalEncoded.x, normalEncoded.y, 0.0, 0.0);
+    outNormalAndMetalRougness = vec4(normalEncoded.x, normalEncoded.y, metal_rougness.g, metal_rougness.b);
 }

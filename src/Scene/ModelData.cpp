@@ -27,7 +27,7 @@ glm::mat4 convert_matrix(const aiMatrix4x4& m)
 pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 {
     LoadedScene    out_scene;
-    const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+    const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
     if (scene == nullptr)
     {
@@ -54,11 +54,13 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
             {
                 const aiVector3D& pos = mesh->mVertices[v];
                 const aiVector3D& norm = mesh->mNormals[v];
+                const aiVector3D& tangent = mesh->mTangents[v];
                 const aiVector3D& texcoord = mesh->mTextureCoords[0][v];
 
                 model.vertices.emplace_back(glm::vec3(pos.x, pos.y, pos.z),
                                             glm::vec2(texcoord.x, texcoord.y),
-                                            glm::vec3(norm.x, norm.y, norm.z));
+                                            glm::vec3(norm.x, norm.y, norm.z),
+                                            glm::vec3(tangent.x, tangent.y, tangent.z));
             }
 
             for (unsigned int f = 0; f < mesh->mNumFaces; ++f)

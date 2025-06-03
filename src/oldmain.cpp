@@ -700,8 +700,8 @@ class HelloTraingle
 
     void createGraphicsPipeline()
     {
-        auto                            vertShaderCode = readFile("shaders/shader.vert.spv");
-        auto                            fragShaderCode = readFile("shaders/shader.frag.spv");
+        auto                            vertShaderCode = readFile("shaders/shader.vert");
+        auto                            fragShaderCode = readFile("shaders/shader.frag");
 
         VkShaderModule                  vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule                  fragShaderModule = createShaderModule(fragShaderCode);

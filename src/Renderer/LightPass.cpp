@@ -44,8 +44,8 @@ namespace pvp
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_light_pipeline_layout, nullptr); });
 
         GraphicsPipelineBuilder()
-            .add_shader("shaders/lightpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT)
-            .add_shader("shaders/lightpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_shader("shaders/lightpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
+            .add_shader("shaders/lightpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
             .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
             .set_pipeline_layout(m_light_pipeline_layout)
             .build(*m_context.device, m_light_pipeline);

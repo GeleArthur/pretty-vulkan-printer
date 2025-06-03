@@ -11,7 +11,7 @@
 void pvp::Buffer::copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source) const
 {
     VkBufferCopy copy_region{};
-    copy_region.size = m_allocation_info.size;
+    copy_region.size = get_size();
     vkCmdCopyBuffer(command_buffer, source.m_buffer, m_buffer, 1, &copy_region);
 }
 

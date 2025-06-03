@@ -94,6 +94,18 @@ add_library(spirv-reflect STATIC
 target_include_directories(spirv-reflect PUBLIC ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect)
 set_target_properties(spirv-reflect PROPERTIES PROPERTY EXCLUDE_FROM_ALL)
 
+add_library(shaderc STATIC IMPORTED)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set_target_properties(shaderc PROPERTIES
+            IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combinedd.lib"
+    )
+else()
+    set_target_properties(shaderc PROPERTIES
+            IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combined.lib"
+    )
+endif()
+
 target_link_libraries(${PROJECT_NAME} INTERFACE
         glm::glm
         glfw
@@ -102,4 +114,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         assimp
         Vulkan::Vulkan
         spirv-reflect
+        shaderc
 )
