@@ -1,9 +1,10 @@
 #version 450
 #pragma shader_stage(vertex)
 
+
 layout (set = 0, binding = 0) uniform SceneGlobals {
-    mat4x4 camera_view_projection;
-    vec3   lights[1];
+    mat4x4 camera_view;
+    mat4x4 camera_projection;
 } sceneInfo;
 
 layout(push_constant) uniform PushConstant {
@@ -24,7 +25,7 @@ layout (location = 2) out vec3 outTangent;
 
 
 void main() {
-    gl_Position = sceneInfo.camera_view_projection * pc.model * vec4(inPosition, 1.0);
+    gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * pc.model * vec4(inPosition, 1.0);
     fragTexCoord = inTexCoord;
     normalCoord = vec3(pc.model * vec4(inNormal, 0.0));
     outTangent = vec3(pc.model * vec4(inTangent, 0.0));

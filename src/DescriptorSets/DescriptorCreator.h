@@ -14,6 +14,7 @@ namespace pvp
         ~DescriptorCreator();
         DescriptorLayoutBuilder create_layout();
         void                    add_layout(uint32_t index, VkDescriptorSetLayout layout);
+        void                    remove_layout(uint32_t index);
 
         VkDescriptorSetLayout get_layout(uint32_t index) const
         {

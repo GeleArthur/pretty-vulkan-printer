@@ -20,9 +20,9 @@ namespace pvp
         return *this;
     }
 
-    DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, const Image& image, const Sampler& sampler, VkImageLayout layout)
+    DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, const Image& image, VkImageLayout layout)
     {
-        m_images.push_back({ binding, image, sampler, layout });
+        m_images.push_back({ binding, image, layout });
         return *this;
     }
     DescriptorSetBuilder& DescriptorSetBuilder::bind_image_array(uint32_t binding, const std::vector<Image>& image_array)
@@ -89,15 +89,14 @@ namespace pvp
             {
                 VkDescriptorImageInfo image_info{};
                 image_info.imageView = std::get<1>(image).get().get_view();
-                image_info.sampler = std::get<2>(image).get().handle;
-                image_info.imageLayout = std::get<3>(image) == VK_IMAGE_LAYOUT_MAX_ENUM ? std::get<1>(image).get().get_layout() : std::get<3>(image);
+                image_info.imageLayout = std::get<2>(image) == VK_IMAGE_LAYOUT_MAX_ENUM ? std::get<1>(image).get().get_layout() : std::get<2>(image);
 
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 write.dstSet = descriptor.sets[i];
                 write.dstBinding = std::get<0>(image);
                 write.dstArrayElement = 0;
-                write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 write.descriptorCount = 1;
                 write.pImageInfo = &image_info;
 

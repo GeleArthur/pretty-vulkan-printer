@@ -216,11 +216,9 @@ void pvp::PvpScene::update()
 
     m_camera.update(delta_time);
 
-    glm::mat4x4 model = glm::rotate(glm::mat4(1.0f), 0.0f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
     m_scene_globals = {
-        m_camera.get_perspective_matrix() * m_camera.get_view_matrix() * model,
-        glm::vec3{ 0, 0, 0 }
+        m_camera.get_view_matrix(),
+        m_camera.get_projection_matrix(),
     };
 }
 void pvp::PvpScene::update_render() const

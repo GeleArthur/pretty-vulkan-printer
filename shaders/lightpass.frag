@@ -1,12 +1,15 @@
 #version 450
 #pragma shader_stage(fragment)
+#extension GL_EXT_samplerless_texture_functions : enable
 
-layout (binding = 0) uniform sampler2D albedoImage;
-layout (binding = 1) uniform sampler2D normalImage;
+layout (set = 0, binding = 0) uniform SceneGlobals {
+    mat4x4 camera_view;
+    mat4x4 camera_projection;
+} sceneInfo;
 
-//layout(std140, set = 0, binding = 2) uniform ScreenUBO{
-//    vec2 screensize;
-//} uScreen;
+layout(set = 1, binding = 0) uniform sampler shardedSampler;
+layout(set = 1, binding = 1) uniform texture2D albedoImage;
+layout(set = 1, binding = 2) uniform texture2D normalImage;
 
 layout (location = 0) out vec4 outColor;
 
@@ -27,10 +30,13 @@ vec3 DecodeNormalOcta(vec2 f) {
     return normalize(n);
 }
 
+//vec3 GetWolrdPositionFromDepth(in float depth, in ivec2 fragcoords,  )
+
+
 void main() {
     vec4 normalMetalRougness = texelFetch(normalImage, ivec2(gl_FragCoord.xy), 0);
     vec3 normal = DecodeNormalOcta(normalMetalRougness.xy);
 
-    //outColor = dot(normal, normalize(vec3(0.577, -0.577, -0.577))) * texelFetch(albedoImage, ivec2(gl_FragCoord.xy), 0);
-    outColor = vec4(normal, 1.0);
+    outColor = dot(normal, normalize(vec3(0.577, -0.577, -0.577))) * texelFetch(albedoImage, ivec2(gl_FragCoord.xy), 0);
+    //    outColor = vec4(normal, 1.0);
 }

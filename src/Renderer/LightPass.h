@@ -13,7 +13,7 @@ namespace pvp
     class LightPass
     {
     public:
-        explicit LightPass(const Context& context, GBuffer& gbuffer);
+        explicit LightPass(const Context& context, const PvpScene& scene, GBuffer& gbuffer);
         void   draw(VkCommandBuffer command_buffer);
         Image& get_light_image()
         {
@@ -21,14 +21,15 @@ namespace pvp
         };
 
     private:
-        void           build_pipelines();
-        void           create_images();
-        const Context& m_context;
-        GBuffer&       m_gemotry_pass;
-        Image          m_light_image{};
-        Sampler        m_sampler{};
+        void            build_pipelines();
+        void            create_images();
+        const Context&  m_context;
+        GBuffer&        m_gemotry_pass;
+        const PvpScene& m_scene;
+        Image           m_light_image{};
+        Sampler         m_sampler{};
 
-        DescriptorSets m_descriptor_binding;
+        DescriptorSets m_light_binding;
 
         // UniformBuffer<glm::vec2>* m_screensize_buffer;
 

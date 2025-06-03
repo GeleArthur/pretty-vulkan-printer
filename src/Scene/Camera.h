@@ -14,14 +14,14 @@ namespace pvp
         {
             return m_view;
         };
-        glm::mat4x4 get_perspective_matrix() const
+        glm::mat4x4 get_projection_matrix() const
         {
-            return m_perspective;
+            return m_projection;
         };
 
     private:
         const Context& m_context;
-        glm::mat4x4    m_perspective{};
+        glm::mat4x4    m_projection{};
         glm::mat4x4    m_view{};
         glm::vec3      m_position{ 0, 0, 0 };
         glm::vec3      m_front{ 0, 0, 1 };

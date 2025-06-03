@@ -11,9 +11,10 @@
 
 namespace pvp
 {
-    LightPass::LightPass(const Context& context, GBuffer& gbuffer)
+    LightPass::LightPass(const Context& context, const PvpScene& scene, GBuffer& gbuffer)
         : m_context{ context }
         , m_gemotry_pass{ gbuffer }
+        , m_scene{ scene }
     {
         build_pipelines();
         create_images();
@@ -22,9 +23,12 @@ namespace pvp
     void LightPass::build_pipelines()
     {
         m_context.descriptor_creator->create_layout()
-            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .add_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(11);
+
+        m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(11); });
 
         SamplerBuilder()
             .set_filter(VK_FILTER_LINEAR)
@@ -32,13 +36,15 @@ namespace pvp
             .build(m_context, m_sampler);
         m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });
 
-        m_descriptor_binding = DescriptorSetBuilder()
-                                   .bind_image(0, m_gemotry_pass.get_albedo_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                                   .bind_image(1, m_gemotry_pass.get_normal_image(), m_sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                                   .set_layout(m_context.descriptor_creator->get_layout(11))
-                                   .build(m_context);
+        m_light_binding = DescriptorSetBuilder()
+                              .bind_sampler(0, m_sampler)
+                              .bind_image(1, m_gemotry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                              .bind_image(2, m_gemotry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                              .set_layout(m_context.descriptor_creator->get_layout(11))
+                              .build(m_context);
 
         PipelineLayoutBuilder()
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(11))
             .build(m_context.device->get_device(), m_light_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_light_pipeline_layout, nullptr); });
@@ -77,7 +83,8 @@ namespace pvp
                                         VK_ACCESS_2_NONE,
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_descriptor_binding.sets[0], 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, &m_light_binding.sets[0], 0, nullptr);
 
         const auto render_color_info = RenderInfoBuilder()
                                            .add_color(&m_light_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)

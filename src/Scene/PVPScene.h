@@ -37,8 +37,8 @@ namespace pvp
 
     struct SceneGlobals
     {
-        glm::mat4x4 camera_view_projection;
-        glm::vec3   lights[1];
+        glm::mat4x4 camera_view;
+        glm::mat4x4 camera_projection;
     };
 
     class PvpScene

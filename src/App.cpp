@@ -59,15 +59,23 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { delete m_scene; });
 
     m_renderer = new Renderer(m_context, *m_swapchain, *m_scene);
-    m_destructor_queue.add_to_queue([&] { delete m_renderer; });
+    // m_destructor_queue.add_to_queue([&] { delete m_renderer; });
 
     // TODO: poll events on other thread
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
         glfwPollEvents();
+        if (glfwGetKey(m_window_surface.get_window(), GLFW_KEY_R))
+        {
+            vkDeviceWaitIdle(m_device.get_device());
+            delete m_renderer;
+            m_renderer = new Renderer(m_context, *m_swapchain, *m_scene);
+        }
+
         m_scene->update();
         m_renderer->draw();
     }
 
     vkDeviceWaitIdle(m_device.get_device());
+    delete m_renderer;
 }

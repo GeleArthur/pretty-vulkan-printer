@@ -31,7 +31,7 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpS
     m_destructor_queue.add_to_queue([&] { delete m_depth_pre_pass; });
     m_geometry_draw = new GBuffer(m_context, scene, *m_depth_pre_pass);
     m_destructor_queue.add_to_queue([&] { delete m_geometry_draw; });
-    m_light_pass = new LightPass(m_context, *m_geometry_draw);
+    m_light_pass = new LightPass(m_context, m_scene, *m_geometry_draw);
     m_destructor_queue.add_to_queue([&] { delete m_light_pass; });
     m_blit_to_swapchain = new BlitToSwapchain(m_context, swapchain, m_light_pass->get_light_image());
 }

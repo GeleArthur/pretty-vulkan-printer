@@ -6,8 +6,8 @@
 pvp::Camera::Camera(const Context& context)
     : m_context(context)
 {
-    m_perspective = glm::perspective(glm::radians(45.0f), static_cast<float>(context.swapchain->get_swapchain_extent().width) / static_cast<float>(context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
-    m_perspective[1][1] *= -1;
+    m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(context.swapchain->get_swapchain_extent().width) / static_cast<float>(context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
+    m_projection[1][1] *= -1;
     glfwGetCursorPos(m_context.window_surface->get_window(), &m_prev_mouse_x, &m_prev_mouse_y);
 }
 void pvp::Camera::update(float delta_time)

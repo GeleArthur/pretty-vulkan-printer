@@ -13,6 +13,7 @@ pvp::DescriptorCreator::DescriptorCreator(const Context& context)
     const std::array sizes = {
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
     };
 
@@ -51,4 +52,9 @@ void pvp::DescriptorCreator::add_layout(uint32_t index, VkDescriptorSetLayout la
     }
 
     m_layouts[index] = layout;
+}
+void pvp::DescriptorCreator::remove_layout(uint32_t index)
+{
+    vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
+    m_layouts.erase(index);
 }
