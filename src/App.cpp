@@ -1,5 +1,6 @@
 ﻿#include "App.h"
 
+#include "../cmake-build-x64-release/_deps/spdlog-src/include/spdlog/spdlog.h"
 #include "Context/LogicPhysicalQueueBuilder.h"
 
 #include <Context/InstanceBuilder.h>
@@ -70,6 +71,7 @@ void pvp::App::run()
             vkDeviceWaitIdle(m_device.get_device());
             delete m_renderer;
             m_renderer = new Renderer(m_context, *m_swapchain, *m_scene);
+            spdlog::info("reloaded renderer");
         }
 
         m_scene->update();

@@ -13,7 +13,7 @@ namespace pvp
     class LightPass
     {
     public:
-        explicit LightPass(const Context& context, const PvpScene& scene, GBuffer& gbuffer);
+        explicit LightPass(const Context& context, const PvpScene& scene, const GBuffer& gbuffer, DepthPrePass& depth_pre_pass);
         void   draw(VkCommandBuffer command_buffer);
         Image& get_light_image()
         {
@@ -24,7 +24,8 @@ namespace pvp
         void            build_pipelines();
         void            create_images();
         const Context&  m_context;
-        GBuffer&        m_gemotry_pass;
+        const GBuffer&  m_geometry_pass;
+        DepthPrePass&   m_depth_pre_pass;
         const PvpScene& m_scene;
         Image           m_light_image{};
         Sampler         m_sampler{};

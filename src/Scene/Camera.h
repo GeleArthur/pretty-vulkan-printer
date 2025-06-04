@@ -10,14 +10,19 @@ namespace pvp
         explicit Camera(const Context& context);
         void update(float delta_time);
 
-        glm::mat4x4 get_view_matrix() const
+        const glm::mat4x4& get_view_matrix() const
         {
             return m_view;
         };
-        glm::mat4x4 get_projection_matrix() const
+        const glm::mat4x4& get_projection_matrix() const
         {
             return m_projection;
         };
+
+        const glm::vec3& get_position() const
+        {
+            return m_position;
+        }
 
     private:
         const Context& m_context;

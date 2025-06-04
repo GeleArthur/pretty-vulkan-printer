@@ -5,6 +5,7 @@
 layout (set = 0, binding = 0) uniform SceneGlobals {
     mat4x4 camera_view;
     mat4x4 camera_projection;
+    vec3 position;
 } sceneInfo;
 
 layout(push_constant) uniform PushConstant {

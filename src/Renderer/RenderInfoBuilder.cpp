@@ -7,12 +7,12 @@ namespace pvp
         m_layout = layout;
         return *this;
     }
-    RenderInfoBuilder& RenderInfoBuilder::add_color(Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
+    RenderInfoBuilder& RenderInfoBuilder::add_color(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
     {
         m_colors.emplace_back(image, load, store);
         return *this;
     }
-    RenderInfoBuilder& RenderInfoBuilder::set_depth(Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
+    RenderInfoBuilder& RenderInfoBuilder::set_depth(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
     {
         m_depth = ImageLoadStore{ image, load, store };
         return *this;

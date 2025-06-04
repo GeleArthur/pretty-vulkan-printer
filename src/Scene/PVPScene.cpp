@@ -160,7 +160,7 @@ pvp::PvpScene::PvpScene(Context& context)
     m_scene_globals_gpu = new UniformBuffer<SceneGlobals>(context.allocator->get_allocator());
 
     context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
         .build(0);
 
     context.descriptor_creator->create_layout()
@@ -219,6 +219,7 @@ void pvp::PvpScene::update()
     m_scene_globals = {
         m_camera.get_view_matrix(),
         m_camera.get_projection_matrix(),
+        m_camera.get_position()
     };
 }
 void pvp::PvpScene::update_render() const

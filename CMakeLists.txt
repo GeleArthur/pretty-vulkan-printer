@@ -57,8 +57,6 @@ add_executable(${PROJECT_NAME}
         src/Renderer/BlitToSwapchain.h
         src/Renderer/GBuffer.cpp
         src/Renderer/GBuffer.h
-        src/RenderPassOLD/RenderPassBuilder.cpp
-        src/RenderPassOLD/RenderPassBuilder.h
         src/GraphicsPipeline/GraphicsPipelineBuilder.cpp
         src/GraphicsPipeline/GraphicsPipelineBuilder.h
         src/GraphicsPipeline/ShaderLoader.cpp

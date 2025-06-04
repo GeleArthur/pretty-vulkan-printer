@@ -23,7 +23,10 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, std::
     path.replace_extension();
     auto name = path.filename().string();
 
-    shaderc::AssemblyCompilationResult result = compiler.PreprocessGlsl(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), {});
+    shaderc::CompileOptions options;
+    options.SetGenerateDebugInfo();
+
+    shaderc::AssemblyCompilationResult result = compiler.PreprocessGlsl(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
         spdlog::error(result.GetErrorMessage());
@@ -33,7 +36,7 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, std::
     shader_code.resize(result.cend() - result.cbegin());
     std::ranges::copy(result, shader_code.data());
 
-    result = compiler.CompileGlslToSpvAssembly(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), {});
+    result = compiler.CompileGlslToSpvAssembly(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
         spdlog::error(result.GetErrorMessage().c_str());

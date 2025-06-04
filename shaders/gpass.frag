@@ -39,10 +39,10 @@ vec2 EncodeNormalOcta(vec3 n) {
 void main() {
 
     vec4 color = texture(sampler2D(textures[pc.diffuse_texture_index], shardedSampler), fragTexCoord).rgba;
-    vec4 metal_rougness = texture(sampler2D(textures[pc.metalness_texture_index], shardedSampler), fragTexCoord).rgba;
+    vec4 roughness_metal = texture(sampler2D(textures[pc.metalness_texture_index], shardedSampler), fragTexCoord).rgba;
 
     outColor = color;
 
     vec2 normalEncoded = EncodeNormalOcta(objectNormal);
-    outNormalAndMetalRougness = vec4(normalEncoded.x, normalEncoded.y, metal_rougness.g, metal_rougness.b);
+    outNormalAndMetalRougness = vec4(normalEncoded.x, normalEncoded.y, roughness_metal.g, roughness_metal.b);
 }

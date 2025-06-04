@@ -1,5 +1,6 @@
 ﻿#include "LightPass.h"
 
+#include "DepthPrePass.h"
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
 
@@ -11,9 +12,10 @@
 
 namespace pvp
 {
-    LightPass::LightPass(const Context& context, const PvpScene& scene, GBuffer& gbuffer)
+    LightPass::LightPass(const Context& context, const PvpScene& scene, const GBuffer& gbuffer, DepthPrePass& depth_pre_pass)
         : m_context{ context }
-        , m_gemotry_pass{ gbuffer }
+        , m_geometry_pass{ gbuffer }
+        , m_depth_pre_pass{ depth_pre_pass }
         , m_scene{ scene }
     {
         build_pipelines();
@@ -24,6 +26,7 @@ namespace pvp
     {
         m_context.descriptor_creator->create_layout()
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(11);
@@ -38,8 +41,9 @@ namespace pvp
 
         m_light_binding = DescriptorSetBuilder()
                               .bind_sampler(0, m_sampler)
-                              .bind_image(1, m_gemotry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                              .bind_image(2, m_gemotry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                              .bind_image(1, m_geometry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                              .bind_image(2, m_geometry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                              .bind_image(3, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                               .set_layout(m_context.descriptor_creator->get_layout(11))
                               .build(m_context);
 
@@ -52,7 +56,7 @@ namespace pvp
         GraphicsPipelineBuilder()
             .add_shader("shaders/lightpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
             .add_shader("shaders/lightpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
-            .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+            .set_color_format(std::array{ VK_FORMAT_R32G32B32A32_SFLOAT })
             .set_pipeline_layout(m_light_pipeline_layout)
             .build(*m_context.device, m_light_pipeline);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_light_pipeline, nullptr); });
@@ -65,7 +69,7 @@ namespace pvp
     void LightPass::create_images()
     {
         ImageBuilder()
-            .set_format(m_context.swapchain->get_swapchain_surface_format().format)
+            .set_format(VK_FORMAT_R32G32B32A32_SFLOAT)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .set_size(m_context.swapchain->get_swapchain_extent())

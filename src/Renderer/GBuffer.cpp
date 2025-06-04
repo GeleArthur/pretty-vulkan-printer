@@ -89,7 +89,7 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
     const auto color_info = RenderInfoBuilder()
                                 .add_color(&m_albedo_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
                                 .add_color(&m_normal_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-                                .set_depth(m_depth_pre_pass.get_depth_image(), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE)
+                                .set_depth(&m_depth_pre_pass.get_depth_image(), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
                                 .set_size(m_albedo_image.get_size())
                                 .build();
 
@@ -120,4 +120,12 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                                      VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                      VK_ACCESS_2_SHADER_READ_BIT);
+
+    m_depth_pre_pass.get_depth_image()
+        .transition_layout(cmd,
+                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                           VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+                           VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                           VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                           VK_ACCESS_2_SHADER_READ_BIT);
 }

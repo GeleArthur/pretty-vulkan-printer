@@ -10,6 +10,7 @@
 #include "BlitToSwapchain.h"
 #include "DepthPrePass.h"
 
+#include <VulkanExternalFunctions.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <Scene/PVPScene.h>
 #include <VMAAllocator/VmaAllocator.h>
@@ -31,7 +32,7 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpS
     m_destructor_queue.add_to_queue([&] { delete m_depth_pre_pass; });
     m_geometry_draw = new GBuffer(m_context, scene, *m_depth_pre_pass);
     m_destructor_queue.add_to_queue([&] { delete m_geometry_draw; });
-    m_light_pass = new LightPass(m_context, m_scene, *m_geometry_draw);
+    m_light_pass = new LightPass(m_context, m_scene, *m_geometry_draw, *m_depth_pre_pass);
     m_destructor_queue.add_to_queue([&] { delete m_light_pass; });
     m_blit_to_swapchain = new BlitToSwapchain(m_context, swapchain, m_light_pass->get_light_image());
 }
@@ -82,7 +83,10 @@ void pvp::Renderer::prepare_frame()
 void pvp::Renderer::draw()
 {
     prepare_frame();
+    // VkDebugUtilsLabelEXT yea{ .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, .pLabelName = "Depth prepass", .color = { 0.0, 0.0, 0.0, 1.0 } };
+    // VulkanInstanceExtensions::vkCmdBeginDebugUtilsLabelEXT(m_cmds_graphics[m_double_buffer_frame], &yea);
     m_depth_pre_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
+    // VulkanInstanceExtensions::vkCmdEndDebugUtilsLabelEXT(m_cmds_graphics[m_double_buffer_frame]);
     m_geometry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_blit_to_swapchain->draw(m_cmds_graphics[m_double_buffer_frame], m_current_swapchain_index);

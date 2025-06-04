@@ -39,6 +39,7 @@ namespace pvp
     {
         glm::mat4x4 camera_view;
         glm::mat4x4 camera_projection;
+        glm::vec3   positon;
     };
 
     class PvpScene
