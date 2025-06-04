@@ -42,6 +42,22 @@ namespace pvp
         glm::vec3   positon;
     };
 
+    struct PointLight
+    {
+        glm::vec3 position;
+        glm::vec3 color;
+        float     intensity;
+    };
+
+    struct SceneLights
+    {
+        glm::vec3  direction_light_direction;
+        glm::vec3  direction_light_color;
+        float      direction_light_intensity;
+        int        point_light_count;
+        PointLight points[];
+    };
+
     class PvpScene
     {
     public:
@@ -83,8 +99,10 @@ namespace pvp
         DescriptorSets     m_all_textures;
         Sampler            m_shadered_sampler;
         SceneGlobals       m_scene_globals;
+        // SceneLights        m_scene_lights;
 
         UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
+        UniformBuffer<SceneGlobals>* m_scene_lights_gpu{};
     };
 
 } // namespace pvp

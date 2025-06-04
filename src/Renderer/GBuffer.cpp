@@ -21,8 +21,8 @@ pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, DepthPrePas
     , m_scene(scene)
     , m_depth_pre_pass(depth)
 {
-    build_pipelines();
     create_images();
+    build_pipelines();
 }
 
 void pvp::GBuffer::build_pipelines()
@@ -37,8 +37,8 @@ void pvp::GBuffer::build_pipelines()
     GraphicsPipelineBuilder()
         .add_shader("shaders/gpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
         .add_shader("shaders/gpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
-        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format, m_context.swapchain->get_swapchain_surface_format().format })
-        .set_depth_format(VK_FORMAT_D32_SFLOAT)
+        .set_color_format(std::array{ m_albedo_image.get_format(), m_normal_image.get_format() })
+        .set_depth_format(m_depth_pre_pass.get_depth_image().get_format())
         .set_pipeline_layout(m_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
         .set_input_binding_description(Vertex::get_binding_description())

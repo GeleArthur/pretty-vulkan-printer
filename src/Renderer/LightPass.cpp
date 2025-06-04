@@ -18,8 +18,8 @@ namespace pvp
         , m_depth_pre_pass{ depth_pre_pass }
         , m_scene{ scene }
     {
-        build_pipelines();
         create_images();
+        build_pipelines();
     }
 
     void LightPass::build_pipelines()
@@ -56,14 +56,10 @@ namespace pvp
         GraphicsPipelineBuilder()
             .add_shader("shaders/lightpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
             .add_shader("shaders/lightpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
-            .set_color_format(std::array{ VK_FORMAT_R32G32B32A32_SFLOAT })
+            .set_color_format(std::array{ m_light_image.get_format() })
             .set_pipeline_layout(m_light_pipeline_layout)
             .build(*m_context.device, m_light_pipeline);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_light_pipeline, nullptr); });
-
-        // m_screensize_buffer = new UniformBuffer<glm::vec2>(m_context.allocator->get_allocator());
-        // m_screensize_buffer->update(0, glm::vec2(m_image_info.image_size.width, m_image_info.image_size.height));
-        // m_destructor_queue.add_to_queue([&] { delete m_screensize_buffer; });
     }
 
     void LightPass::create_images()
@@ -73,7 +69,7 @@ namespace pvp
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .set_size(m_context.swapchain->get_swapchain_extent())
-            .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+            .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
             .build(m_context, m_light_image);
         m_destructor_queue.add_to_queue([&] { m_light_image.destroy(m_context); });
     }
@@ -103,7 +99,7 @@ namespace pvp
         vkCmdEndRendering(cmd);
 
         m_light_image.transition_layout(cmd,
-                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                         VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,

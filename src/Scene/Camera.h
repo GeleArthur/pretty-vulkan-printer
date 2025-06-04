@@ -28,7 +28,7 @@ namespace pvp
         const Context& m_context;
         glm::mat4x4    m_projection{};
         glm::mat4x4    m_view{};
-        glm::vec3      m_position{ 0, 0, 0 };
+        glm::vec3      m_position{ 0, 1, 0 };
         glm::vec3      m_front{ 0, 0, 1 };
         glm::vec3      m_camera_up = glm::vec3{ 0, 1.0f, 0.0f };
 

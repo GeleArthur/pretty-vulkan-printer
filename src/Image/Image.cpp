@@ -38,6 +38,10 @@ namespace pvp
     {
         return m_current_layout;
     }
+    VkFormat Image::get_format() const
+    {
+        return m_format;
+    }
     VkExtent2D Image::get_size() const
     {
         return m_extent;

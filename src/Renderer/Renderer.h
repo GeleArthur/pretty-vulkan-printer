@@ -8,6 +8,10 @@
 
 namespace pvp
 {
+    class ToneMappingPass;
+}
+namespace pvp
+{
     class DepthPrePass;
 }
 namespace pvp
@@ -46,6 +50,7 @@ namespace pvp
         DepthPrePass*    m_depth_pre_pass{};
         GBuffer*         m_geometry_draw{};
         LightPass*       m_light_pass{};
+        ToneMappingPass* m_tone_mapping_pass{};
         BlitToSwapchain* m_blit_to_swapchain{};
 
         DestructorQueue m_destructor_queue{};

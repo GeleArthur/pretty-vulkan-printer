@@ -65,7 +65,7 @@ namespace pvp
 
         GraphicsPipelineBuilder()
             .add_shader("shaders/depthpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
-            .set_depth_format(VK_FORMAT_D32_SFLOAT)
+            .set_depth_format(m_depth_image.get_format())
             .set_pipeline_layout(m_pipeline_layout)
             .set_input_attribute_description(Vertex::get_attribute_descriptions())
             .set_input_binding_description(Vertex::get_binding_description())
