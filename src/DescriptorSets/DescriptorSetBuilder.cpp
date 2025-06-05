@@ -49,16 +49,18 @@ namespace pvp
         {
             VkDescriptorSetAllocateInfo alloc_info{};
 
+            std::unique_ptr<unsigned>                                           image_count{};
+            std::unique_ptr<VkDescriptorSetVariableDescriptorCountAllocateInfo> variable_count{};
+
             if (m_image_array != nullptr)
             {
-                const uint32_t image_count = static_cast<uint32_t>(std::get<1>(*m_image_array).size());
+                image_count = std::make_unique<uint32_t>(static_cast<uint32_t>(std::get<1>(*m_image_array).size()));
 
-                VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count{
+                variable_count = std::make_unique<VkDescriptorSetVariableDescriptorCountAllocateInfo>(VkDescriptorSetVariableDescriptorCountAllocateInfo{
                     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO,
                     .descriptorSetCount = 1,
-                    .pDescriptorCounts = &image_count
-                };
-                alloc_info.pNext = &variable_count;
+                    .pDescriptorCounts = image_count.get() });
+                alloc_info.pNext = variable_count.get();
             }
 
             alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
