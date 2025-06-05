@@ -28,7 +28,7 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { m_instance.destroy(); });
 
     WindowSurfaceBuilder()
-        // .set_window_size(1200, 1000)
+        .set_window_size(1920, 1080)
         .set_window_title("pretty vulkan printer")
         .build(m_instance, m_window_surface);
     m_destructor_queue.add_to_queue([&] { m_window_surface.destroy(m_instance); });

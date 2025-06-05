@@ -42,20 +42,18 @@ namespace pvp
         glm::vec3   positon;
     };
 
-    struct PointLight
+    struct alignas(16) PointLight
     {
-        glm::vec3 position;
-        glm::vec3 color;
+        glm::vec4 position;
+        glm::vec4 color;
         float     intensity;
     };
 
-    struct SceneLights
+    struct alignas(16) DirectionLight
     {
-        glm::vec3  direction_light_direction;
-        glm::vec3  direction_light_color;
-        float      direction_light_intensity;
-        int        point_light_count;
-        PointLight points[];
+        glm::vec4 direction;
+        glm::vec4 color;
+        float     intensity;
     };
 
     class PvpScene
@@ -63,8 +61,12 @@ namespace pvp
     public:
         explicit PvpScene(Context& context);
         ~PvpScene();
-        void update();
-        void update_render() const;
+        uint32_t add_point_light(const PointLight& light) const;
+        void     change_point_light(uint32_t index, const PointLight& light) const;
+        uint32_t add_direction_light(const DirectionLight& light) const;
+        void     change_direction_light(uint32_t index, const DirectionLight& light) const;
+        void     update();
+        void     update_render() const;
 
         const std::vector<Model>& get_models() const
         {
@@ -80,7 +82,6 @@ namespace pvp
         {
             return m_scene_globals_gpu;
         };
-
         const DescriptorSets& get_scene_descriptor() const
         {
             return m_scene_binding;
@@ -88,6 +89,14 @@ namespace pvp
         const DescriptorSets& get_textures_descriptor() const
         {
             return m_all_textures;
+        }
+        const DescriptorSets& get_light_descriptor() const
+        {
+            return m_point_descriptor;
+        }
+        const DescriptorSets& get_diratinal_descriptor() const
+        {
+            return m_point_descriptor;
         }
 
     private:
@@ -97,12 +106,17 @@ namespace pvp
         Camera             m_camera;
         DescriptorSets     m_scene_binding;
         DescriptorSets     m_all_textures;
+        DescriptorSets     m_point_descriptor;
         Sampler            m_shadered_sampler;
         SceneGlobals       m_scene_globals;
-        // SceneLights        m_scene_lights;
+        Buffer             m_point_lights;
+        Buffer             m_directonal_lights;
+
+        constexpr static uint32_t max_point_lights{ 10u };
+        constexpr static uint32_t max_direction_lights{ 10u };
 
         UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
-        UniformBuffer<SceneGlobals>* m_scene_lights_gpu{};
+        // UniformBuffer<SceneGlobals>* m_scene_lights_gpu{};
     };
 
 } // namespace pvp

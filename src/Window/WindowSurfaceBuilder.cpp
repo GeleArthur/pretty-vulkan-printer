@@ -29,7 +29,7 @@ namespace pvp
         monitors = glfwGetMonitors(&count);
 
         int xpos, ypos;
-        glfwGetMonitorPos(monitors[1], &xpos, &ypos);
+        glfwGetMonitorPos(monitors[0], &xpos, &ypos);
 
         if (m_width == 0 || m_height == 0)
         {

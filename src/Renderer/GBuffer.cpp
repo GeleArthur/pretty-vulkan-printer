@@ -6,6 +6,7 @@
 
 #include <UniformBufferStruct.h>
 #include <array>
+#include <Debugger/Debugger.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
@@ -70,6 +71,8 @@ void pvp::GBuffer::create_images()
 
 void pvp::GBuffer::draw(VkCommandBuffer cmd)
 {
+    Debugger::start_debug_label(cmd, "G buffer", { 0, 1, 0 });
+
     m_albedo_image.transition_layout(cmd,
                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                      VK_PIPELINE_STAGE_2_NONE,
@@ -128,4 +131,5 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
                            VK_ACCESS_2_SHADER_READ_BIT);
+    Debugger::end_debug_label(cmd);
 }

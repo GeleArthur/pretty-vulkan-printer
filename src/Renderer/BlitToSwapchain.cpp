@@ -3,6 +3,7 @@
 #include "RenderInfoBuilder.h"
 
 #include <Context/Device.h>
+#include <Debugger/Debugger.h>
 #include <Image/ImageBuilder.h>
 #include <Image/TransitionLayout.h>
 
@@ -17,6 +18,8 @@ namespace pvp
 
     void BlitToSwapchain::draw(VkCommandBuffer cmd, uint32_t swapchain_image_index)
     {
+        Debugger::start_debug_label(cmd, "Bilt to swapchain", { 0.5f, 0.5f, 0.0f });
+
         VkImageBlit2 region{
             .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
             .srcSubresource = VkImageSubresourceLayers{
@@ -68,5 +71,6 @@ namespace pvp
                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                                 range);
+        Debugger::end_debug_label(cmd);
     }
 } // namespace pvp

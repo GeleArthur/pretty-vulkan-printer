@@ -2,6 +2,7 @@
 #include "ModelData.h"
 
 #include <DestructorQueue.h>
+#include <iostream>
 #include <set>
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
@@ -62,6 +63,7 @@ pvp::PvpScene::PvpScene(Context& context)
 
         Image gpu_image;
         ImageBuilder()
+            .set_name(texture.name)
             .set_format(format)
             .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
             .set_size({ texture.width, texture.height })
@@ -104,6 +106,7 @@ pvp::PvpScene::PvpScene(Context& context)
             .set_size(cpu_model.vertices.size() * sizeof(Vertex))
             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
             .build(context.allocator->get_allocator(), transfer_buffer);
 
         transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(cpu_model.vertices)));
@@ -112,6 +115,7 @@ pvp::PvpScene::PvpScene(Context& context)
         BufferBuilder()
             .set_size(cpu_model.vertices.size() * sizeof(Vertex))
             .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .build(context.allocator->get_allocator(), gpu_model.vertex_data);
 
         gpu_model.vertex_data.copy_from_buffer(cmd, transfer_buffer);
@@ -186,6 +190,38 @@ pvp::PvpScene::PvpScene(Context& context)
                          .bind_sampler(0, m_shadered_sampler)
                          .bind_image_array(1, m_gpu_textures)
                          .build(context);
+
+    BufferBuilder()
+        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+        .set_size((16 + sizeof(PointLight) * max_point_lights))
+        .build(m_context.allocator->get_allocator(), m_point_lights);
+
+    BufferBuilder()
+        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+        .set_size(16 + sizeof(DirectionLight) * max_direction_lights)
+        .build(m_context.allocator->get_allocator(), m_directonal_lights);
+
+    m_context.descriptor_creator->create_layout()
+        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .build(3);
+
+    std::vector buffers{ m_point_lights };
+    std::vector buffer_direction{ m_directonal_lights };
+
+    m_point_descriptor = DescriptorSetBuilder()
+                             .set_layout(m_context.descriptor_creator->get_layout(3))
+                             .bind_buffer_ssbo(0, buffers)
+                             .bind_buffer_ssbo(1, buffer_direction)
+                             .build(m_context);
+
+    add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
+    add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
+    add_direction_light(DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 10 });
 }
 pvp::PvpScene::~PvpScene()
 {
@@ -203,7 +239,44 @@ pvp::PvpScene::~PvpScene()
     delete m_scene_globals_gpu;
 
     m_shadered_sampler.destroy(m_context.device->get_device());
+    m_point_lights.destroy();
+    m_directonal_lights.destroy();
 }
+uint32_t pvp::PvpScene::add_point_light(const PointLight& light) const
+{
+    void*     light_base = m_point_lights.get_allocation_info().pMappedData;
+    uint32_t  light_index = (++*static_cast<uint32_t*>(light_base));
+    std::span point_lights(reinterpret_cast<PointLight*>(reinterpret_cast<char*>(light_base) + 16u), max_point_lights);
+    point_lights[light_index - 1] = light;
+
+    return light_index - 1;
+}
+void pvp::PvpScene::change_point_light(uint32_t index, const PointLight& light) const
+{
+    void* light_base = m_point_lights.get_allocation_info().pMappedData;
+
+    std::span point_lights(reinterpret_cast<PointLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
+    point_lights[index] = light;
+}
+
+uint32_t pvp::PvpScene::add_direction_light(const DirectionLight& light) const
+{
+    void* light_base = m_directonal_lights.get_allocation_info().pMappedData;
+
+    uint32_t  light_index = (++*static_cast<uint32_t*>(light_base));
+    std::span point_lights(reinterpret_cast<DirectionLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
+    point_lights[light_index - 1] = light;
+
+    return light_index - 1;
+}
+void pvp::PvpScene::change_direction_light(uint32_t index, const DirectionLight& light) const
+{
+    void* light_base = m_directonal_lights.get_allocation_info().pMappedData;
+
+    std::span point_lights(reinterpret_cast<DirectionLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
+    point_lights[index] = light;
+}
+
 void pvp::PvpScene::update()
 {
     static auto start_time = std::chrono::high_resolution_clock::now();
@@ -211,10 +284,17 @@ void pvp::PvpScene::update()
     const auto  current_time = std::chrono::high_resolution_clock::now();
     const float delta_time = std::chrono::duration<float>(current_time - last_time).count();
     const float time = std::chrono::duration<float>(current_time - start_time).count();
-
     last_time = current_time;
 
     m_camera.update(delta_time);
+
+    PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
+    change_point_light(0, light);
+
+    // void* light_data = m_point_lights.get_allocation_info().pMappedData;
+    // light_data = reinterpret_cast<char*>(light_data) + 16;
+    // reinterpret_cast<PointLight*>(light_data)->position = glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0);
+    // reinterpret_cast<PointLight*>(light_data)->color = glm::vec4(1, 1, 1, 0);
 
     m_scene_globals = {
         m_camera.get_view_matrix(),

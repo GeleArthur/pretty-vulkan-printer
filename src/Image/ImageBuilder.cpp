@@ -2,9 +2,15 @@
 
 #include "Image.h"
 
+#include <VulkanExternalFunctions.h>
 #include <exception>
 #include <Context/Device.h>
 
+pvp::ImageBuilder& pvp::ImageBuilder::set_name(const std::string& name)
+{
+    m_name = name;
+    return *this;
+}
 pvp::ImageBuilder& pvp::ImageBuilder::set_size(const VkExtent2D& size)
 {
     m_size = size;
@@ -81,4 +87,17 @@ void pvp::ImageBuilder::build(const Context& context, pvp::Image& image) const
     {
         throw std::exception("Failed creating image view");
     }
+
+#if defined(_DEBUG)
+
+    VkDebugUtilsObjectNameInfoEXT image_debug{
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+        .objectType = VK_OBJECT_TYPE_IMAGE,
+        .objectHandle = reinterpret_cast<uint64_t>(image.m_image),
+        .pObjectName = m_name.c_str()
+    };
+
+    VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(context.device->get_device(), &image_debug);
+
+#endif
 }

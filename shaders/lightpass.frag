@@ -9,17 +9,32 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
 } sceneInfo;
 
 
-
 layout (set = 1, binding = 0) uniform sampler shardedSampler;
 layout (set = 1, binding = 1) uniform texture2D albedoImage;
 layout (set = 1, binding = 2) uniform texture2D normalImage;
 layout (set = 1, binding = 3) uniform texture2D depthImage;
 
-layout (set = 2, binding = 0) uniform LightsUniform {
-    vec3 positions[];
-    vec3 color[];
-    float ranges[];
-} lights;
+struct PointLight {
+    vec4 position;
+    vec4 color;
+    float intensity;
+};
+
+struct DirectionalLight {
+    vec4 direction;
+    vec4 color;
+    float intensity;
+};
+
+layout (set = 2, binding = 0, std430) readonly buffer LightsPoint {
+    uint count;
+    PointLight point[];
+} lights_point;
+
+layout (set = 2, binding = 1, std430) readonly buffer LightsDirection {
+    uint count;
+    DirectionalLight direction[];
+} lights_direction;
 
 layout (location = 0) out vec4 outColor;
 
@@ -42,8 +57,6 @@ vec3 DecodeNormalOcta(vec2 f) {
     return normalize(n);
 }
 
-
-
 vec3 GetWolrdPositionFromDepth(in float depth, in ivec2 fragcoords, in ivec2 resolution, in mat4 invProj, in mat4 invView) {
     vec2 ndc = vec2(
     (float(fragcoords.x) / resolution.x) * 2.0f - 1.0f,
@@ -61,7 +74,12 @@ vec3 GetWolrdPositionFromDepth(in float depth, in ivec2 fragcoords, in ivec2 res
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-    float a = roughness * roughness;
+    float a = roughness;
+    const bool squareRougness = false;
+    if (squareRougness) {
+        a = roughness * roughness;
+    }
+
     float a2 = a * a;
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH * NdotH;
@@ -122,15 +140,15 @@ void main() {
 
     vec3 Lo = vec3(0.0);
 
-    vec3 lightPositions = vec3(3.0f, 1.0f, 0.0f);
-    vec3 lightColors = vec3(1.0f, 1.0f, 1.0f);
-
+    for (int i = 0; i < lights_direction.count; ++i)
     {
-        vec3 L = normalize(lightPositions - WorldPos);
+        const vec3 lightDirection = lights_direction.direction[i].direction.xyz;
+        const vec3 lightColor = lights_direction.direction[i].color.rgb;
+        const float illuminace = lights_direction.direction[i].intensity;
+
+        vec3 L = -lightDirection;
         vec3 H = normalize(V + L);
-        float distance = length(lightPositions - WorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColors * attenuation;
+        vec3 irradiance = lightColor * illuminace;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
@@ -147,10 +165,43 @@ void main() {
 
         // add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        Lo += (kD * albedo / PI + specular) * irradiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.0);
+    for (int i = 0; i < lights_point.count; ++i)
+    {
+        vec3 lightPositions = lights_point.point[i].position.xyz;
+        vec3 lightColors = lights_point.point[i].color.xyz;
+
+        const float lumen = lights_point.point[i].intensity;
+        const float luminousIntensity = lumen / (4.0 * PI);
+
+        vec3 L = normalize(lightPositions - WorldPos);
+        vec3 H = normalize(V + L);
+        float distance = length(lightPositions - WorldPos);
+        const float attenuation = 1.0 / max((distance * distance), 0.00001f);
+        const float illuminace = luminousIntensity * attenuation;
+        vec3 irradiance = lightColors * illuminace;
+
+        // cook-torrance brdf
+        float NDF = DistributionGGX(N, H, roughness);
+        float G = GeometrySmith(N, V, L, roughness);
+        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
+
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        vec3 specular = numerator / denominator;
+
+        // add to outgoing radiance Lo
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * albedo / PI + specular) * irradiance * NdotL;
+    }
+
+    vec3 ambient = vec3(0.03) * albedo;
     vec3 color = ambient + Lo;
 
     outColor = vec4(color, 1.0);

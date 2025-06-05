@@ -91,10 +91,7 @@ void pvp::Renderer::prepare_frame()
 void pvp::Renderer::draw()
 {
     prepare_frame();
-    // VkDebugUtilsLabelEXT yea{ .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, .pLabelName = "Depth prepass", .color = { 0.0, 0.0, 0.0, 1.0 } };
-    // VulkanInstanceExtensions::vkCmdBeginDebugUtilsLabelEXT(m_cmds_graphics[m_double_buffer_frame], &yea);
     m_depth_pre_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
-    // VulkanInstanceExtensions::vkCmdEndDebugUtilsLabelEXT(m_cmds_graphics[m_double_buffer_frame]);
     m_geometry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_tone_mapping_pass->draw(m_cmds_graphics[m_double_buffer_frame]);

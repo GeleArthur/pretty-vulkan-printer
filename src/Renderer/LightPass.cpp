@@ -4,6 +4,7 @@
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
 
+#include <Debugger/Debugger.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
 #include <Image/ImageBuilder.h>
@@ -50,6 +51,7 @@ namespace pvp
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(11))
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout(3))
             .build(m_context.device->get_device(), m_light_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_light_pipeline_layout, nullptr); });
 
@@ -76,6 +78,7 @@ namespace pvp
 
     void LightPass::draw(VkCommandBuffer cmd)
     {
+        Debugger::start_debug_label(cmd, "Light pass", { 0, 0, 1 });
         m_light_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_NONE,
@@ -85,6 +88,7 @@ namespace pvp
 
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, &m_light_binding.sets[0], 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 2, 1, &m_scene.get_light_descriptor().sets[0], 0, nullptr);
 
         const auto render_color_info = RenderInfoBuilder()
                                            .add_color(&m_light_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
@@ -104,5 +108,6 @@ namespace pvp
                                         VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                         VK_ACCESS_2_TRANSFER_READ_BIT);
+        Debugger::end_debug_label(cmd);
     }
 } // namespace pvp

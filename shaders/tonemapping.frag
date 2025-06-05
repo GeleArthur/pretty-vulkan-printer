@@ -28,7 +28,7 @@ float ConvertEV100ToExposure(in float EV100) {
 void main() {
     const vec3 image = texelFetch(lightpassTexture, ivec2(gl_FragCoord.xy), 0).xyz;
 
-    #define SUNNY_16
+    #define INDOOR
 
     #ifdef SUNNY_16
     float apature = 5.f;
@@ -45,7 +45,7 @@ void main() {
     const float EV100_HardCoded = 1.0f;
     const float EV100_PhysicalCamera = CalulateEV100FromPhysicalCamera(apature, ISO, shutterSpeed);
 
-    float exposure = ConvertEV100ToExposure(EV100_HardCoded);
+    float exposure = ConvertEV100ToExposure(EV100_PhysicalCamera);
 
     outColor = vec4(ACESFilmToneMapping(image * exposure), 1.0f);
 }

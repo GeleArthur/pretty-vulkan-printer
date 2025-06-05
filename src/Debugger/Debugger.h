@@ -1,4 +1,7 @@
 #pragma once
+
+#include <string>
+#include <glm/vec3.hpp>
 #include <vulkan/vulkan.h>
 
 namespace pvp
@@ -25,5 +28,9 @@ namespace pvp
         {
             return &debug_create_info;
         }
+
+        void start_debug_label(VkCommandBuffer buffer, const std::string& name, glm::vec3 color);
+        void end_debug_label(VkCommandBuffer buffer);
+
     }; // namespace Debugger
 } // namespace pvp

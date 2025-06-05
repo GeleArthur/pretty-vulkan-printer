@@ -4,6 +4,7 @@
 #include "Swapchain.h"
 
 #include <Context/Device.h>
+#include <Debugger/Debugger.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
@@ -21,6 +22,7 @@ namespace pvp
     }
     void DepthPrePass::draw(VkCommandBuffer cmd)
     {
+        Debugger::start_debug_label(cmd, "Depth pre pass", { 0.2, 0.2, 0.2 });
         m_depth_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_NONE,
@@ -54,6 +56,8 @@ namespace pvp
                                         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT);
+
+        Debugger::end_debug_label(cmd);
     }
     void DepthPrePass::build_pipelines()
     {

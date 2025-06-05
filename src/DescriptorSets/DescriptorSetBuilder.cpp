@@ -20,6 +20,11 @@ namespace pvp
         return *this;
     }
 
+    DescriptorSetBuilder& DescriptorSetBuilder::bind_buffer_ssbo(uint32_t binding, const std::vector<Buffer>& buffer)
+    {
+        m_buffers_ssbo.emplace_back(binding, buffer);
+        return *this;
+    }
     DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, const Image& image, VkImageLayout layout)
     {
         m_images.push_back({ binding, image, layout });
@@ -79,6 +84,25 @@ namespace pvp
                 write.dstBinding = std::get<0>(buffer);
                 write.dstArrayElement = 0;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                write.descriptorCount = 1;
+                write.pBufferInfo = &buffer_info;
+
+                vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
+            }
+
+            for (const auto& buffer : m_buffers_ssbo)
+            {
+                VkDescriptorBufferInfo buffer_info{};
+                buffer_info.buffer = std::get<1>(buffer).get()[i].get_buffer();
+                buffer_info.offset = 0;
+                buffer_info.range = std::get<1>(buffer).get()[i].get_size();
+
+                VkWriteDescriptorSet write{};
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstSet = descriptor.sets[i];
+                write.dstBinding = std::get<0>(buffer);
+                write.dstArrayElement = 0;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                 write.descriptorCount = 1;
                 write.pBufferInfo = &buffer_info;
 
