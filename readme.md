@@ -6,7 +6,7 @@
 https://github.com/Howest-DAE-GD/graphics-programming-2-vulkan-project-Arthur-van-den-Barselaar
 
 
-https://github.com/user-attachments/assets/eb2e2b46-029a-47dc-9462-d5a90cbb8e81
+https://github.com/user-attachments/assets/a15b8aac-ff3d-45bb-8977-f636ff13b1ac
 
 
 Vulkan deferred renderer. 
