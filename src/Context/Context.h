@@ -11,17 +11,17 @@ namespace pvp
     class PhysicalDevice;
     class Instance;
     class QueueFamilies;
-    class DescriptorCreator;
+    class DescriptorLayoutCreator;
     struct Context
     {
-        Instance*          instance;
-        PhysicalDevice*    physical_device;
-        Device*            device;
-        PvpVmaAllocator*   allocator;
-        QueueFamilies*     queue_families;
-        DescriptorCreator* descriptor_creator;
-        Swapchain*         swapchain;
-        WindowSurface*     window_surface;
+        Instance*                instance;
+        PhysicalDevice*          physical_device;
+        Device*                  device;
+        PvpVmaAllocator*         allocator;
+        QueueFamilies*           queue_families;
+        DescriptorLayoutCreator* descriptor_creator;
+        Swapchain*               swapchain;
+        WindowSurface*           window_surface;
     };
 
     struct ImageInfo

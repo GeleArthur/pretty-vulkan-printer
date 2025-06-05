@@ -4,7 +4,7 @@
 #include <Image/Image.h>
 #include <vulkan/vulkan.hpp>
 
-#include "DescriptorCreator.h"
+#include "DescriptorLayoutCreator.h"
 #include "DescriptorSets.h"
 
 #include <UniformBuffers/UniformBuffer.h>

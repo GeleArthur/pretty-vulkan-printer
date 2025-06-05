@@ -2,13 +2,14 @@
 #include "ModelData.h"
 
 #include <DestructorQueue.h>
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
 #include <CommandBuffer/CommandPool.h>
 #include <Context/Device.h>
-#include <DescriptorSets/DescriptorCreator.h>
+#include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GLFW/glfw3.h>
@@ -291,13 +292,13 @@ void pvp::PvpScene::update_render()
     const float time = std::chrono::duration<float>(current_time - start_time).count();
     last_time = current_time;
 
+    m_camera.update(delta_time);
+
     m_scene_globals = {
         m_camera.get_view_matrix(),
         m_camera.get_projection_matrix(),
         m_camera.get_position()
     };
-
-    m_camera.update(delta_time);
 
     PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
     change_point_light(0, light);

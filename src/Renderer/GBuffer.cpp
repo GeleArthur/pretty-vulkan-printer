@@ -60,7 +60,7 @@ void pvp::GBuffer::create_images()
     m_destructor_queue.add_to_queue([&] { m_albedo_image.destroy(m_context); });
 
     ImageBuilder()
-        .set_format(m_context.swapchain->get_swapchain_surface_format().format)
+        .set_format(VK_FORMAT_B8G8R8A8_UNORM)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
         .set_size(m_context.swapchain->get_swapchain_extent())

@@ -22,7 +22,7 @@ namespace pvp
     }
     void DepthPrePass::draw(VkCommandBuffer cmd)
     {
-        Debugger::start_debug_label(cmd, "Depth pre pass", { 0.2, 0.2, 0.2 });
+        Debugger::start_debug_label(cmd, "Depth pre pass", { 0.7, 0, 0 });
         m_depth_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_NONE,

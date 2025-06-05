@@ -4,7 +4,7 @@
 #include "Context/LogicPhysicalQueueBuilder.h"
 
 #include <Context/InstanceBuilder.h>
-#include <DescriptorSets/DescriptorCreator.h>
+#include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <GLFW/glfw3.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <Renderer/Renderer.h>
@@ -28,7 +28,7 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { m_instance.destroy(); });
 
     WindowSurfaceBuilder()
-        .set_window_size(1920, 1080)
+        .set_window_size(1200, 1000)
         .set_window_title("pretty vulkan printer")
         .build(m_instance, m_window_surface);
     m_destructor_queue.add_to_queue([&] { m_window_surface.destroy(m_instance); });
@@ -49,7 +49,7 @@ void pvp::App::run()
     m_context.queue_families = &m_queue_families;
     m_context.window_surface = &m_window_surface;
 
-    m_context.descriptor_creator = new DescriptorCreator(m_context);
+    m_context.descriptor_creator = new DescriptorLayoutCreator(m_context);
     m_destructor_queue.add_to_queue([&] { delete m_context.descriptor_creator; });
 
     m_swapchain = new Swapchain(m_context, m_window_surface);

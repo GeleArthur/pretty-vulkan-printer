@@ -20,6 +20,8 @@ R: reload shaders
 - load images using stbc_image
 - Hot shader reloading (press r)
 - Depth buffer prepass
+- Bindless rendering for the textures
+- Dynamic rendering
 - GBuffer render to 2 images
     - Albedo (RGBA)
     - Normal(RG), Roughness(B) Metal(A).

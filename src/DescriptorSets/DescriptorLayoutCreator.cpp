@@ -1,4 +1,4 @@
-﻿#include "DescriptorCreator.h"
+﻿#include "DescriptorLayoutCreator.h"
 
 #include "DescriptorLayoutBuilder.h"
 
@@ -7,7 +7,7 @@
 #include <Context/Device.h>
 #include <spdlog/spdlog.h>
 
-pvp::DescriptorCreator::DescriptorCreator(const Context& context)
+pvp::DescriptorLayoutCreator::DescriptorLayoutCreator(const Context& context)
     : m_context{ context }
 {
     const std::array sizes = {
@@ -29,7 +29,7 @@ pvp::DescriptorCreator::DescriptorCreator(const Context& context)
     }
 }
 
-pvp::DescriptorCreator::~DescriptorCreator()
+pvp::DescriptorLayoutCreator::~DescriptorLayoutCreator()
 {
     for (auto& layout : m_layouts)
     {
@@ -38,12 +38,12 @@ pvp::DescriptorCreator::~DescriptorCreator()
     vkDestroyDescriptorPool(m_context.device->get_device(), m_pool, nullptr);
 }
 
-pvp::DescriptorLayoutBuilder pvp::DescriptorCreator::create_layout()
+pvp::DescriptorLayoutBuilder pvp::DescriptorLayoutCreator::create_layout()
 {
     return DescriptorLayoutBuilder{ m_context, *this };
 }
 
-void pvp::DescriptorCreator::add_layout(uint32_t index, VkDescriptorSetLayout layout)
+void pvp::DescriptorLayoutCreator::add_layout(uint32_t index, VkDescriptorSetLayout layout)
 {
     if (m_layouts.contains(index))
     {
@@ -53,7 +53,7 @@ void pvp::DescriptorCreator::add_layout(uint32_t index, VkDescriptorSetLayout la
 
     m_layouts[index] = layout;
 }
-void pvp::DescriptorCreator::remove_layout(uint32_t index)
+void pvp::DescriptorLayoutCreator::remove_layout(uint32_t index)
 {
     vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
     m_layouts.erase(index);

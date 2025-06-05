@@ -1,13 +1,13 @@
 ﻿#include "DescriptorLayoutBuilder.h"
 
-#include "DescriptorCreator.h"
+#include "DescriptorLayoutCreator.h"
 
 #include <stdexcept>
 #include <Context/Device.h>
 
 namespace pvp
 {
-    DescriptorLayoutBuilder::DescriptorLayoutBuilder(const Context& context, DescriptorCreator& creator)
+    DescriptorLayoutBuilder::DescriptorLayoutBuilder(const Context& context, DescriptorLayoutCreator& creator)
         : m_creator(creator)
         , m_context(context)
     {
@@ -28,7 +28,7 @@ namespace pvp
         return *this;
     }
 
-    DescriptorCreator& DescriptorLayoutBuilder::build(uint32_t index)
+    DescriptorLayoutCreator& DescriptorLayoutBuilder::build(uint32_t index)
     {
         VkDescriptorSetLayoutBindingFlagsCreateInfo extra_flags{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,

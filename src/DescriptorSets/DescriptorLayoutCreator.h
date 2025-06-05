@@ -7,11 +7,11 @@ namespace pvp
 {
     class DescriptorLayoutBuilder;
 
-    class DescriptorCreator final
+    class DescriptorLayoutCreator final
     {
     public:
-        explicit DescriptorCreator(const Context& context);
-        ~DescriptorCreator();
+        explicit DescriptorLayoutCreator(const Context& context);
+        ~DescriptorLayoutCreator();
         DescriptorLayoutBuilder create_layout();
         void                    add_layout(uint32_t index, VkDescriptorSetLayout layout);
         void                    remove_layout(uint32_t index);

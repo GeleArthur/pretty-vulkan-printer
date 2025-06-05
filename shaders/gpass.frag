@@ -44,12 +44,12 @@ void main() {
         discard;
     }
 
+    outColor = color;
+
     vec4 roughness_metal = texture(sampler2D(textures[pc.metalness_texture_index], shardedSampler), fragTexCoord).rgba;
     vec3 normal_texture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgb;
 
     normal_texture = (2.0f * normal_texture) - 1.0f;
-
-    outColor = color;
 
     const vec3 binormal = cross(objectNormal, outTangent);
 
