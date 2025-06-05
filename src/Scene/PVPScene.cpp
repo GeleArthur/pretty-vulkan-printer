@@ -221,7 +221,7 @@ pvp::PvpScene::PvpScene(Context& context)
 
     add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
-    add_direction_light(DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 10 });
+    add_direction_light(DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 0 });
 }
 pvp::PvpScene::~PvpScene()
 {

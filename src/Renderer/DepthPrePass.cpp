@@ -30,6 +30,7 @@ namespace pvp
                                         VK_ACCESS_2_NONE,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &m_scene.get_textures_descriptor().sets[0], 0, nullptr);
 
         const auto depth_info = RenderInfoBuilder()
                                     .set_depth(&m_depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
@@ -44,7 +45,7 @@ namespace pvp
                 VkDeviceSize offset{ 0 };
                 vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
                 vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-                vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model.material.transform);
+                vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MaterialTransform), &model.material.transform);
                 vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
             }
         }
@@ -63,12 +64,14 @@ namespace pvp
     {
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MaterialTransform) })
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout(1))
+            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MaterialTransform) })
             .build(m_context.device->get_device(), m_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
         GraphicsPipelineBuilder()
             .add_shader("shaders/depthpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
+            .add_shader("shaders/depthpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
             .set_depth_format(m_depth_image.get_format())
             .set_pipeline_layout(m_pipeline_layout)
             .set_input_attribute_description(Vertex::get_attribute_descriptions())
