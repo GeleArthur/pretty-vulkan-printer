@@ -10,11 +10,11 @@ https://github.com/user-attachments/assets/a15b8aac-ff3d-45bb-8977-f636ff13b1ac
 Vulkan deferred renderer.
 Created for graphics programming 2 DAE howest.
 
-WASD + mouse(left click): To move and look around.
+## Controls
 
-Space: Toggle directional light.
-
-R: reload shaders
+- WASD + mouse(left click): To move and look around.
+- Space: Toggle directional light.
+- R: reload shaders
 
 ### Features
 
