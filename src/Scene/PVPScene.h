@@ -66,7 +66,7 @@ namespace pvp
         uint32_t add_direction_light(const DirectionLight& light) const;
         void     change_direction_light(uint32_t index, const DirectionLight& light) const;
         void     update();
-        void     update_render() const;
+        void     update_render();
 
         const std::vector<Model>& get_models() const
         {
@@ -111,6 +111,8 @@ namespace pvp
         SceneGlobals       m_scene_globals;
         Buffer             m_point_lights;
         Buffer             m_directonal_lights;
+
+        DirectionLight direction_light{};
 
         constexpr static uint32_t max_point_lights{ 10u };
         constexpr static uint32_t max_direction_lights{ 10u };

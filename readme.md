@@ -5,27 +5,28 @@
 
 https://github.com/Howest-DAE-GD/graphics-programming-2-vulkan-project-Arthur-van-den-Barselaar
 
-
 https://github.com/user-attachments/assets/a15b8aac-ff3d-45bb-8977-f636ff13b1ac
 
-
-Vulkan deferred renderer. 
+Vulkan deferred renderer.
 Created for graphics programming 2 DAE howest.
 
+WASD + mouse: To move around.
+Space: Toggle directional light.
 
 ### Features
+
 - load models with assimp
 - load images using stbc_image
 - Depth buffer prepass
 - GBuffer render to 2 images
-  - Albedo (RGBA)
-  - Normal(RG), Roughness(B) Metal(A).
+    - Albedo (RGBA)
+    - Normal(RG), Roughness(B) Metal(A).
 - Light pass. (Cook-Torrance BRDF)
-  - point light
-  - Directional light
+    - point light
+    - Directional light
 - Post processing
-  - Tone mapping (ACES)
-  - Exposure 
+    - Tone mapping (ACES)
+    - Exposure
 - HDR to LDR
 
 # Passes

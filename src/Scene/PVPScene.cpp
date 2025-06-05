@@ -219,9 +219,11 @@ pvp::PvpScene::PvpScene(Context& context)
                              .bind_buffer_ssbo(1, buffer_direction)
                              .build(m_context);
 
+    direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 0 };
+
     add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
-    add_direction_light(DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 0 });
+    add_direction_light(direction_light);
 }
 pvp::PvpScene::~PvpScene()
 {
@@ -279,6 +281,9 @@ void pvp::PvpScene::change_direction_light(uint32_t index, const DirectionLight&
 
 void pvp::PvpScene::update()
 {
+}
+void pvp::PvpScene::update_render()
+{
     static auto start_time = std::chrono::high_resolution_clock::now();
     static auto last_time = std::chrono::high_resolution_clock::now();
     const auto  current_time = std::chrono::high_resolution_clock::now();
@@ -286,23 +291,25 @@ void pvp::PvpScene::update()
     const float time = std::chrono::duration<float>(current_time - start_time).count();
     last_time = current_time;
 
-    m_camera.update(delta_time);
-
-    PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
-    change_point_light(0, light);
-
-    // void* light_data = m_point_lights.get_allocation_info().pMappedData;
-    // light_data = reinterpret_cast<char*>(light_data) + 16;
-    // reinterpret_cast<PointLight*>(light_data)->position = glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0);
-    // reinterpret_cast<PointLight*>(light_data)->color = glm::vec4(1, 1, 1, 0);
-
     m_scene_globals = {
         m_camera.get_view_matrix(),
         m_camera.get_projection_matrix(),
         m_camera.get_position()
     };
-}
-void pvp::PvpScene::update_render() const
-{
+
+    m_camera.update(delta_time);
+
+    PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
+    change_point_light(0, light);
+
+    static bool key_pressed_last{};
+    bool        key_pressed = glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_SPACE) == GLFW_PRESS;
+
+    if (key_pressed && !key_pressed_last)
+    {
+        direction_light.intensity = direction_light.intensity > 5.0f ? 0.0f : 10.0f;
+        change_direction_light(0, direction_light);
+    }
+    key_pressed_last = key_pressed;
     m_scene_globals_gpu->update(0, m_scene_globals);
 }

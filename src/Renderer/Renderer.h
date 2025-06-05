@@ -24,7 +24,7 @@ namespace pvp
     class Renderer
     {
     public:
-        explicit Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene);
+        explicit Renderer(const Context& context, Swapchain& swapchain, PvpScene& scene);
 
         void prepare_frame();
         void draw();
@@ -36,9 +36,9 @@ namespace pvp
         }
 
     private:
-        const Context&  m_context;
-        Swapchain&      m_swapchain;
-        const PvpScene& m_scene;
+        const Context& m_context;
+        Swapchain&     m_swapchain;
+        PvpScene&      m_scene;
 
         uint32_t     m_double_buffer_frame{ 0 };
         uint32_t     m_current_swapchain_index{};

@@ -16,7 +16,7 @@
 #include <Scene/PVPScene.h>
 #include <VMAAllocator/VmaAllocator.h>
 
-pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, const PvpScene& scene)
+pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
     , m_scene{ scene }
