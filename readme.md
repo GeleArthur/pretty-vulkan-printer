@@ -6,7 +6,8 @@
 https://github.com/Howest-DAE-GD/graphics-programming-2-vulkan-project-Arthur-van-den-Barselaar
 
 
-<video controls src=".github/demo-dark.mp4" title="Demo vulkan renderer"></video>
+https://github.com/user-attachments/assets/eb2e2b46-029a-47dc-9462-d5a90cbb8e81
+
 
 Vulkan deferred renderer. 
 Created for graphics programming 2 DAE howest.
