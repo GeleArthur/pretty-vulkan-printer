@@ -12,11 +12,13 @@ Created for graphics programming 2 DAE howest.
 
 WASD + mouse: To move around.
 Space: Toggle directional light.
+R: reload shaders
 
 ### Features
 
 - load models with assimp
 - load images using stbc_image
+- Hot shader reloading (press r)
 - Depth buffer prepass
 - GBuffer render to 2 images
     - Albedo (RGBA)

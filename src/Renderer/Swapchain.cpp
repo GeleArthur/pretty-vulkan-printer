@@ -80,11 +80,6 @@ static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabili
     return actual_extent;
 }
 
-static VkFormat get_depth_format()
-{
-    return VK_FORMAT_D32_SFLOAT; // TODO
-}
-
 pvp::Swapchain::Swapchain(Context& context, WindowSurface& surface)
     : m_window_surface(surface)
     , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), surface.get_surface()) }

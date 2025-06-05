@@ -33,11 +33,6 @@ namespace pvp
 
         Swapchain* m_swapchain{};
 
-        VkPipelineLayout m_pipeline_layout{};
-        VkPipeline       m_graphics_pipeline{};
-        Buffer           m_vertex_buffer{};
-        Buffer           m_index_buffer{};
-
         PvpScene*      m_scene{};
         Sampler        m_sampler{};
         Image          m_texture{};

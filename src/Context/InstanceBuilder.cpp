@@ -55,7 +55,7 @@ void pvp::InstanceBuilder::build(Instance& instance)
     char const** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
     m_extensions.reserve(m_extensions.size() + glfw_extension_count);
-    for (int i = 0; i < glfw_extension_count; ++i)
+    for (uint32_t i = 0; i < glfw_extension_count; ++i)
     {
         m_extensions.push_back(glfw_extensions[i]);
     }

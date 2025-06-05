@@ -1,14 +1,12 @@
 ﻿#pragma once
 #include <vulkan/vulkan.h>
+#include <utility>
 
 namespace VulkanInstanceExtensions
 {
     inline VkInstance my_instance;
 
-    static void register_instance(const VkInstance instance)
-    {
-        my_instance = instance;
-    }
+    void register_instance(VkInstance instance);
 
 #define VK_DEFINE_INSTANCE_FUNCTION(name)                                                                 \
     auto static name(auto&&... args)                                                                      \

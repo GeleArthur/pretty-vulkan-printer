@@ -108,6 +108,7 @@ add_executable(${PROJECT_NAME}
         src/Scene/Camera.h
         src/Renderer/ToneMappingPass.cpp
         src/Renderer/ToneMappingPass.h
+        src/VulkanExternalFunctions.cpp
 )
 
 add_subdirectory(libraries)

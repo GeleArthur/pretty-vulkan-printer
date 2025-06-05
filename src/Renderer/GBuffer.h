@@ -9,7 +9,7 @@ namespace pvp
 {
     class DepthPrePass;
     struct ModelCameraViewData;
-    struct PvpScene;
+    class PvpScene;
     class GBuffer final
     {
     public:
