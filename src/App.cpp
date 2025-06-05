@@ -1,6 +1,5 @@
 ﻿#include "App.h"
 
-#include "../cmake-build-x64-release/_deps/spdlog-src/include/spdlog/spdlog.h"
 #include "Context/LogicPhysicalQueueBuilder.h"
 
 #include <Context/InstanceBuilder.h>
@@ -13,6 +12,7 @@
 #include <SyncManager/FrameSyncers.h>
 #include <Window/WindowSurfaceBuilder.h>
 #include <glm/gtx/quaternion.hpp>
+#include <spdlog/spdlog.h>
 
 void pvp::App::run()
 {
