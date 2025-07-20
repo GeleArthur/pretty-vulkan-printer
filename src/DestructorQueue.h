@@ -8,7 +8,7 @@
 class DestructorQueue final
 {
 public:
-    void add_to_queue(const std::function<void()>& function);
+    void add_to_queue(std::function<void()>&& function);
     void destroy_and_clear();
     ~DestructorQueue();
 

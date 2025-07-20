@@ -3,6 +3,7 @@
 #include <format>
 #include <stdexcept>
 #include <GLFW/glfw3.h>
+#include <tracy/Tracy.hpp>
 
 namespace pvp
 {
@@ -19,8 +20,10 @@ namespace pvp
     }
     void WindowSurfaceBuilder::build(const Instance& instance, WindowSurface& window_surface)
     {
+        ZoneScoped;
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
         GLFWmonitor** monitors;

@@ -2,6 +2,10 @@
 
 #include <vulkan/vulkan.h>
 
+namespace tracy
+{
+    class VkCtx;
+}
 namespace pvp
 {
     class WindowSurface;
@@ -22,6 +26,7 @@ namespace pvp
         DescriptorLayoutCreator* descriptor_creator;
         Swapchain*               swapchain;
         WindowSurface*           window_surface;
+        mutable tracy::VkCtx*    tracy_ctx; // BAD TRASH
     };
 
     struct ImageInfo

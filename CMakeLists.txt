@@ -109,19 +109,20 @@ add_executable(${PROJECT_NAME}
         src/Renderer/ToneMappingPass.cpp
         src/Renderer/ToneMappingPass.h
         src/VulkanExternalFunctions.cpp
+        src/OverwriteNewDelete.cpp
 )
 
 add_subdirectory(libraries)
 
 # needs to be different as it doesn't run when source files don't change
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different # TODO: WHEN HANDING IN CHANGE create_symlink TO copy_directory_if_different. ( I need a fallback)
+        COMMAND ${CMAKE_COMMAND} -E create_symlink # TODO: WHEN HANDING IN CHANGE create_symlink TO copy_directory_if_different. ( I need a fallback)
         "${CMAKE_SOURCE_DIR}/resources"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different # TODO: WHEN HANDING IN CHANGE create_symlink TO copy_directory_if_different. ( I need a fallback)
+        COMMAND ${CMAKE_COMMAND} -E create_symlink # TODO: WHEN HANDING IN CHANGE create_symlink TO copy_directory_if_different. ( I need a fallback)
         "${CMAKE_SOURCE_DIR}/shaders"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
 )
@@ -129,7 +130,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
+target_link_libraries(${PROJECT_NAME} PRIVATE pretty-vulkan-printer-libraries)
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
 #        $<$<CXX_COMPILER_ID:MSVC>:/W4>
@@ -137,3 +138,8 @@ target_link_libraries(${PROJECT_NAME} pretty-vulkan-printer-libraries)
 #)
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/.gitignore *)
+
+find_package(VLD CONFIG)
+target_include_directories(${PROJECT_NAME} PRIVATE ${VLD_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${VLD_LIBRARY})
+

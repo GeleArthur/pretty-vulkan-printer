@@ -3,9 +3,11 @@
 #include <globalconst.h>
 #include <Context/Device.h>
 #include <spdlog/spdlog.h>
+#include <tracy/Tracy.hpp>
 
 FrameSyncers::FrameSyncers(const pvp::Context& context)
 {
+    ZoneScoped;
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };

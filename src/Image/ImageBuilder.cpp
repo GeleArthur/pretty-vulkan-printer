@@ -16,6 +16,11 @@ pvp::ImageBuilder& pvp::ImageBuilder::set_size(const VkExtent2D& size)
     m_size = size;
     return *this;
 }
+pvp::ImageBuilder& pvp::ImageBuilder::use_screen_size_auto_update(bool enabled)
+{
+    m_use_screen_size_auto_update = enabled;
+    return *this;
+}
 
 pvp::ImageBuilder& pvp::ImageBuilder::set_format(VkFormat format)
 {

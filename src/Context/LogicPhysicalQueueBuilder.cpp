@@ -9,6 +9,7 @@
 #include <Window/WindowSurface.h>
 #include "QueueFamilies.h"
 #include "Device.h"
+#include <tracy/Tracy.hpp>
 
 namespace pvp
 {
@@ -29,6 +30,8 @@ namespace pvp
 
     void LogicPhysicalQueueBuilder::build(const Instance& instance, const WindowSurface& window_surface, PhysicalDevice& physical_device_out, Device& device_out, QueueFamilies& queue_families_out)
     {
+        ZoneScoped;
+
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
         auto physical_device = get_best_device(instance, window_surface);

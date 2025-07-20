@@ -14,6 +14,7 @@
 #include <set>
 #include <stdexcept>
 #include <vector>
+#include <tracy/Tracy.hpp>
 
 static VkSurfaceFormatKHR get_best_surface_format(const VkPhysicalDevice& physical_device, const VkSurfaceKHR& surface)
 {
@@ -31,24 +32,6 @@ static VkSurfaceFormatKHR get_best_surface_format(const VkPhysicalDevice& physic
     }
 
     return surface_formats[0]; // lol
-}
-
-VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
-{
-    uint32_t present_mode_count;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &present_mode_count, nullptr);
-    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &present_mode_count, present_modes.data());
-
-    for (const VkPresentModeKHR& available_present_mode : present_modes)
-    {
-        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
-        {
-            return available_present_mode;
-        }
-    }
-
-    return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 static uint32_t get_mini_image_count(const VkSurfaceCapabilitiesKHR& capabilities)
@@ -80,14 +63,41 @@ static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabili
     return actual_extent;
 }
 
+VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
+{
+    uint32_t present_mode_count;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &present_mode_count, present_modes.data());
+
+    for (const VkPresentModeKHR& available_present_mode : present_modes)
+    {
+        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return available_present_mode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+// Gets called from different thread!!!
+void frame_buffer_size_changed_callback(GLFWwindow* window, int width, int height)
+{
+    pvp::Context* context = static_cast<pvp::Context*>(glfwGetWindowUserPointer(window));
+}
+
 pvp::Swapchain::Swapchain(Context& context, WindowSurface& surface)
     : m_window_surface(surface)
     , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), surface.get_surface()) }
     , m_command_pool{ context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT }
     , m_context(context)
 {
+    ZoneScoped;
     m_swap_chain_destructor.add_to_queue([&] { m_command_pool.destroy(); });
     create_the_swapchain();
+
+    // glfwSetFramebufferSizeCallback(m_window_surface.get_window(), frame_buffer_size_changed_callback);
 }
 
 bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device, const VkSurfaceKHR surface)
@@ -103,6 +113,10 @@ bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device
 
 void pvp::Swapchain::recreate_swapchain()
 {
+    // std::unique_lock lock{ m_screen_change_mutex };
+    // m_get_screen_size.wait(lock, [&] { return m_screen_updated; });
+    // m_screen_updated = false;
+
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_window_surface.get_window(), &width, &height);
     while (width == 0 || height == 0)
@@ -112,7 +126,9 @@ void pvp::Swapchain::recreate_swapchain()
     }
 
     vkDeviceWaitIdle(m_context.device->get_device());
-    // destroy_old_swapchain();
+
+    destroy_old_swapchain();
+    create_the_swapchain();
 
     // create_the_swapchain(m_context.device, command_buffer);
     // create_frame_buffers(m_context.device.get_device(), render_pass);
@@ -154,6 +170,7 @@ void pvp::Swapchain::destroy_old_swapchain()
 
 void pvp::Swapchain::create_the_swapchain()
 {
+    ZoneScoped;
     VkSurfaceCapabilitiesKHR surface_capabilities{};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &surface_capabilities);
 

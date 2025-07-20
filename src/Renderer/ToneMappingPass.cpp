@@ -13,6 +13,8 @@
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
 #include <Image/ImageBuilder.h>
 #include <Image/SamplerBuilder.h>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 
 namespace pvp
 {
@@ -20,12 +22,15 @@ namespace pvp
         : m_context{ context }
         , m_light_pass{ light_pass }
     {
+        ZoneScoped;
         create_images();
         build_pipelines();
     }
 
     void ToneMappingPass::draw(VkCommandBuffer cmd)
     {
+        ZoneScoped;
+        TracyVkZone(m_context.tracy_ctx, cmd, "ToneMapping");
         Debugger::start_debug_label(cmd, "tone mapping", { 0.8, 0.8f, 0.0f });
         m_tone_texture.transition_layout(cmd,
                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -37,10 +42,11 @@ namespace pvp
         // vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_tone_pipeline_layout, 0, 1, &m_tone_binding.sets[0], 0, nullptr);
 
-        const auto render_color_info = RenderInfoBuilder()
-                                           .add_color(&m_tone_texture, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-                                           .set_size(m_tone_texture.get_size())
-                                           .build();
+        RenderInfo render_color_info;
+        RenderInfoBuilder()
+            .add_color(&m_tone_texture, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+            .set_size(m_tone_texture.get_size())
+            .build(render_color_info);
 
         vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
         {
@@ -60,6 +66,7 @@ namespace pvp
 
     void ToneMappingPass::build_pipelines()
     {
+        ZoneScoped;
         m_context.descriptor_creator->create_layout()
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(12);
@@ -87,6 +94,7 @@ namespace pvp
 
     void ToneMappingPass::create_images()
     {
+        ZoneScoped;
         ImageBuilder()
             .set_format(VK_FORMAT_R32G32B32A32_SFLOAT)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)

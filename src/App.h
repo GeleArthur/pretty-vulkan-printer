@@ -20,7 +20,9 @@ namespace pvp
     class App final
     {
     public:
+        void frame_buffer_resize(GLFWwindow* window, int width, int height);
         void run();
+        void run_loop() const;
 
     private:
         Instance        m_instance{};
@@ -30,8 +32,7 @@ namespace pvp
         QueueFamilies   m_queue_families;
         PvpVmaAllocator m_allocator{};
         Context         m_context{};
-
-        Swapchain* m_swapchain{};
+        Swapchain*      m_swapchain{};
 
         PvpScene*      m_scene{};
         Sampler        m_sampler{};

@@ -6,6 +6,7 @@
 #include <VulkanExternalFunctions.h>
 #include <GLFW/glfw3.h>
 #include <Debugger/Debugger.h>
+#include <tracy/Tracy.hpp>
 
 void pvp::InstanceBuilder::valid_extensions_check()
 {
@@ -42,6 +43,7 @@ pvp::InstanceBuilder& pvp::InstanceBuilder::enable_debugging(bool enabled)
 
 void pvp::InstanceBuilder::build(Instance& instance)
 {
+    ZoneScoped;
     VkApplicationInfo app_info{};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pApplicationName = m_app_name.c_str();

@@ -6,10 +6,12 @@
 #include <stdexcept>
 #include <Context/Device.h>
 #include <spdlog/spdlog.h>
+#include <tracy/Tracy.hpp>
 
 pvp::DescriptorLayoutCreator::DescriptorLayoutCreator(const Context& context)
     : m_context{ context }
 {
+    ZoneScoped;
     const std::array sizes = {
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },

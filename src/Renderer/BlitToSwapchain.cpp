@@ -6,6 +6,8 @@
 #include <Debugger/Debugger.h>
 #include <Image/ImageBuilder.h>
 #include <Image/TransitionLayout.h>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 
 namespace pvp
 {
@@ -18,6 +20,8 @@ namespace pvp
 
     void BlitToSwapchain::draw(VkCommandBuffer cmd, uint32_t swapchain_image_index)
     {
+        ZoneScoped;
+        TracyVkZone(m_context.tracy_ctx, cmd, "Blit To SwapChain");
         Debugger::start_debug_label(cmd, "Bilt to swapchain", { 0.5f, 0.5f, 0.0f });
 
         VkImageBlit2 region{

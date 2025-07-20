@@ -3,6 +3,7 @@
 #include "Window/WindowSurface.h"
 
 #include <DestructorQueue.h>
+#include <condition_variable>
 #include <globalconst.h>
 #include <vector>
 #include <CommandBuffer/CommandPool.h>
@@ -47,6 +48,12 @@ namespace pvp
         VkFormat           m_depth_format;
         CommandPool        m_command_pool;
         Context&           m_context;
+
+        // std::condition_variable m_get_screen_size{};
+        // std::mutex              m_screen_change_mutex{};
+        // bool                    m_screen_updated{};
+        // int                     m_frame_buffer_size_x{};
+        // int                     m_frame_buffer_size_y{};
 
         DestructorQueue m_swap_chain_destructor;
     };

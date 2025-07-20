@@ -10,6 +10,7 @@
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
 #include <GraphicsPipeline/Vertex.h>
 #include <Image/ImageBuilder.h>
+#include <tracy/TracyVulkan.hpp>
 
 namespace pvp
 {
@@ -22,26 +23,34 @@ namespace pvp
     }
     void DepthPrePass::draw(VkCommandBuffer cmd)
     {
+        ZoneScoped;
+        TracyVkZone(m_context.tracy_ctx, cmd, "DepthPrePass");
         Debugger::start_debug_label(cmd, "Depth pre pass", { 0.7, 0, 0 });
+
+        ZoneNamedN(transition, "TransitionLayout", true);
         m_depth_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_NONE,
                                         VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
                                         VK_ACCESS_2_NONE,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+        ZoneNamedN(bind_texture, "Bind Scene+Texture", true);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &m_scene.get_textures_descriptor().sets[0], 0, nullptr);
 
-        const auto depth_info = RenderInfoBuilder()
-                                    .set_depth(&m_depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-                                    .set_size(m_depth_image.get_size())
-                                    .build();
+        RenderInfo depth_info;
+        RenderInfoBuilder()
+            .set_depth(&m_depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+            .set_size(m_depth_image.get_size())
+            .build(depth_info);
 
+        ZoneNamedN(begin_rendering, "begin rendering", true);
         vkCmdBeginRendering(cmd, &depth_info.rendering_info);
         {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
             for (const Model& model : m_scene.get_models())
             {
+                ZoneScopedN("Draw");
                 VkDeviceSize offset{ 0 };
                 vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
                 vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
@@ -49,8 +58,10 @@ namespace pvp
                 vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
             }
         }
+        ZoneNamedN(end_rendering, "end rendering", true);
         vkCmdEndRendering(cmd);
 
+        ZoneNamedN(transition_depth, "transition depth", true);
         m_depth_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,

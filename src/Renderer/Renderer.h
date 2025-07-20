@@ -5,22 +5,14 @@
 
 #include <Scene/PVPScene.h>
 #include <SyncManager/FrameSyncers.h>
+#include <tracy/TracyVulkan.hpp>
 
 namespace pvp
 {
     class ToneMappingPass;
-}
-namespace pvp
-{
     class DepthPrePass;
-}
-namespace pvp
-{
     class BlitToSwapchain;
-}
 
-namespace pvp
-{
     class Renderer
     {
     public:

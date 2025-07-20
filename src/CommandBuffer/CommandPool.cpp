@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <Context/Device.h>
+#include <tracy/Tracy.hpp>
 
 namespace pvp
 {
@@ -9,6 +10,7 @@ namespace pvp
         : m_device(context.device->get_device())
         , m_queue(queue)
     {
+        ZoneScoped;
         m_device = context.device->get_device();
         VkCommandPoolCreateInfo pool_info{};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

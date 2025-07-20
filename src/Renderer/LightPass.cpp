@@ -10,6 +10,8 @@
 #include <Image/ImageBuilder.h>
 #include <Image/SamplerBuilder.h>
 #include <Scene/PVPScene.h>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 
 namespace pvp
 {
@@ -19,12 +21,14 @@ namespace pvp
         , m_depth_pre_pass{ depth_pre_pass }
         , m_scene{ scene }
     {
+        ZoneScoped;
         create_images();
         build_pipelines();
     }
 
     void LightPass::build_pipelines()
     {
+        ZoneScoped;
         m_context.descriptor_creator->create_layout()
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -66,6 +70,7 @@ namespace pvp
 
     void LightPass::create_images()
     {
+        ZoneScoped;
         ImageBuilder()
             .set_format(VK_FORMAT_R32G32B32A32_SFLOAT)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
@@ -78,6 +83,8 @@ namespace pvp
 
     void LightPass::draw(VkCommandBuffer cmd)
     {
+        ZoneScoped;
+        TracyVkZone(m_context.tracy_ctx, cmd, "LightPass");
         Debugger::start_debug_label(cmd, "Light pass", { 0, 0, 1 });
         m_light_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -90,10 +97,12 @@ namespace pvp
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, &m_light_binding.sets[0], 0, nullptr);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 2, 1, &m_scene.get_light_descriptor().sets[0], 0, nullptr);
 
-        const auto render_color_info = RenderInfoBuilder()
-                                           .add_color(&m_light_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-                                           .set_size(m_light_image.get_size())
-                                           .build();
+        RenderInfo render_color_info;
+
+        RenderInfoBuilder()
+            .add_color(&m_light_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+            .set_size(m_light_image.get_size())
+            .build(render_color_info);
 
         vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
         {

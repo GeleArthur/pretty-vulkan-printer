@@ -2,9 +2,9 @@
 #include <filesystem>
 #include <memory>
 #include <stb_image.h>
+#include <assimp/material.h>
 #include <glm/mat4x4.hpp>
 
-enum aiTextureType : int;
 namespace pvp
 {
     struct Context;

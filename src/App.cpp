@@ -2,6 +2,7 @@
 
 #include "Context/LogicPhysicalQueueBuilder.h"
 
+#include <iostream>
 #include <Context/InstanceBuilder.h>
 #include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <GLFW/glfw3.h>
@@ -11,11 +12,13 @@
 #include <Scene/PVPScene.h>
 #include <SyncManager/FrameSyncers.h>
 #include <Window/WindowSurfaceBuilder.h>
-#include <glm/gtx/quaternion.hpp>
 #include <spdlog/spdlog.h>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 
 void pvp::App::run()
 {
+    ZoneScoped;
     glfwInit();
     m_destructor_queue.add_to_queue([&] {
         glfwTerminate();
@@ -60,24 +63,29 @@ void pvp::App::run()
     m_destructor_queue.add_to_queue([&] { delete m_scene; });
 
     m_renderer = new Renderer(m_context, *m_swapchain, *m_scene);
-    // m_destructor_queue.add_to_queue([&] { delete m_renderer; });
+    m_destructor_queue.add_to_queue([&] { delete m_renderer; });
 
-    // TODO: poll events on other thread
+    std::jthread rendering_thread{ &App::run_loop, this };
+
+    glfwSetWindowUserPointer(m_window_surface.get_window(), &m_context);
+
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
-        glfwPollEvents();
-        if (glfwGetKey(m_window_surface.get_window(), GLFW_KEY_R))
-        {
-            vkDeviceWaitIdle(m_device.get_device());
-            delete m_renderer;
-            m_renderer = new Renderer(m_context, *m_swapchain, *m_scene);
-            spdlog::info("reloaded renderer");
-        }
-
-        m_scene->update();
-        m_renderer->draw();
+        ZoneScoped;
+        glfwWaitEvents();
     }
 
+    rendering_thread.join();
     vkDeviceWaitIdle(m_device.get_device());
-    delete m_renderer;
+}
+
+void pvp::App::run_loop() const
+{
+    ZoneScoped;
+    while (!glfwWindowShouldClose(m_window_surface.get_window()))
+    {
+        m_scene->update();
+        m_renderer->draw();
+        FrameMark;
+    }
 }

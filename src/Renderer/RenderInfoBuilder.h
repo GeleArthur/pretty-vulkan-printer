@@ -8,9 +8,9 @@
 
 struct RenderInfo
 {
-    std::vector<VkRenderingAttachmentInfo>     attachment_info;
-    std::unique_ptr<VkRenderingAttachmentInfo> depth_info;
-    VkRenderingInfo                            rendering_info;
+    std::vector<VkRenderingAttachmentInfo> attachment_info;
+    VkRenderingAttachmentInfo              depth_info;
+    VkRenderingInfo                        rendering_info;
 };
 
 namespace pvp
@@ -27,7 +27,7 @@ namespace pvp
         RenderInfoBuilder& set_depth(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
         RenderInfoBuilder& set_size(VkExtent2D size);
 
-        RenderInfo build() const;
+        void build(RenderInfo& render_info) const;
 
     private:
         using ImageLoadStore = std::tuple<const Image*, VkAttachmentLoadOp, VkAttachmentStoreOp>;

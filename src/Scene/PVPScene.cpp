@@ -23,10 +23,12 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <spdlog/spdlog.h>
+#include <tracy/Tracy.hpp>
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
     , m_camera(context)
 {
+    ZoneScoped;
     LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
@@ -40,6 +42,8 @@ pvp::PvpScene::PvpScene(Context& context)
 
     for (const TextureData& texture : loaded_scene.textures)
     {
+        ZoneScopedN("Texture");
+        ZoneTextF(texture.name.c_str());
         VkDeviceSize image_size = texture.width * texture.height * 4;
 
         Buffer staging_buffer{};
@@ -96,6 +100,7 @@ pvp::PvpScene::PvpScene(Context& context)
     m_gpu_models.resize(loaded_scene.models.size());
     for (int i = 0; i < loaded_scene.models.size(); ++i)
     {
+        ZoneScopedN("Model");
         ModelData& cpu_model = loaded_scene.models[i];
         Model&     gpu_model = m_gpu_models[i];
 

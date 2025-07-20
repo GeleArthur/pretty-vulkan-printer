@@ -3,11 +3,13 @@ project(pretty-vulkan-printer-libraries)
 
 include(FetchContent)
 
+# VulkanSDK
 find_package(Vulkan REQUIRED)
 if(NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
 endif()
 
+# GLM
 FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -25,6 +27,7 @@ target_compile_definitions(glm PUBLIC
         GLM_EXT_INCLUDED
 )
 
+# GLFW
 set(GLFW_INSTALL OFF)
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_BUILD_EXAMPLES OFF)
@@ -37,14 +40,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-#set(VMA_ENABLE_INSTALL ON)
-#FetchContent_Declare(
-#        vma
-#        URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.2.1.zip
-#)
-#FetchContent_MakeAvailable(vma)
-
-
+# IMGUI
 FetchContent_Declare(
         imgui
         URL https://github.com/ocornut/imgui/archive/refs/tags/v1.91.9b.zip
@@ -71,12 +67,14 @@ target_link_libraries(imgui PRIVATE
         Vulkan::Vulkan
 )
 
+# spdlog
 FetchContent_Declare(
         spdlog
         URL https://github.com/gabime/spdlog/archive/refs/tags/v1.15.1.zip
 )
 FetchContent_MakeAvailable(spdlog)
 
+# assimp
 set(ASSIMP_BUILD_TESTS OFF)
 FetchContent_Declare(
         assimp
@@ -84,9 +82,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(assimp)
 
-add_library(${PROJECT_NAME} INTERFACE)
 
-# hihihi
+# spirv-reflect
 add_library(spirv-reflect STATIC
         ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.h
         ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.c
@@ -106,6 +103,17 @@ else()
     )
 endif()
 
+# tracy
+option(TRACY_ENABLE " " ON)
+#option(TRACY_ON_DEMAND " " ON)
+FetchContent_Declare(
+        tracy
+        URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.12.2.zip
+)
+FetchContent_MakeAvailable(tracy)
+
+# final
+add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
         glm::glm
         glfw
@@ -115,4 +123,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         Vulkan::Vulkan
         spirv-reflect
         shaderc
+        TracyClient
 )

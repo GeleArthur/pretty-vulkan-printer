@@ -16,18 +16,22 @@
 #include <Scene/PVPScene.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <tracy/TracyVulkan.hpp>
+#include <tracy/Tracy.hpp>
 
 pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& depth)
     : m_context(context)
     , m_scene(scene)
     , m_depth_pre_pass(depth)
 {
+    ZoneScoped;
     create_images();
     build_pipelines();
 }
 
 void pvp::GBuffer::build_pipelines()
 {
+    ZoneScoped;
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
         .add_descriptor_layout(m_context.descriptor_creator->get_layout(1))
@@ -50,6 +54,7 @@ void pvp::GBuffer::build_pipelines()
 
 void pvp::GBuffer::create_images()
 {
+    ZoneScoped;
     ImageBuilder()
         .set_format(m_context.swapchain->get_swapchain_surface_format().format)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
@@ -71,8 +76,11 @@ void pvp::GBuffer::create_images()
 
 void pvp::GBuffer::draw(VkCommandBuffer cmd)
 {
+    ZoneScoped;
+    TracyVkZone(m_context.tracy_ctx, cmd, "GBuffer");
     Debugger::start_debug_label(cmd, "G buffer", { 0, 1, 0 });
 
+    ZoneNamedN(transition, "TransitionLayout", true);
     m_albedo_image.transition_layout(cmd,
                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                      VK_PIPELINE_STAGE_2_NONE,
@@ -86,21 +94,26 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                                      VK_ACCESS_2_NONE,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
+    ZoneNamedN(bind_texture, "Bind Scene+Texture", true);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &m_scene.get_textures_descriptor().sets[0], 0, nullptr);
 
-    const auto color_info = RenderInfoBuilder()
-                                .add_color(&m_albedo_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-                                .add_color(&m_normal_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-                                .set_depth(&m_depth_pre_pass.get_depth_image(), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
-                                .set_size(m_albedo_image.get_size())
-                                .build();
+    ZoneNamedN(render_info, "create render info", true);
+    RenderInfo color_info;
+    RenderInfoBuilder()
+        .add_color(&m_albedo_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(&m_normal_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .set_depth(&m_depth_pre_pass.get_depth_image(), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
+        .set_size(m_albedo_image.get_size())
+        .build(color_info);
 
+    ZoneNamedN(begin_rendering, "begin rendering", true);
     vkCmdBeginRendering(cmd, &color_info.rendering_info);
     {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
         for (const Model& model : m_scene.get_models())
         {
+            ZoneScopedN("Draw");
             VkDeviceSize offset{ 0 };
             vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
             vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
@@ -108,8 +121,10 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
             vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
         }
     }
+    ZoneNamedN(end_rendering, "end rendering", true);
     vkCmdEndRendering(cmd);
 
+    ZoneNamedN(transition_depth, "transition", true);
     m_albedo_image.transition_layout(cmd,
                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,

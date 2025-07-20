@@ -12,15 +12,19 @@
 #include "ToneMappingPass.h"
 
 #include <VulkanExternalFunctions.h>
+#include <Context/PhysicalDevice.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <Scene/PVPScene.h>
 #include <VMAAllocator/VmaAllocator.h>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 
 pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
     , m_scene{ scene }
 {
+    ZoneScoped;
     m_frame_syncers = FrameSyncers(m_context);
     m_destructor_queue.add_to_queue([&] { m_frame_syncers.destroy(m_context.device->get_device()); });
 
@@ -28,6 +32,10 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, PvpScene& 
     m_destructor_queue.add_to_queue([&] { m_cmd_pool_graphics_present.destroy(); });
 
     m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
+
+    m_context.tracy_ctx = TracyVkContext(context.physical_device->get_physical_device(), context.device->get_device(), context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, true)->queue, m_cmds_graphics[0]);
+    m_destructor_queue.add_to_queue([&] { TracyVkDestroy(m_context.tracy_ctx) });
+    TracyVkContextName(m_context.tracy_ctx, "VULKAN", 1);
 
     m_depth_pre_pass = new DepthPrePass(m_context, m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_depth_pre_pass; });
@@ -47,11 +55,15 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, PvpScene& 
 
 void pvp::Renderer::prepare_frame()
 {
+    ZoneScoped;
+    ZoneNamedN(waiting, "waiting", true);
     vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
     vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
 
+    ZoneNamedN(update_renderer, "update renderer", true);
     m_scene.update_render();
 
+    ZoneNamedN(AcquireNextImage, "Acquire Next Image", true);
     VkResult result = vkAcquireNextImageKHR(
         m_context.device->get_device(),
         m_swapchain.get_swapchain(),
@@ -62,17 +74,19 @@ void pvp::Renderer::prepare_frame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        // m_swapchain.recreate_swapchain();
-        throw std::runtime_error("failed to present swap chain image!");
+        m_swapchain.recreate_swapchain();
+        // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
+    ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
     VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     vkBeginCommandBuffer(m_cmds_graphics[m_double_buffer_frame], &start_info);
 
+    ZoneNamedN(viewport_scisor, "VkViewport scissor", true);
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -90,19 +104,24 @@ void pvp::Renderer::prepare_frame()
 
 void pvp::Renderer::draw()
 {
+    ZoneScoped;
     prepare_frame();
     m_depth_pre_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_geometry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_tone_mapping_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
     m_blit_to_swapchain->draw(m_cmds_graphics[m_double_buffer_frame], m_current_swapchain_index);
+    TracyVkCollect(m_context.tracy_ctx, m_cmds_graphics[m_double_buffer_frame]);
     end_frame();
 }
 
 void pvp::Renderer::end_frame()
 {
+    ZoneScoped;
+    ZoneNamedN(end_command_buffer, "end command buffer", true);
     vkEndCommandBuffer(m_cmds_graphics[m_double_buffer_frame]);
 
+    ZoneNamedN(submit_queue, "submit queue", true);
     VkSemaphoreSubmitInfo semaphore_wait_for{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .semaphore = m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
@@ -135,6 +154,7 @@ void pvp::Renderer::end_frame()
 
     vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
 
+    ZoneNamedN(present, "Queue present", true);
     VkPresentInfoKHR present_info{};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
@@ -149,8 +169,8 @@ void pvp::Renderer::end_frame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        // m_swapchain.recreate_swapchain();
-        throw std::runtime_error("failed to present swap chain image!");
+        m_swapchain.recreate_swapchain();
+        // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS)
     {
