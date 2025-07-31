@@ -82,6 +82,7 @@ void pvp::App::run()
 void pvp::App::run_loop() const
 {
     ZoneScoped;
+    tracy::SetThreadName("Renderer");
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
         m_scene->update();

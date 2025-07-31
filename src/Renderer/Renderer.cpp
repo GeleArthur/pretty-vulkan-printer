@@ -15,11 +15,10 @@
 #include <Context/PhysicalDevice.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <Scene/PVPScene.h>
-#include <VMAAllocator/VmaAllocator.h>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyVulkan.hpp>
 
-pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, PvpScene& scene)
+pvp::Renderer::Renderer(Context& context, Swapchain& swapchain, PvpScene& scene)
     : m_context{ context }
     , m_swapchain{ swapchain }
     , m_scene{ scene }
@@ -31,11 +30,19 @@ pvp::Renderer::Renderer(const Context& context, Swapchain& swapchain, PvpScene& 
     m_cmd_pool_graphics_present = CommandPool(m_context, *context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, true), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     m_destructor_queue.add_to_queue([&] { m_cmd_pool_graphics_present.destroy(); });
 
-    m_cmds_graphics = (m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT));
+    const std::vector<VkCommandBuffer> buffers = m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT);
 
-    m_context.tracy_ctx = TracyVkContext(context.physical_device->get_physical_device(), context.device->get_device(), context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, true)->queue, m_cmds_graphics[0]);
-    m_destructor_queue.add_to_queue([&] { TracyVkDestroy(m_context.tracy_ctx) });
-    TracyVkContextName(m_context.tracy_ctx, "VULKAN", 1);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        m_frame_contexts[i].buffer_index = i;
+        m_frame_contexts[i].command_buffer = buffers[i];
+#ifdef TRACY_ENABLE
+        tracy::VkCtx* context_tracy = TracyVkContext(context.physical_device->get_physical_device(), context.device->get_device(), context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, true)->queue, m_frame_contexts[i].command_buffer);
+        m_context.tracy_ctx.push_back(context_tracy);
+        m_destructor_queue.add_to_queue([=] { TracyVkDestroy(context_tracy) });
+        TracyVkContextName(context_tracy, "VULKAN", 1);
+#endif
+    }
 
     m_depth_pre_pass = new DepthPrePass(m_context, m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_depth_pre_pass; });
@@ -84,7 +91,7 @@ void pvp::Renderer::prepare_frame()
 
     ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
     VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    vkBeginCommandBuffer(m_cmds_graphics[m_double_buffer_frame], &start_info);
+    vkBeginCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer, &start_info);
 
     ZoneNamedN(viewport_scisor, "VkViewport scissor", true);
     VkViewport viewport{};
@@ -94,24 +101,24 @@ void pvp::Renderer::prepare_frame()
     viewport.height = static_cast<float>(m_swapchain.get_swapchain_extent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(m_cmds_graphics[m_double_buffer_frame], 0, 1, &viewport);
+    vkCmdSetViewport(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
     scissor.extent = m_swapchain.get_swapchain_extent();
-    vkCmdSetScissor(m_cmds_graphics[m_double_buffer_frame], 0, 1, &scissor);
+    vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
 }
 
 void pvp::Renderer::draw()
 {
     ZoneScoped;
     prepare_frame();
-    m_depth_pre_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
-    m_geometry_draw->draw(m_cmds_graphics[m_double_buffer_frame]);
-    m_light_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
-    m_tone_mapping_pass->draw(m_cmds_graphics[m_double_buffer_frame]);
-    m_blit_to_swapchain->draw(m_cmds_graphics[m_double_buffer_frame], m_current_swapchain_index);
-    TracyVkCollect(m_context.tracy_ctx, m_cmds_graphics[m_double_buffer_frame]);
+    m_depth_pre_pass->draw(m_frame_contexts[m_double_buffer_frame]);
+    m_geometry_draw->draw(m_frame_contexts[m_double_buffer_frame]);
+    m_light_pass->draw(m_frame_contexts[m_double_buffer_frame]);
+    m_tone_mapping_pass->draw(m_frame_contexts[m_double_buffer_frame]);
+    m_blit_to_swapchain->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();
 }
 
@@ -119,7 +126,7 @@ void pvp::Renderer::end_frame()
 {
     ZoneScoped;
     ZoneNamedN(end_command_buffer, "end command buffer", true);
-    vkEndCommandBuffer(m_cmds_graphics[m_double_buffer_frame]);
+    vkEndCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer);
 
     ZoneNamedN(submit_queue, "submit queue", true);
     VkSemaphoreSubmitInfo semaphore_wait_for{
@@ -130,7 +137,7 @@ void pvp::Renderer::end_frame()
 
     VkCommandBufferSubmitInfo cmd_submit_info{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        .commandBuffer = m_cmds_graphics[m_double_buffer_frame],
+        .commandBuffer = m_frame_contexts[m_double_buffer_frame].command_buffer,
     };
 
     VkSemaphoreSubmitInfo semaphore_singled{

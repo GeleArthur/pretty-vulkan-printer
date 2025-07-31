@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "StaticImage.h"
 #include "Image.h"
 #include "VMAAllocator/VmaAllocator.h"
 
@@ -15,13 +16,14 @@ namespace pvp
 
         ImageBuilder& set_name(const std::string& name);
         ImageBuilder& set_size(const VkExtent2D& size);
-        ImageBuilder& use_screen_size_auto_update(bool enabled);
+        ImageBuilder& set_screen_size_auto_update(bool enabled);
         ImageBuilder& set_format(VkFormat format);
         ImageBuilder& set_usage(VkImageUsageFlags usage);
         ImageBuilder& set_aspect_flags(VkImageAspectFlags aspect_flags);
         ImageBuilder& set_memory_usage(VmaMemoryUsage memory_usage);
 
-        void build(const Context& context, pvp::Image& image) const;
+        void build(const Context& context, Image& image) const;
+        void build(const Context& context, StaticImage& image) const;
 
     private:
         std::string        m_name;

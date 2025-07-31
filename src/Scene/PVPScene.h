@@ -8,6 +8,7 @@
 #include <Context/Context.h>
 #include <DescriptorSets/DescriptorSets.h>
 #include <Image/Sampler.h>
+#include <Image/StaticImage.h>
 #include <UniformBuffers/UniformBuffer.h>
 #include <glm/mat4x4.hpp>
 #include <glm/detail/func_packing_simd.inl>
@@ -15,10 +16,6 @@
 namespace pvp
 {
     struct Sampler;
-}
-namespace pvp
-{
-
     struct MaterialTransform
     {
         glm::mat4x4 transform;
@@ -73,7 +70,7 @@ namespace pvp
             return m_gpu_models;
         };
 
-        const std::vector<Image>& get_textures() const
+        const std::vector<StaticImage>& get_textures() const
         {
             return m_gpu_textures;
         };
@@ -94,23 +91,19 @@ namespace pvp
         {
             return m_point_descriptor;
         }
-        const DescriptorSets& get_diratinal_descriptor() const
-        {
-            return m_point_descriptor;
-        }
 
     private:
-        Context&           m_context;
-        std::vector<Model> m_gpu_models;
-        std::vector<Image> m_gpu_textures;
-        Camera             m_camera;
-        DescriptorSets     m_scene_binding;
-        DescriptorSets     m_all_textures;
-        DescriptorSets     m_point_descriptor;
-        Sampler            m_shadered_sampler;
-        SceneGlobals       m_scene_globals;
-        Buffer             m_point_lights;
-        Buffer             m_directonal_lights;
+        Context&                 m_context;
+        std::vector<Model>       m_gpu_models;
+        std::vector<StaticImage> m_gpu_textures;
+        Camera                   m_camera;
+        DescriptorSets           m_scene_binding;
+        DescriptorSets           m_all_textures;
+        DescriptorSets           m_point_descriptor;
+        Sampler                  m_shadered_sampler;
+        SceneGlobals             m_scene_globals;
+        Buffer                   m_point_lights;
+        Buffer                   m_directonal_lights;
 
         DirectionLight direction_light{};
 

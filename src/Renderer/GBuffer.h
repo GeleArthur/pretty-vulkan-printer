@@ -14,7 +14,7 @@ namespace pvp
     {
     public:
         explicit GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& depth);
-        void draw(VkCommandBuffer cmd);
+        void draw(const FrameContext& cmd);
 
         const Image& get_albedo_image() const
         {

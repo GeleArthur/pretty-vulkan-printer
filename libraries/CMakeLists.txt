@@ -104,7 +104,14 @@ else()
 endif()
 
 # tracy
-option(TRACY_ENABLE " " ON)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(TRACY_ENABLE ON)
+else()
+    set(TRACY_ENABLE ON)
+endif()
+
+#option(TRACY_ENABLE " " ON)
 #option(TRACY_ON_DEMAND " " ON)
 FetchContent_Declare(
         tracy

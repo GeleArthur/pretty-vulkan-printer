@@ -14,7 +14,7 @@ namespace pvp
     {
     public:
         explicit LightPass(const Context& context, const PvpScene& scene, const GBuffer& gbuffer, DepthPrePass& depth_pre_pass);
-        void   draw(VkCommandBuffer command_buffer);
+        void   draw(const FrameContext& cmd);
         Image& get_light_image()
         {
             return m_light_image;

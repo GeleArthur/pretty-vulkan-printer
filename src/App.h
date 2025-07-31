@@ -20,7 +20,6 @@ namespace pvp
     class App final
     {
     public:
-        void frame_buffer_resize(GLFWwindow* window, int width, int height);
         void run();
         void run_loop() const;
 

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <vector>
 #include <vulkan/vulkan.h>
 
 namespace tracy
@@ -26,7 +27,10 @@ namespace pvp
         DescriptorLayoutCreator* descriptor_creator;
         Swapchain*               swapchain;
         WindowSurface*           window_surface;
-        mutable tracy::VkCtx*    tracy_ctx; // BAD TRASH
+
+#ifdef TRACY_ENABLE
+        std::vector<tracy::VkCtx*> tracy_ctx;
+#endif
     };
 
     struct ImageInfo

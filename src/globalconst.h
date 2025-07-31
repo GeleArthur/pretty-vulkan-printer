@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <cstdint>
 
-constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
+constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
 #define DISABLE_COPY(className)           \
     className(const className&) = delete; \

@@ -1,5 +1,6 @@
 ﻿#include "Device.h"
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 void pvp::Device::destroy() const
 {

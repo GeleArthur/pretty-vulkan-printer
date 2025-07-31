@@ -1,5 +1,6 @@
 ﻿#include "BlitToSwapchain.h"
 
+#include "FrameContext.h"
 #include "RenderInfoBuilder.h"
 
 #include <Context/Device.h>
@@ -18,11 +19,11 @@ namespace pvp
     {
     }
 
-    void BlitToSwapchain::draw(VkCommandBuffer cmd, uint32_t swapchain_image_index)
+    void BlitToSwapchain::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
     {
         ZoneScoped;
-        TracyVkZone(m_context.tracy_ctx, cmd, "Blit To SwapChain");
-        Debugger::start_debug_label(cmd, "Bilt to swapchain", { 0.5f, 0.5f, 0.0f });
+        TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "Blit To SwapChain");
+        Debugger::start_debug_label(cmd.command_buffer, "Bilt to swapchain", { 0.5f, 0.5f, 0.0f });
 
         VkImageBlit2 region{
             .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
@@ -38,7 +39,7 @@ namespace pvp
 
         const VkBlitImageInfo2 info{
             .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
-            .srcImage = m_source_image.get_image(),
+            .srcImage = m_source_image.get_image(cmd),
             .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             .dstImage = m_swapchain.get_images()[swapchain_image_index],
             .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -55,7 +56,7 @@ namespace pvp
             .layerCount = VK_REMAINING_ARRAY_LAYERS
         };
 
-        image_layout_transition(cmd,
+        image_layout_transition(cmd.command_buffer,
                                 m_swapchain.get_images()[swapchain_image_index],
                                 VK_PIPELINE_STAGE_2_NONE,
                                 VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -65,8 +66,8 @@ namespace pvp
                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                 range);
 
-        vkCmdBlitImage2(cmd, &info);
-        image_layout_transition(cmd,
+        vkCmdBlitImage2(cmd.command_buffer, &info);
+        image_layout_transition(cmd.command_buffer,
                                 m_swapchain.get_images()[swapchain_image_index],
                                 VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -75,6 +76,6 @@ namespace pvp
                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                                 range);
-        Debugger::end_debug_label(cmd);
+        Debugger::end_debug_label(cmd.command_buffer);
     }
 } // namespace pvp

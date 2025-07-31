@@ -1,5 +1,7 @@
 #include "WindowSurface.h"
 
+#include <Context/Context.h>
+
 namespace pvp
 {
     GLFWwindow* WindowSurface::get_window() const

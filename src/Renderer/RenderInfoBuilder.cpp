@@ -9,13 +9,13 @@ namespace pvp
         m_layout = layout;
         return *this;
     }
-    RenderInfoBuilder& RenderInfoBuilder::add_color(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
+    RenderInfoBuilder& RenderInfoBuilder::add_color(VkImageView image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
     {
         ZoneScoped;
         m_colors.emplace_back(image, load, store);
         return *this;
     }
-    RenderInfoBuilder& RenderInfoBuilder::set_depth(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
+    RenderInfoBuilder& RenderInfoBuilder::set_depth(VkImageView image, VkAttachmentLoadOp load, VkAttachmentStoreOp store)
     {
         m_depth = ImageLoadStore{ image, load, store };
         return *this;
@@ -41,7 +41,7 @@ namespace pvp
         {
             render_info.attachment_info.push_back(VkRenderingAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-                .imageView = std::get<0>(image)->get_view(),
+                .imageView = std::get<0>(image),
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .loadOp = std::get<1>(image),
                 .storeOp = std::get<2>(image),
@@ -60,7 +60,7 @@ namespace pvp
         {
             render_info.depth_info = VkRenderingAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-                .imageView = std::get<0>(m_depth)->get_view(),
+                .imageView = std::get<0>(m_depth),
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                 .loadOp = std::get<1>(m_depth),
                 .storeOp = std::get<2>(m_depth),

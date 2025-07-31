@@ -5,6 +5,12 @@
 
 #include "../Context/Context.h"
 
+#include <array>
+#include <globalconst.h>
+#include <Events/Event.h>
+#include <Events/EventListener.h>
+
+struct FrameContext;
 namespace pvp
 {
     class Image final
@@ -13,28 +19,53 @@ namespace pvp
         Image() = default;
         void destroy(const Context& context) const;
 
-        [[nodiscard]] VkImageView              get_view() const;
-        [[nodiscard]] VkImage                  get_image() const;
-        [[nodiscard]] VmaAllocation            get_allocation() const;
+        DISABLE_COPY(Image);
+
+        Image(Image&&) noexcept = default;
+        Image& operator=(Image&&) noexcept = default;
+
+        [[nodiscard]] VkImageView              get_view(const FrameContext& frame_context) const;
+        [[nodiscard]] VkImageView              get_view(int index) const;
+        [[nodiscard]] VkImage                  get_image(const FrameContext& frame_context) const;
+        [[nodiscard]] VkImage                  get_image(int index) const;
+        [[nodiscard]] VkImageLayout            get_layout(const FrameContext& frame_context) const;
+        [[nodiscard]] VkImageLayout            get_layout(int index) const;
         [[nodiscard]] const VmaAllocationInfo& get_allocation_info() const;
-        [[nodiscard]] VkImageLayout            get_layout() const;
         [[nodiscard]] VkFormat                 get_format() const;
         [[nodiscard]] VkExtent2D               get_size() const;
+        [[nodiscard]] Event<>&                 get_image_invalid();
 
-        void transition_layout(VkCommandBuffer command_buffer, VkImageLayout new_layout, VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask, VkAccessFlags2 src_access_mask, VkAccessFlags2 dst_access_mask);
-        void copy_from_buffer(VkCommandBuffer cmd, const Buffer& buffer) const;
+        void transition_layout(const FrameContext&   frame_context,
+                               VkImageLayout         new_layout,
+                               VkPipelineStageFlags2 src_stage_mask,
+                               VkPipelineStageFlags2 dst_stage_mask,
+                               VkAccessFlags2        src_access_mask,
+                               VkAccessFlags2        dst_access_mask);
 
     private:
         friend class ImageBuilder;
 
-        VmaAllocation      m_allocation{};
-        VmaAllocationInfo  m_allocation_info{};
-        VkImageCreateInfo  m_debug_create_info;
-        VkImage            m_image{ VK_NULL_HANDLE };
-        VkImageView        m_view{ VK_NULL_HANDLE };
-        VkImageLayout      m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
-        VkExtent2D         m_extent{};
-        VkImageAspectFlags m_aspect_flags{};
-        VkFormat           m_format{};
+        void create_images(const Context& context);
+
+        void                              resize_image(const Context& context, int width, int height);
+        EventListener<Context&, int, int> m_on_image_resized{
+            [this](const Context& context, int width, int height) {
+                resize_image(context, width, height);
+            }
+        };
+        Event<> m_image_invalid{};
+
+        VmaAllocationInfo m_allocation_info{};
+
+        VmaAllocationCreateInfo m_allocation_create_info;
+        VkImageCreateInfo       m_create_info;
+        VkImageViewCreateInfo   m_view_create_info;
+        std::string             m_name;
+
+        std::array<VmaAllocation, MAX_FRAMES_IN_FLIGHT> m_allocation{};
+        std::array<VkImage, MAX_FRAMES_IN_FLIGHT>       m_image{ VK_NULL_HANDLE };
+        std::array<VkImageView, MAX_FRAMES_IN_FLIGHT>   m_view{ VK_NULL_HANDLE };
+
+        std::array<VkImageLayout, MAX_FRAMES_IN_FLIGHT> m_current_layout{};
     };
 } // namespace pvp

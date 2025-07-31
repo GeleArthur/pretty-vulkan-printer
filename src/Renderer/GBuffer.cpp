@@ -1,6 +1,7 @@
 ﻿#include "GBuffer.h"
 
 #include "DepthPrePass.h"
+#include "FrameContext.h"
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
 
@@ -59,7 +60,8 @@ void pvp::GBuffer::create_images()
         .set_format(m_context.swapchain->get_swapchain_surface_format().format)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .set_size(m_context.swapchain->get_swapchain_extent())
+        // .set_size(m_context.swapchain->get_swapchain_extent())
+        .set_screen_size_auto_update(true)
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context, m_albedo_image);
     m_destructor_queue.add_to_queue([&] { m_albedo_image.destroy(m_context); });
@@ -68,17 +70,18 @@ void pvp::GBuffer::create_images()
         .set_format(VK_FORMAT_B8G8R8A8_UNORM)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .set_size(m_context.swapchain->get_swapchain_extent())
+        // .set_size(m_context.swapchain->get_swapchain_extent())
+        .set_screen_size_auto_update(true)
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context, m_normal_image);
     m_destructor_queue.add_to_queue([&] { m_normal_image.destroy(m_context); });
 }
 
-void pvp::GBuffer::draw(VkCommandBuffer cmd)
+void pvp::GBuffer::draw(const FrameContext& cmd)
 {
     ZoneScoped;
-    TracyVkZone(m_context.tracy_ctx, cmd, "GBuffer");
-    Debugger::start_debug_label(cmd, "G buffer", { 0, 1, 0 });
+    TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "GBuffer");
+    Debugger::start_debug_label(cmd.command_buffer, "G buffer", { 0, 1, 0 });
 
     ZoneNamedN(transition, "TransitionLayout", true);
     m_albedo_image.transition_layout(cmd,
@@ -95,34 +98,34 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
     ZoneNamedN(bind_texture, "Bind Scene+Texture", true);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &m_scene.get_textures_descriptor().sets[0], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_scene.get_textures_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
     ZoneNamedN(render_info, "create render info", true);
     RenderInfo color_info;
     RenderInfoBuilder()
-        .add_color(&m_albedo_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-        .add_color(&m_normal_image, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-        .set_depth(&m_depth_pre_pass.get_depth_image(), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_albedo_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_normal_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .set_depth(m_depth_pre_pass.get_depth_image().get_view(cmd), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_albedo_image.get_size())
         .build(color_info);
 
     ZoneNamedN(begin_rendering, "begin rendering", true);
-    vkCmdBeginRendering(cmd, &color_info.rendering_info);
+    vkCmdBeginRendering(cmd.command_buffer, &color_info.rendering_info);
     {
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
+        vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
         for (const Model& model : m_scene.get_models())
         {
             ZoneScopedN("Draw");
             VkDeviceSize offset{ 0 };
-            vkCmdBindVertexBuffers(cmd, 0, 1, &model.vertex_data.get_buffer(), &offset);
-            vkCmdBindIndexBuffer(cmd, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdPushConstants(cmd, m_pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(MaterialTransform), &model.material);
-            vkCmdDrawIndexed(cmd, model.index_count, 1, 0, 0, 0);
+            vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &model.vertex_data.get_buffer(), &offset);
+            vkCmdBindIndexBuffer(cmd.command_buffer, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(MaterialTransform), &model.material);
+            vkCmdDrawIndexed(cmd.command_buffer, model.index_count, 1, 0, 0, 0);
         }
     }
     ZoneNamedN(end_rendering, "end rendering", true);
-    vkCmdEndRendering(cmd);
+    vkCmdEndRendering(cmd.command_buffer);
 
     ZoneNamedN(transition_depth, "transition", true);
     m_albedo_image.transition_layout(cmd,
@@ -146,5 +149,5 @@ void pvp::GBuffer::draw(VkCommandBuffer cmd)
                            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
                            VK_ACCESS_2_SHADER_READ_BIT);
-    Debugger::end_debug_label(cmd);
+    Debugger::end_debug_label(cmd.command_buffer);
 }

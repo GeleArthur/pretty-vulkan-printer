@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "FrameContext.h"
 #include "GBuffer.h"
 #include "LightPass.h"
 #include "Swapchain.h"
@@ -16,7 +17,7 @@ namespace pvp
     class Renderer
     {
     public:
-        explicit Renderer(const Context& context, Swapchain& swapchain, PvpScene& scene);
+        explicit Renderer(Context& context, Swapchain& swapchain, PvpScene& scene);
 
         void prepare_frame();
         void draw();
@@ -28,16 +29,16 @@ namespace pvp
         }
 
     private:
-        const Context& m_context;
-        Swapchain&     m_swapchain;
-        PvpScene&      m_scene;
+        Context&   m_context;
+        Swapchain& m_swapchain;
+        PvpScene&  m_scene;
 
         uint32_t     m_double_buffer_frame{ 0 };
         uint32_t     m_current_swapchain_index{};
         FrameSyncers m_frame_syncers{};
 
-        CommandPool                  m_cmd_pool_graphics_present{};
-        std::vector<VkCommandBuffer> m_cmds_graphics{};
+        CommandPool                                    m_cmd_pool_graphics_present{};
+        std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> m_frame_contexts;
 
         DepthPrePass*    m_depth_pre_pass{};
         GBuffer*         m_geometry_draw{};

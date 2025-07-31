@@ -4,13 +4,15 @@
 #include <DescriptorSets/DescriptorSets.h>
 #include <Image/Image.h>
 #include <Scene/PVPScene.h>
+
+struct FrameContext;
 namespace pvp
 {
     class DepthPrePass
     {
     public:
         explicit DepthPrePass(const Context& context, const PvpScene& scene);
-        void draw(VkCommandBuffer cmd);
+        void draw(const FrameContext& cmd);
 
         Image& get_depth_image()
         {

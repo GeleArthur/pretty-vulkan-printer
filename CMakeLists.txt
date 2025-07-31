@@ -110,6 +110,12 @@ add_executable(${PROJECT_NAME}
         src/Renderer/ToneMappingPass.h
         src/VulkanExternalFunctions.cpp
         src/OverwriteNewDelete.cpp
+        src/Events/EventListener.h
+        src/Events/Event.h
+        src/Image/StaticImage.h
+        src/Image/StaticImage.h
+        src/Renderer/FrameContext.h
+        src/Image/StaticImage.cpp
 )
 
 add_subdirectory(libraries)

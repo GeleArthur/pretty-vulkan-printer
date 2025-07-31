@@ -1,5 +1,6 @@
 #include "CommandPool.h"
 
+#include <span>
 #include <stdexcept>
 #include <Context/Device.h>
 #include <tracy/Tracy.hpp>
@@ -23,10 +24,12 @@ namespace pvp
     }
     void CommandPool::destroy() const
     {
+        ZoneScoped;
         vkDestroyCommandPool(m_device, m_command_pool, nullptr);
     }
     VkCommandBuffer CommandPool::begin_buffer() const
     {
+        ZoneScoped;
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -45,6 +48,7 @@ namespace pvp
     }
     void CommandPool::end_buffer(VkCommandBuffer buffer, VkFence fence) const
     {
+        ZoneScoped;
         vkEndCommandBuffer(buffer);
 
         VkCommandBufferSubmitInfo command_buffer_submit{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, .commandBuffer = buffer };
@@ -64,6 +68,7 @@ namespace pvp
 
     std::vector<VkCommandBuffer> CommandPool::allocate_buffers(const uint32_t count) const
     {
+        ZoneScoped;
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         alloc_info.commandPool = m_command_pool;

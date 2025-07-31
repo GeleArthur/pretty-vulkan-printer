@@ -81,12 +81,6 @@ VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-// Gets called from different thread!!!
-void frame_buffer_size_changed_callback(GLFWwindow* window, int width, int height)
-{
-    pvp::Context* context = static_cast<pvp::Context*>(glfwGetWindowUserPointer(window));
-}
-
 pvp::Swapchain::Swapchain(Context& context, WindowSurface& surface)
     : m_window_surface(surface)
     , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), surface.get_surface()) }
@@ -96,8 +90,6 @@ pvp::Swapchain::Swapchain(Context& context, WindowSurface& surface)
     ZoneScoped;
     m_swap_chain_destructor.add_to_queue([&] { m_command_pool.destroy(); });
     create_the_swapchain();
-
-    // glfwSetFramebufferSizeCallback(m_window_surface.get_window(), frame_buffer_size_changed_callback);
 }
 
 bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device, const VkSurfaceKHR surface)
@@ -129,6 +121,8 @@ void pvp::Swapchain::recreate_swapchain()
 
     destroy_old_swapchain();
     create_the_swapchain();
+    m_on_frame_buffer_size_changed.notify_listeners(m_context, width, height);
+    // window_resized(width, height); // Not happy with this but need to make it work first!!!
 
     // create_the_swapchain(m_context.device, command_buffer);
     // create_frame_buffers(m_context.device.get_device(), render_pass);
@@ -159,6 +153,10 @@ const std::vector<VkImage>& pvp::Swapchain::get_images() const
 const std::vector<VkImageView>& pvp::Swapchain::get_views() const
 {
     return m_swapchain_views;
+}
+Event<pvp::Context&, int, int>& pvp::Swapchain::get_on_frame_buffer_size_changed()
+{
+    return m_on_frame_buffer_size_changed;
 }
 
 void pvp::Swapchain::destroy_old_swapchain()

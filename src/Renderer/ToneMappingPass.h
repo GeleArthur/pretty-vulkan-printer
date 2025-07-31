@@ -11,7 +11,7 @@ namespace pvp
     {
     public:
         explicit ToneMappingPass(const Context& context, LightPass& light_pass);
-        void   draw(VkCommandBuffer cmd);
+        void   draw(const FrameContext& cmd);
         Image& get_tone_mapped_texture()
         {
             return m_tone_texture;

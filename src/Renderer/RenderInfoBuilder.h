@@ -23,14 +23,14 @@ namespace pvp
         DISABLE_MOVE(RenderInfoBuilder);
 
         RenderInfoBuilder& set_layout(VkImageLayout layout);
-        RenderInfoBuilder& add_color(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
-        RenderInfoBuilder& set_depth(const Image* image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
+        RenderInfoBuilder& add_color(VkImageView image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
+        RenderInfoBuilder& set_depth(VkImageView image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
         RenderInfoBuilder& set_size(VkExtent2D size);
 
         void build(RenderInfo& render_info) const;
 
     private:
-        using ImageLoadStore = std::tuple<const Image*, VkAttachmentLoadOp, VkAttachmentStoreOp>;
+        using ImageLoadStore = std::tuple<VkImageView, VkAttachmentLoadOp, VkAttachmentStoreOp>;
         std::vector<ImageLoadStore> m_colors;
         ImageLoadStore              m_depth{};
         VkImageLayout               m_layout{ VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };

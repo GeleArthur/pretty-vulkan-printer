@@ -66,7 +66,7 @@ pvp::PvpScene::PvpScene(Context& context)
                 format = VK_FORMAT_R8G8B8A8_SRGB;
         }
 
-        Image gpu_image;
+        StaticImage gpu_image;
         ImageBuilder()
             .set_name(texture.name)
             .set_format(format)
@@ -92,7 +92,7 @@ pvp::PvpScene::PvpScene(Context& context)
 
         stbi_image_free(texture.pixels);
 
-        m_gpu_textures.push_back(gpu_image);
+        m_gpu_textures.push_back(std::move(gpu_image));
         gpu_texture_names.push_back(texture.name);
     }
 
@@ -239,7 +239,7 @@ pvp::PvpScene::~PvpScene()
         model.index_data.destroy();
     }
 
-    for (Image& gpu_texture : m_gpu_textures)
+    for (StaticImage& gpu_texture : m_gpu_textures)
     {
         gpu_texture.destroy(m_context);
     }

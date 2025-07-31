@@ -49,5 +49,7 @@ namespace pvp
         {
             throw std::runtime_error(std::format("Failed to create surface. {}", result));
         }
+
+        // glfwSetFramebufferSizeCallback(window_surface.m_window, &WindowSurface::window_resized);
     }
 } // namespace pvp

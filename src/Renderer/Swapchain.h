@@ -7,6 +7,8 @@
 #include <globalconst.h>
 #include <vector>
 #include <CommandBuffer/CommandPool.h>
+#include <Events/EventListener.h>
+#include <Events/Event.h>
 #include <vulkan/vulkan.h>
 
 namespace pvp
@@ -33,6 +35,8 @@ namespace pvp
         [[nodiscard]] const std::vector<VkImage>&     get_images() const;
         [[nodiscard]] const std::vector<VkImageView>& get_views() const;
 
+        [[nodiscard]] Event<Context&, int, int>& get_on_frame_buffer_size_changed();
+
     private:
         void             destroy_old_swapchain();
         void             create_the_swapchain();
@@ -48,6 +52,9 @@ namespace pvp
         VkFormat           m_depth_format;
         CommandPool        m_command_pool;
         Context&           m_context;
+
+        Event<Context&, int, int> m_on_frame_buffer_size_changed;
+        // std::vector<std::function<void(int, int)>> m_on_frame_buffer_changed{};
 
         // std::condition_variable m_get_screen_size{};
         // std::mutex              m_screen_change_mutex{};

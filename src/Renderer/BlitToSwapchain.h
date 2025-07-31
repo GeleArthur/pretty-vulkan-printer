@@ -9,7 +9,7 @@ namespace pvp
     {
     public:
         explicit BlitToSwapchain(const Context& context, Swapchain& swapchain, Image& source);
-        void draw(VkCommandBuffer cmd, uint32_t swapchain_image_index);
+        void draw(const FrameContext& cmd, uint32_t swapchain_image_index);
 
     private:
         Swapchain&     m_swapchain;
