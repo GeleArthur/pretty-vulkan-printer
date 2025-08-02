@@ -3,9 +3,19 @@
 #include <vulkan/vulkan.h>
 #include <array>
 #include "../globalconst.h"
+#include <Image/Image.h>
+#include <vector>
 
 namespace pvp
 {
+    struct ImageBinding
+    {
+        uint32_t      binding;
+        VkImageLayout layout;
+        const Image*  image;
+        int           set;
+    };
+
     class DescriptorSets final
     {
     public:
@@ -16,6 +26,11 @@ namespace pvp
 
     private:
         friend class DescriptorSetBuilder;
+        const Context* m_context;
+
         std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> m_sets{ VK_NULL_HANDLE };
+        std::vector<EventListener<>>                      m_images;
+
+        void reconnect_image(const ImageBinding& binding);
     };
 } // namespace pvp

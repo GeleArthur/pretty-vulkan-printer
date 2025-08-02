@@ -33,11 +33,4 @@ namespace pvp
 #endif
     };
 
-    struct ImageInfo
-    {
-        VkFormat   depth_format;
-        VkFormat   color_format;
-        VkExtent2D image_size;
-    };
-
 } // namespace pvp

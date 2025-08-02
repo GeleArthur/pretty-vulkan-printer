@@ -2,6 +2,7 @@
 
 #include "Buffer.h"
 #include <exception>
+#include <stdexcept>
 
 namespace pvp
 {
@@ -39,10 +40,11 @@ namespace pvp
 
         if (vmaCreateBuffer(allocator, &create_info, &allocation_create_info, &buffer.m_buffer, &buffer.m_allocation, &buffer.m_allocation_info) != VK_SUCCESS)
         {
-            throw std::exception("Can't create buffer");
+            throw std::runtime_error("Can't create buffer");
         }
 
         buffer.m_allocator = allocator;
         buffer.m_buffer_size = m_buffer_size;
+        buffer.m_create_info = create_info;
     }
 } // namespace pvp

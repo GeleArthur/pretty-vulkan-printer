@@ -68,7 +68,7 @@ void pvp::Renderer::prepare_frame()
     vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
 
     ZoneNamedN(update_renderer, "update renderer", true);
-    m_scene.update_render();
+    m_scene.update_render(m_frame_contexts[m_double_buffer_frame]);
 
     ZoneNamedN(AcquireNextImage, "Acquire Next Image", true);
     VkResult result = vkAcquireNextImageKHR(

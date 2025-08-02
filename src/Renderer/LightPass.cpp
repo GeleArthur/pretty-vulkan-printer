@@ -16,7 +16,7 @@
 
 namespace pvp
 {
-    LightPass::LightPass(const Context& context, const PvpScene& scene, const GBuffer& gbuffer, DepthPrePass& depth_pre_pass)
+    LightPass::LightPass(const Context& context, const PvpScene& scene, GBuffer& gbuffer, DepthPrePass& depth_pre_pass)
         : m_context{ context }
         , m_geometry_pass{ gbuffer }
         , m_depth_pre_pass{ depth_pre_pass }
@@ -45,13 +45,13 @@ namespace pvp
             .build(m_context, m_sampler);
         m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });
 
-        m_light_binding = DescriptorSetBuilder()
-                              .bind_sampler(0, m_sampler)
-                              .bind_image(1, m_geometry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                              .bind_image(2, m_geometry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                              .bind_image(3, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                              .set_layout(m_context.descriptor_creator->get_layout(11))
-                              .build(m_context);
+        DescriptorSetBuilder()
+            .bind_sampler(0, m_sampler)
+            .bind_image(1, m_geometry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .bind_image(2, m_geometry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .bind_image(3, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .set_layout(m_context.descriptor_creator->get_layout(11))
+            .build(m_context, m_light_binding);
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))

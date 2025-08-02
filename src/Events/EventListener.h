@@ -51,7 +51,8 @@ EventListener<Args...>::EventListener(const EventListener& other) noexcept
     : m_function{ other.m_function }
     , m_event{ other.m_event }
 {
-    m_event->add_listener(this);
+    if (m_event != nullptr)
+        m_event->add_listener(this);
 }
 
 template<typename... Args>

@@ -45,14 +45,14 @@ namespace pvp
     private:
         friend class ImageBuilder;
 
-        void create_images(const Context& context);
-
-        void                              resize_image(const Context& context, int width, int height);
         EventListener<Context&, int, int> m_on_image_resized{
             [this](const Context& context, int width, int height) {
                 resize_image(context, width, height);
             }
         };
+        void resize_image(const Context& context, int width, int height);
+        void create_images(const Context& context);
+
         Event<> m_image_invalid{};
 
         VmaAllocationInfo m_allocation_info{};

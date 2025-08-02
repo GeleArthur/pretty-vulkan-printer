@@ -1,5 +1,4 @@
-﻿#pragma once
-#include <cstddef>
+﻿#include <cstddef>
 #include <cstdlib>
 #include <tracy/Tracy.hpp>
 

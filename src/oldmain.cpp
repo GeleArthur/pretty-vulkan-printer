@@ -2038,7 +2038,7 @@ int main2()
     {
         HelloTraingle {}.run();
     }
-    catch (std::exception const& e)
+    catch (std::runtime_error const& e)
     {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

@@ -38,10 +38,11 @@ namespace pvp
 
     private:
         friend class BufferBuilder;
-        VkBuffer          m_buffer{ VK_NULL_HANDLE };
-        VmaAllocator      m_allocator{ VK_NULL_HANDLE };
-        VmaAllocation     m_allocation{ VK_NULL_HANDLE };
-        VmaAllocationInfo m_allocation_info{};
-        VkDeviceSize      m_buffer_size{};
+        VkBuffer           m_buffer{ VK_NULL_HANDLE };
+        VmaAllocator       m_allocator{ VK_NULL_HANDLE };
+        VmaAllocation      m_allocation{ VK_NULL_HANDLE };
+        VmaAllocationInfo  m_allocation_info{};
+        VkBufferCreateInfo m_create_info{};
+        VkDeviceSize       m_buffer_size{};
     };
 } // namespace pvp

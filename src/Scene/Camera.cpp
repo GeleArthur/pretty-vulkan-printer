@@ -12,6 +12,9 @@ pvp::Camera::Camera(const Context& context)
 }
 void pvp::Camera::update(float delta_time)
 {
+    m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(m_context.swapchain->get_swapchain_extent().width) / static_cast<float>(m_context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
+    m_projection[1][1] *= -1;
+
     double xpos, ypos;
     glfwGetCursorPos(m_context.window_surface->get_window(), &xpos, &ypos);
 

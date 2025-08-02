@@ -88,7 +88,7 @@ namespace pvp
         {
             if (vmaCreateImage(context.allocator->get_allocator(), &m_create_info, &m_allocation_create_info, &m_image[i], &m_allocation[i], &m_allocation_info) != VK_SUCCESS)
             {
-                throw std::exception("Failed creating image");
+                throw std::runtime_error("Failed creating image");
             }
             m_current_layout[i] = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -96,7 +96,7 @@ namespace pvp
 
             if (vkCreateImageView(context.device->get_device(), &m_view_create_info, nullptr, &m_view[i]) != VK_SUCCESS)
             {
-                throw std::exception("Failed creating image view");
+                throw std::runtime_error("Failed creating image view");
             }
 #if defined(_DEBUG)
 

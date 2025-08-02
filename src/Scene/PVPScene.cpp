@@ -24,11 +24,19 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <spdlog/spdlog.h>
 #include <tracy/Tracy.hpp>
+
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
+    , m_scene_globals{}
     , m_camera(context)
+    , m_scene_globals_gpu{ sizeof(SceneGlobals), context.allocator->get_allocator() }
+    , m_point_lights_gpu{ 16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator() }
+    , m_directonal_lights_gpu{ 16 + sizeof(DirectionLight) * max_direction_lights, context.allocator->get_allocator() }
 {
     ZoneScoped;
+
+    m_command_queue.resize(MAX_FRAMES_IN_FLIGHT);
+
     LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
@@ -167,7 +175,9 @@ pvp::PvpScene::PvpScene(Context& context)
     transfer_image_deleter.destroy_and_clear();
     cmd_pool_transfer_buffers.destroy();
 
-    m_scene_globals_gpu = new UniformBuffer<SceneGlobals>(context.allocator->get_allocator());
+    // m_scene_globals_gpu = UniformBuffer{};
+    // m_point_lights_gpu = UniformBuffer(16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator());
+    // m_directonal_lights_gpu = UniformBuffer(16 + sizeof(DirectionLight) * max_direction_lights, context.allocator->get_allocator());
 
     context.descriptor_creator->create_layout()
         .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -186,50 +196,33 @@ pvp::PvpScene::PvpScene(Context& context)
         .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
         .build(m_context, m_shadered_sampler);
 
-    m_scene_binding = DescriptorSetBuilder()
-                          .set_layout(m_context.descriptor_creator->get_layout(0))
-                          .bind_buffer(0, *m_scene_globals_gpu)
-                          .build(m_context);
+    DescriptorSetBuilder()
+        .set_layout(m_context.descriptor_creator->get_layout(0))
+        .bind_uniform_buffer(0, m_scene_globals_gpu)
+        .build(m_context, m_scene_binding);
 
-    m_all_textures = DescriptorSetBuilder()
-                         .set_layout(m_context.descriptor_creator->get_layout(1))
-                         .bind_sampler(0, m_shadered_sampler)
-                         .bind_image_array(1, m_gpu_textures)
-                         .build(context);
-
-    BufferBuilder()
-        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
-        .set_size((16 + sizeof(PointLight) * max_point_lights))
-        .build(m_context.allocator->get_allocator(), m_point_lights);
-
-    BufferBuilder()
-        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
-        .set_size(16 + sizeof(DirectionLight) * max_direction_lights)
-        .build(m_context.allocator->get_allocator(), m_directonal_lights);
+    DescriptorSetBuilder()
+        .set_layout(m_context.descriptor_creator->get_layout(1))
+        .bind_sampler(0, m_shadered_sampler)
+        .bind_image_array(1, m_gpu_textures)
+        .build(context, m_all_textures);
 
     m_context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
         .build(3);
 
-    std::vector buffers{ m_point_lights };
-    std::vector buffer_direction{ m_directonal_lights };
+    DescriptorSetBuilder()
+        .set_layout(m_context.descriptor_creator->get_layout(3))
+        .bind_uniform_buffer(0, m_point_lights_gpu)
+        .bind_uniform_buffer(1, m_directonal_lights_gpu)
+        .build(m_context, m_point_descriptor);
 
-    m_point_descriptor = DescriptorSetBuilder()
-                             .set_layout(m_context.descriptor_creator->get_layout(3))
-                             .bind_buffer_ssbo(0, buffers)
-                             .bind_buffer_ssbo(1, buffer_direction)
-                             .build(m_context);
-
-    direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 0 };
+    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 0 };
 
     add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
-    add_direction_light(direction_light);
+    add_direction_light(m_direction_light);
 }
 pvp::PvpScene::~PvpScene()
 {
@@ -244,51 +237,62 @@ pvp::PvpScene::~PvpScene()
         gpu_texture.destroy(m_context);
     }
 
-    delete m_scene_globals_gpu;
-
     m_shadered_sampler.destroy(m_context.device->get_device());
-    m_point_lights.destroy();
-    m_directonal_lights.destroy();
 }
-uint32_t pvp::PvpScene::add_point_light(const PointLight& light) const
+uint32_t pvp::PvpScene::add_point_light(const PointLight& light)
 {
-    void*     light_base = m_point_lights.get_allocation_info().pMappedData;
-    uint32_t  light_index = (++*static_cast<uint32_t*>(light_base));
-    std::span point_lights(reinterpret_cast<PointLight*>(reinterpret_cast<char*>(light_base) + 16u), max_point_lights);
-    point_lights[light_index - 1] = light;
-
-    return light_index - 1;
+    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    {
+        command_queue.push_back([light](int buffer_index, PvpScene& scene) {
+            void*          light_base = scene.m_point_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
+            const uint32_t light_index = (++*static_cast<uint32_t*>(light_base));
+            std::span      point_lights(reinterpret_cast<PointLight*>(reinterpret_cast<char*>(light_base) + 16u), max_point_lights);
+            point_lights[light_index - 1] = light;
+        });
+    }
+    return 0;
 }
-void pvp::PvpScene::change_point_light(uint32_t index, const PointLight& light) const
+void pvp::PvpScene::change_point_light(uint32_t light_index, const PointLight& light)
 {
-    void* light_base = m_point_lights.get_allocation_info().pMappedData;
+    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    {
+        command_queue.push_back([light, light_index](int buffer_index, PvpScene& scene) {
+            void* light_base = scene.m_point_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
 
-    std::span point_lights(reinterpret_cast<PointLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
-    point_lights[index] = light;
+            std::span point_lights(reinterpret_cast<PointLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
+            point_lights[light_index] = light;
+        });
+    }
 }
 
-uint32_t pvp::PvpScene::add_direction_light(const DirectionLight& light) const
+uint32_t pvp::PvpScene::add_direction_light(const DirectionLight& light)
 {
-    void* light_base = m_directonal_lights.get_allocation_info().pMappedData;
+    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    {
+        command_queue.push_back([light](int buffer_index, PvpScene& scene) {
+            void*     light_base = scene.m_directonal_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
+            uint32_t  light_index = (++*static_cast<uint32_t*>(light_base));
+            std::span point_lights(reinterpret_cast<DirectionLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
+            point_lights[light_index - 1] = light;
+        });
+    }
 
-    uint32_t  light_index = (++*static_cast<uint32_t*>(light_base));
-    std::span point_lights(reinterpret_cast<DirectionLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
-    point_lights[light_index - 1] = light;
-
-    return light_index - 1;
+    return 0;
 }
-void pvp::PvpScene::change_direction_light(uint32_t index, const DirectionLight& light) const
+void pvp::PvpScene::change_direction_light(uint32_t light_index, const DirectionLight& light)
 {
-    void* light_base = m_directonal_lights.get_allocation_info().pMappedData;
+    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    {
+        command_queue.push_back([light, light_index](int buffer_index, PvpScene& scene) {
+            void* light_base = scene.m_directonal_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
 
-    std::span point_lights(reinterpret_cast<DirectionLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
-    point_lights[index] = light;
+            std::span direction_lights(reinterpret_cast<DirectionLight*>(reinterpret_cast<char*>(light_base) + 16u), max_direction_lights);
+            direction_lights[light_index] = light;
+        });
+    }
 }
 
 void pvp::PvpScene::update()
-{
-}
-void pvp::PvpScene::update_render()
 {
     static auto start_time = std::chrono::high_resolution_clock::now();
     static auto last_time = std::chrono::high_resolution_clock::now();
@@ -313,9 +317,19 @@ void pvp::PvpScene::update_render()
 
     if (key_pressed && !key_pressed_last)
     {
-        direction_light.intensity = direction_light.intensity > 5.0f ? 0.0f : 10.0f;
-        change_direction_light(0, direction_light);
+        m_direction_light.intensity = m_direction_light.intensity > 5.0f ? 0.0f : 10.0f;
+        change_direction_light(0, m_direction_light);
     }
     key_pressed_last = key_pressed;
-    m_scene_globals_gpu->update(0, m_scene_globals);
+}
+void pvp::PvpScene::update_render(const FrameContext& frame_context)
+{
+    auto& commands_buffer = m_command_queue[frame_context.buffer_index];
+    while (!commands_buffer.empty())
+    {
+        commands_buffer.front()(frame_context.buffer_index, *this);
+        commands_buffer.pop_front();
+    }
+
+    m_scene_globals_gpu.update(frame_context.buffer_index, m_scene_globals);
 }

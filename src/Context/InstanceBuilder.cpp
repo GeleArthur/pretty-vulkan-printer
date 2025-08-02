@@ -24,7 +24,7 @@ void pvp::InstanceBuilder::valid_extensions_check()
                 });
             extension == extensions_available.end())
         {
-            throw std::exception(std::format("Extension \"{}\" is not on your hardware :(", extension->extensionName).c_str());
+            throw std::runtime_error(std::format("Extension \"{}\" is not on your hardware :(", extension->extensionName).c_str());
         }
     }
 }

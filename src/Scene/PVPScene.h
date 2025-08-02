@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "ModelData.h"
 
+#include <deque>
 #include <filesystem>
 #include <vector>
 #include <Buffer/Buffer.h>
@@ -58,12 +59,13 @@ namespace pvp
     public:
         explicit PvpScene(Context& context);
         ~PvpScene();
-        uint32_t add_point_light(const PointLight& light) const;
-        void     change_point_light(uint32_t index, const PointLight& light) const;
-        uint32_t add_direction_light(const DirectionLight& light) const;
-        void     change_direction_light(uint32_t index, const DirectionLight& light) const;
-        void     update();
-        void     update_render();
+        uint32_t add_point_light(const PointLight& light);
+        void     change_point_light(uint32_t light_index, const PointLight& light);
+        uint32_t add_direction_light(const DirectionLight& light);
+        void     change_direction_light(uint32_t light_index, const DirectionLight& light);
+
+        void update();
+        void update_render(const FrameContext& frame_context);
 
         const std::vector<Model>& get_models() const
         {
@@ -75,7 +77,7 @@ namespace pvp
             return m_gpu_textures;
         };
 
-        UniformBuffer<SceneGlobals>* get_scene_globals() const
+        const UniformBuffer& get_scene_globals() const
         {
             return m_scene_globals_gpu;
         };
@@ -96,22 +98,22 @@ namespace pvp
         Context&                 m_context;
         std::vector<Model>       m_gpu_models;
         std::vector<StaticImage> m_gpu_textures;
-        Camera                   m_camera;
         DescriptorSets           m_scene_binding;
         DescriptorSets           m_all_textures;
         DescriptorSets           m_point_descriptor;
         Sampler                  m_shadered_sampler;
         SceneGlobals             m_scene_globals;
-        Buffer                   m_point_lights;
-        Buffer                   m_directonal_lights;
+        UniformBuffer            m_point_lights_gpu;
+        UniformBuffer            m_directonal_lights_gpu;
+        UniformBuffer            m_scene_globals_gpu;
 
-        DirectionLight direction_light{};
+        std::vector<std::deque<std::function<void(int, PvpScene&)>>> m_command_queue;
+
+        Camera         m_camera;
+        DirectionLight m_direction_light{};
 
         constexpr static uint32_t max_point_lights{ 10u };
         constexpr static uint32_t max_direction_lights{ 10u };
-
-        UniformBuffer<SceneGlobals>* m_scene_globals_gpu{};
-        // UniformBuffer<SceneGlobals>* m_scene_lights_gpu{};
     };
 
 } // namespace pvp

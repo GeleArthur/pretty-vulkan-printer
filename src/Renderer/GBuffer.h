@@ -16,11 +16,11 @@ namespace pvp
         explicit GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& depth);
         void draw(const FrameContext& cmd);
 
-        const Image& get_albedo_image() const
+        Image& get_albedo_image()
         {
             return m_albedo_image;
         };
-        const Image& get_normal_image() const
+        Image& get_normal_image()
         {
             return m_normal_image;
         };

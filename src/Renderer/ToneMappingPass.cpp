@@ -81,10 +81,10 @@ namespace pvp
 
         m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(12); });
 
-        m_tone_binding = DescriptorSetBuilder()
-                             .bind_image(0, m_light_pass.get_light_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                             .set_layout(m_context.descriptor_creator->get_layout(12))
-                             .build(m_context);
+        DescriptorSetBuilder()
+            .bind_image(0, m_light_pass.get_light_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .set_layout(m_context.descriptor_creator->get_layout(12))
+            .build(m_context, m_tone_binding);
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(12))

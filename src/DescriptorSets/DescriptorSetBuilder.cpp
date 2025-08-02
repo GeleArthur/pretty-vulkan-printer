@@ -15,20 +15,19 @@ namespace pvp
         m_descriptor_layout = layout;
         return *this;
     }
-
-    DescriptorSetBuilder& DescriptorSetBuilder::bind_buffer_ssbo(uint32_t binding, Buffer& buffer)
+    DescriptorSetBuilder& DescriptorSetBuilder::bind_uniform_buffer(uint32_t binding, const UniformBuffer& buffer)
     {
-        m_buffers_ssbo = BufferInfo(binding, buffer);
+        m_uniform_buffers.emplace_back(binding, &buffer);
         return *this;
     }
-    DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, const Image& image, VkImageLayout layout)
+    DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, Image& image, VkImageLayout layout)
     {
         m_images.emplace_back(binding, &image, layout);
         return *this;
     }
     DescriptorSetBuilder& DescriptorSetBuilder::bind_image_array(uint32_t binding, const std::vector<StaticImage>& image_array)
     {
-        m_image_array = std::tuple<uint32_t, std::vector<StaticImage> const*>(binding, &image_array);
+        m_image_array = ImageArrayInfo(binding, &image_array);
         return *this;
     }
     DescriptorSetBuilder& DescriptorSetBuilder::bind_sampler(uint32_t binding, const Sampler& sampler)
@@ -37,14 +36,15 @@ namespace pvp
         return *this;
     }
 
-    DescriptorSets DescriptorSetBuilder::build(const Context& context) const
+    void DescriptorSetBuilder::build(const Context& context, DescriptorSets& descriptor) const
     {
-        DescriptorSets descriptor;
+        descriptor.m_context = &context;
 
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        for (int frame_index = 0; frame_index < MAX_FRAMES_IN_FLIGHT; ++frame_index)
         {
             VkDescriptorSetAllocateInfo alloc_info{};
 
+            // Bindless
             unsigned int                                       image_count{};
             VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count{};
 
@@ -60,26 +60,27 @@ namespace pvp
                 alloc_info.pNext = &variable_count;
             }
 
+            // DescriptorSet
             alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             alloc_info.descriptorPool = context.descriptor_creator->get_pool();
             alloc_info.descriptorSetCount = 1;
             alloc_info.pSetLayouts = &m_descriptor_layout;
 
-            if (vkAllocateDescriptorSets(context.device->get_device(), &alloc_info, &descriptor.m_sets[i]) != VK_SUCCESS)
+            if (vkAllocateDescriptorSets(context.device->get_device(), &alloc_info, &descriptor.m_sets[frame_index]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to allocate descriptor sets!");
             }
 
-            for (const auto& buffer : m_buffers)
+            for (const BufferInfo& buffer : m_uniform_buffers)
             {
                 VkDescriptorBufferInfo buffer_info{};
-                buffer_info.buffer = std::get<1>(buffer)[i].get_buffer();
+                buffer_info.buffer = std::get<1>(buffer)->get_buffer(frame_index).get_buffer();
                 buffer_info.offset = 0;
-                buffer_info.range = std::get<1>(buffer)[i].get_size();
+                buffer_info.range = std::get<1>(buffer)->get_buffer(frame_index).get_size();
 
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = descriptor.m_sets[i];
+                write.dstSet = descriptor.m_sets[frame_index];
                 write.dstBinding = std::get<0>(buffer);
                 write.dstArrayElement = 0;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -89,39 +90,33 @@ namespace pvp
                 vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
             }
 
-            for (const std::tuple<uint32_t, const std::vector<Buffer>>& buffer : m_buffers_ssbo)
-            {
-                VkDescriptorBufferInfo buffer_info{};
-                buffer_info.buffer = std::get<1>(buffer)[0].get_buffer();
-                buffer_info.offset = 0;
-                buffer_info.range = std::get<1>(buffer)[0].get_size();
-
-                VkWriteDescriptorSet write{};
-                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = descriptor.m_sets[0];
-                write.dstBinding = std::get<0>(buffer);
-                write.dstArrayElement = 0;
-                write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                write.descriptorCount = 1;
-                write.pBufferInfo = &buffer_info;
-
-                vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
-            }
-
-            for (const auto& image : m_images)
+            for (const ImageInfo& image : m_images)
             {
                 VkDescriptorImageInfo image_info{};
-                image_info.imageView = std::get<1>(image)->get_view(i);
-                image_info.imageLayout = std::get<2>(image) == VK_IMAGE_LAYOUT_MAX_ENUM ? std::get<1>(image)->get_layout(i) : std::get<2>(image);
+                image_info.imageView = std::get<1>(image)->get_view(frame_index);
+                image_info.imageLayout = std::get<2>(image) == VK_IMAGE_LAYOUT_MAX_ENUM ?
+                    std::get<1>(image)->get_layout(frame_index) :
+                    std::get<2>(image);
 
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = descriptor.m_sets[i];
+                write.dstSet = descriptor.m_sets[frame_index];
                 write.dstBinding = std::get<0>(image);
                 write.dstArrayElement = 0;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 write.descriptorCount = 1;
                 write.pImageInfo = &image_info;
+
+                // TODO: Not happy with this
+                ImageBinding binding{
+                    .binding = std::get<0>(image),
+                    .layout = image_info.imageLayout,
+                    .image = std::get<1>(image),
+                    .set = frame_index
+                };
+
+                EventListener<>& listener = descriptor.m_images.emplace_back(EventListener<>{ [&descriptor, binding] { descriptor.reconnect_image(binding); } });
+                std::get<1>(image)->get_image_invalid().add_listener(&listener);
 
                 vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
             }
@@ -136,7 +131,7 @@ namespace pvp
 
                     VkWriteDescriptorSet write{};
                     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    write.dstSet = descriptor.m_sets[i];
+                    write.dstSet = descriptor.m_sets[frame_index];
                     write.dstBinding = std::get<0>(m_image_array);
                     write.dstArrayElement = j;
                     write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -147,14 +142,14 @@ namespace pvp
                 }
             }
 
-            for (const auto& sampler : m_samplers)
+            for (const SamplerInfo& sampler : m_samplers)
             {
                 VkDescriptorImageInfo sampler_info{};
                 sampler_info.sampler = std::get<1>(sampler)->handle;
 
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = descriptor.m_sets[i];
+                write.dstSet = descriptor.m_sets[frame_index];
                 write.dstBinding = std::get<0>(sampler);
                 write.dstArrayElement = 0;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -164,7 +159,5 @@ namespace pvp
                 vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
             }
         }
-
-        return descriptor;
     }
 } // namespace pvp

@@ -26,14 +26,14 @@ struct DirectionalLight {
     float intensity;
 };
 
-layout (set = 2, binding = 0, std430) readonly buffer LightsPoint {
+layout (set = 2, binding = 0) uniform LightsPoint {
     uint count;
-    PointLight point[];
+    PointLight point[10];
 } lights_point;
 
-layout (set = 2, binding = 1, std430) readonly buffer LightsDirection {
+layout (set = 2, binding = 1) uniform LightsDirection {
     uint count;
-    DirectionalLight direction[];
+    DirectionalLight direction[10];
 } lights_direction;
 
 layout (location = 0) out vec4 outColor;

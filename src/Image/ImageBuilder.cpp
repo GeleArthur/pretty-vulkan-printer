@@ -61,6 +61,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::Image& image) const
     {
         create_info.extent.width = context.swapchain->get_swapchain_extent().width;
         create_info.extent.height = context.swapchain->get_swapchain_extent().height;
+        context.swapchain->get_on_frame_buffer_size_changed().add_listener(&image.m_on_image_resized);
     }
 
     create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -123,7 +124,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
 
     if (vmaCreateImage(context.allocator->get_allocator(), &create_info, &allocation_info, &image.m_image, &image.m_allocation, &image.m_allocation_info) != VK_SUCCESS)
     {
-        throw std::exception("Failed creating image");
+        throw std::runtime_error("Failed creating image");
     }
     image.m_current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -142,7 +143,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
 
     if (vkCreateImageView(context.device->get_device(), &view_info, nullptr, &image.m_view) != VK_SUCCESS)
     {
-        throw std::exception("Failed creating image view");
+        throw std::runtime_error("Failed creating image view");
     }
 
 #if defined(_DEBUG)

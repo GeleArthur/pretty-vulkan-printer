@@ -13,7 +13,7 @@ endif()
 FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG release-1.0.2
+        GIT_TAG 2d4c4b4dd31fde06cfffad7915c2b3006402322f
         GIT_SHALLOW TRUE
 )
 set(GLM_ENABLE_CXX_20 ON)
@@ -78,33 +78,40 @@ FetchContent_MakeAvailable(spdlog)
 set(ASSIMP_BUILD_TESTS OFF)
 FetchContent_Declare(
         assimp
-        URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.3.zip
+        URL https://github.com/assimp/assimp/archive/refs/tags/v6.0.2.zip
 )
 FetchContent_MakeAvailable(assimp)
 
+message(STATUS ${Vulkan_INCLUDE_DIRS})
 
 # spirv-reflect
-add_library(spirv-reflect STATIC
-        ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.h
-        ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.c
-)
-target_include_directories(spirv-reflect PUBLIC ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect)
-set_target_properties(spirv-reflect PROPERTIES PROPERTY EXCLUDE_FROM_ALL)
+#add_library(spirv-reflect STATIC
+#        ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.h
+#        ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect/spirv_reflect.c
+#)
+#target_include_directories(spirv-reflect PUBLIC ${Vulkan_INCLUDE_DIRS}/../Source/SPIRV-Reflect)
+#set_target_properties(spirv-reflect PROPERTIES PROPERTY EXCLUDE_FROM_ALL)
 
 add_library(shaderc STATIC IMPORTED)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(shaderc PROPERTIES
-            IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combinedd.lib"
-    )
+if(WIN32)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(shaderc PROPERTIES
+                IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combinedd.lib"
+        )
+    else()
+        set_target_properties(shaderc PROPERTIES
+                IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combined.lib"
+        )
+    endif()
 else()
     set_target_properties(shaderc PROPERTIES
-            IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combined.lib"
+            IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../lib/libshaderc_combined.a"
     )
+
 endif()
 
 # tracy
-
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(TRACY_ENABLE ON)
 else()
@@ -128,7 +135,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         spdlog
         assimp
         Vulkan::Vulkan
-        spirv-reflect
+        #        spirv-reflect
         shaderc
         TracyClient
 )

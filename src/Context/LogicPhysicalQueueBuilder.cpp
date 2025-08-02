@@ -150,7 +150,7 @@ namespace pvp
                 if (std::ranges::find_if(
                         available_extensions,
                         [&](const VkExtensionProperties& ex) {
-                            return std::strcmp(ex.extensionName, extension);
+                            return strcmp(ex.extensionName, extension);
                         }) == available_extensions.end())
                 {
                     has_extension = false;
