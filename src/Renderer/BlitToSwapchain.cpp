@@ -32,7 +32,7 @@ namespace pvp
                 .mipLevel = 0,
                 .baseArrayLayer = 0,
                 .layerCount = 1 },
-            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(m_swapchain.get_swapchain_extent().width), static_cast<int32_t>(m_swapchain.get_swapchain_extent().height), 1 } },
+            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(m_source_image.get_size().width), static_cast<int32_t>(m_source_image.get_size().height), 1 } },
             .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1 },
             .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(m_swapchain.get_swapchain_extent().width), static_cast<int32_t>(m_swapchain.get_swapchain_extent().height), 1 } },
         };

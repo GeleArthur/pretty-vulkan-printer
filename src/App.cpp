@@ -73,12 +73,9 @@ void pvp::App::run()
     {
         ZoneScoped;
         glfwWaitEvents();
-
-        // m_scene->update();
-        // m_renderer->draw();
     }
 
-    // rendering_thread.join();
+    rendering_thread.join();
     vkDeviceWaitIdle(m_device.get_device());
 }
 
