@@ -11,8 +11,9 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
 
 layout (set = 1, binding = 0) uniform sampler shardedSampler;
 layout (set = 1, binding = 1) uniform texture2D albedoImage;
-layout (set = 1, binding = 2) uniform texture2D normalImage;
-layout (set = 1, binding = 3) uniform texture2D depthImage;
+layout (set = 1, binding = 2) uniform texture2D normalImage2;
+layout (set = 1, binding = 3) uniform texture2D metalRoughnessImage;
+layout (set = 1, binding = 4) uniform texture2D depthImage;
 
 struct PointLight {
     vec4 position;
@@ -117,12 +118,16 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }
 
 void main() {
-    const vec4 normalMetalRougness = texelFetch(normalImage, ivec2(gl_FragCoord.xy), 0);
-
+    const vec2 normal = texelFetch(normalImage2, ivec2(gl_FragCoord.xy), 0).xy;
+    const vec4 metalRoughness = texelFetch(metalRoughnessImage, ivec2(gl_FragCoord.xy), 0);
     const vec3 albedo = texelFetch(albedoImage, ivec2(gl_FragCoord.xy), 0).xyz;
-    const vec3 N = normalize(DecodeNormalOcta(normalMetalRougness.xy));// Normalize needed??
-    const float roughness = normalMetalRougness.b;
-    const float metallic = normalMetalRougness.a;
+
+    const vec3 N = DecodeNormalOcta(normal);// Normalize needed??
+    //    outColor = vec4(N, 1.0f);
+    //    return;
+
+    const float roughness = metalRoughness.r;
+    const float metallic = metalRoughness.g;
     const float depth = texelFetch(sampler2D(depthImage, shardedSampler), ivec2(gl_FragCoord.xy), 0).r;
 
     const vec3 WorldPos = GetWolrdPositionFromDepth(

@@ -66,9 +66,9 @@ static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabili
 VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
 {
     uint32_t present_mode_count;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &present_mode_count, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_context.window_surface->get_surface(), &present_mode_count, nullptr);
     std::vector<VkPresentModeKHR> present_modes(present_mode_count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &present_mode_count, present_modes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_context.window_surface->get_surface(), &present_mode_count, present_modes.data());
 
     for (const VkPresentModeKHR& available_present_mode : present_modes)
     {
@@ -81,11 +81,10 @@ VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-pvp::Swapchain::Swapchain(Context& context, WindowSurface& surface)
-    : m_window_surface(surface)
-    , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), surface.get_surface()) }
+pvp::Swapchain::Swapchain(Context& context)
+    : m_context(context)
+    , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), m_context.window_surface->get_surface()) }
     , m_command_pool{ context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT }
-    , m_context(context)
 {
     ZoneScoped;
     m_swap_chain_destructor.add_to_queue([&] { m_command_pool.destroy(); });
@@ -110,10 +109,10 @@ void pvp::Swapchain::recreate_swapchain()
     // m_screen_updated = false;
 
     int width = 0, height = 0;
-    glfwGetFramebufferSize(m_window_surface.get_window(), &width, &height);
+    glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
     while (width == 0 || height == 0)
     {
-        glfwGetFramebufferSize(m_window_surface.get_window(), &width, &height);
+        glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
         glfwWaitEvents();
     }
 
@@ -140,6 +139,10 @@ VkFormat pvp::Swapchain::get_depth_format() const
 VkExtent2D pvp::Swapchain::get_swapchain_extent() const
 {
     return m_swapchain_extent;
+}
+int pvp::Swapchain::get_min_image_count() const
+{
+    return m_imagecount;
 }
 
 VkSwapchainKHR pvp::Swapchain::get_swapchain() const
@@ -170,14 +173,15 @@ void pvp::Swapchain::create_the_swapchain()
 {
     ZoneScoped;
     VkSurfaceCapabilitiesKHR surface_capabilities{};
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_window_surface.get_surface(), &surface_capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_context.window_surface->get_surface(), &surface_capabilities);
 
-    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, m_window_surface.get_window());
+    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, m_context.window_surface->get_window());
+    m_imagecount = get_mini_image_count(surface_capabilities);
 
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = m_window_surface.get_surface();
-    create_info.minImageCount = get_mini_image_count(surface_capabilities);
+    create_info.surface = m_context.window_surface->get_surface();
+    create_info.minImageCount = m_imagecount;
     create_info.imageFormat = m_swapchain_surface_format.format;
     create_info.imageColorSpace = m_swapchain_surface_format.colorSpace;
     create_info.imageExtent = m_swapchain_extent;

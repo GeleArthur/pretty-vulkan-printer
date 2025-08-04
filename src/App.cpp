@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <Context/InstanceBuilder.h>
+#include <Debugger/Debugger.h>
 #include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <GLFW/glfw3.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
@@ -19,6 +20,9 @@
 void pvp::App::run()
 {
     ZoneScoped;
+
+    glfwSetErrorCallback(Debugger::glfw_error_callback);
+
     glfwInit();
     m_destructor_queue.add_to_queue([&] {
         glfwTerminate();
@@ -38,7 +42,7 @@ void pvp::App::run()
 
     // TODO: Context builder
     LogicPhysicalQueueBuilder()
-        .set_extensions({ VK_EXT_SHADER_OBJECT_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME })
+        .set_extensions({ VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME })
         .build(m_instance, m_window_surface, m_physical_device, m_device, m_queue_families);
     m_destructor_queue.add_to_queue([&] { m_device.destroy(); });
 
@@ -55,14 +59,14 @@ void pvp::App::run()
     m_context.descriptor_creator = new DescriptorLayoutCreator(m_context);
     m_destructor_queue.add_to_queue([&] { delete m_context.descriptor_creator; });
 
-    m_swapchain = new Swapchain(m_context, m_window_surface);
+    m_swapchain = new Swapchain(m_context);
     m_destructor_queue.add_to_queue([&] { delete m_swapchain; });
     m_context.swapchain = m_swapchain;
 
     m_scene = new PvpScene(m_context);
     m_destructor_queue.add_to_queue([&] { delete m_scene; });
 
-    m_renderer = new Renderer(m_context, *m_swapchain, *m_scene);
+    m_renderer = new Renderer(m_context, *m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_renderer; });
 
     std::jthread rendering_thread{ &App::run_loop, this };
@@ -73,6 +77,11 @@ void pvp::App::run()
     {
         ZoneScoped;
         glfwWaitEvents();
+        // glfwPollEvents()
+        // if constexpr (is_imgui_enabeld)
+        // {
+        // ImGui_ImplGlfw_v
+        // }
     }
 
     rendering_thread.join();

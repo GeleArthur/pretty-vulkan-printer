@@ -28,7 +28,7 @@ namespace pvp
         friend class DescriptorSetBuilder;
         const Context* m_context;
 
-        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> m_sets{ VK_NULL_HANDLE };
+        std::array<VkDescriptorSet, max_frames_in_flight> m_sets{ VK_NULL_HANDLE };
         std::vector<EventListener<>>                      m_images;
 
         void reconnect_image(const ImageBinding& binding);

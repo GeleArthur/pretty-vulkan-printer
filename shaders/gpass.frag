@@ -10,7 +10,8 @@ layout (location = 1) in vec3 objectNormal;
 layout (location = 2) in vec3 outTangent;
 
 layout (location = 0) out vec4 outColor;
-layout (location = 1) out vec4 outNormalAndMetalRougness;
+layout (location = 1) out vec2 outNormal;
+layout (location = 2) out vec4 outMetalRougness;
 
 layout (push_constant) uniform PushConstant {
     mat4 model;
@@ -43,12 +44,13 @@ void main() {
     if (color.a < 0.95) {
         discard;
     }
-
     outColor = color;
 
     vec4 roughness_metal = texture(sampler2D(textures[pc.metalness_texture_index], shardedSampler), fragTexCoord).rgba;
-    vec3 normal_texture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgb;
+    outMetalRougness.rg = vec2(roughness_metal.g, roughness_metal.b);
 
+
+    vec3 normal_texture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgb;
     normal_texture = (2.0f * normal_texture) - 1.0f;
 
     const vec3 binormal = cross(objectNormal, outTangent);
@@ -62,6 +64,5 @@ void main() {
 
     const vec3 normal = vec3(tagentSpace * vec4(normal_texture, 0.0f));
 
-    vec2 normalEncoded = EncodeNormalOcta(normal);
-    outNormalAndMetalRougness = vec4(normalEncoded.x, normalEncoded.y, roughness_metal.g, roughness_metal.b);
+    outNormal = EncodeNormalOcta(normal);
 }

@@ -24,6 +24,10 @@ namespace pvp
         {
             return m_normal_image;
         };
+        Image& get_metal_roughness_image()
+        {
+            return m_metal_roughness_image;
+        };
 
     private:
         void            build_pipelines();
@@ -33,6 +37,7 @@ namespace pvp
         DepthPrePass&   m_depth_pre_pass;
         Image           m_albedo_image{};
         Image           m_normal_image{};
+        Image           m_metal_roughness_image{};
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};

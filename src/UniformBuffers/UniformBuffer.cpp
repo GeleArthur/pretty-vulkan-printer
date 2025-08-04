@@ -4,8 +4,8 @@ namespace pvp
 {
     UniformBuffer::UniformBuffer(size_t size, const VmaAllocator& allocator)
     {
-        m_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        m_buffers.resize(max_frames_in_flight);
+        for (int i = 0; i < max_frames_in_flight; ++i)
         {
             BufferBuilder()
                 .set_size(size)

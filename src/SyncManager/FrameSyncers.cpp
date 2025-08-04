@@ -8,7 +8,7 @@
 FrameSyncers::FrameSyncers(const pvp::Context& context)
 {
     ZoneScoped;
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    for (int i = 0; i < max_frames_in_flight; ++i)
     {
         VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
@@ -22,7 +22,7 @@ FrameSyncers::FrameSyncers(const pvp::Context& context)
 }
 void FrameSyncers::destroy(const VkDevice device) const
 {
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    for (int i = 0; i < max_frames_in_flight; ++i)
     {
         image_available_semaphores[i].destroy(device);
         render_finished_semaphores[i].destroy(device);

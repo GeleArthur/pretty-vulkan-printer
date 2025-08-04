@@ -40,7 +40,7 @@ namespace pvp
     {
         descriptor.m_context = &context;
 
-        for (int frame_index = 0; frame_index < MAX_FRAMES_IN_FLIGHT; ++frame_index)
+        for (int frame_index = 0; frame_index < max_frames_in_flight; ++frame_index)
         {
             VkDescriptorSetAllocateInfo alloc_info{};
 

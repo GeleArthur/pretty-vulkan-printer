@@ -14,6 +14,8 @@ namespace pvp
             VkDebugUtilsMessengerCallbackDataEXT const* p_callback_data,
             void*                                       p_user_data);
 
+        void glfw_error_callback(int error, const char* description);
+
         constexpr static VkDebugUtilsMessengerCreateInfoEXT debug_create_info{
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
             .pNext = nullptr,

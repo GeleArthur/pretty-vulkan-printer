@@ -9,6 +9,7 @@
 
 #include "BlitToSwapchain.h"
 #include "DepthPrePass.h"
+#include "ImguiRenderer.h"
 #include "ToneMappingPass.h"
 
 #include <VulkanExternalFunctions.h>
@@ -18,9 +19,8 @@
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyVulkan.hpp>
 
-pvp::Renderer::Renderer(Context& context, Swapchain& swapchain, PvpScene& scene)
+pvp::Renderer::Renderer(Context& context, PvpScene& scene)
     : m_context{ context }
-    , m_swapchain{ swapchain }
     , m_scene{ scene }
 {
     ZoneScoped;
@@ -30,9 +30,9 @@ pvp::Renderer::Renderer(Context& context, Swapchain& swapchain, PvpScene& scene)
     m_cmd_pool_graphics_present = CommandPool(m_context, *context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, true), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     m_destructor_queue.add_to_queue([&] { m_cmd_pool_graphics_present.destroy(); });
 
-    const std::vector<VkCommandBuffer> buffers = m_cmd_pool_graphics_present.allocate_buffers(MAX_FRAMES_IN_FLIGHT);
+    const std::vector<VkCommandBuffer> buffers = m_cmd_pool_graphics_present.allocate_buffers(max_frames_in_flight);
 
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    for (int i = 0; i < max_frames_in_flight; ++i)
     {
         m_frame_contexts[i].buffer_index = i;
         m_frame_contexts[i].command_buffer = buffers[i];
@@ -56,7 +56,10 @@ pvp::Renderer::Renderer(Context& context, Swapchain& swapchain, PvpScene& scene)
     m_tone_mapping_pass = new ToneMappingPass(m_context, *m_light_pass);
     m_destructor_queue.add_to_queue([&] { delete m_tone_mapping_pass; });
 
-    m_blit_to_swapchain = new BlitToSwapchain(m_context, swapchain, m_tone_mapping_pass->get_tone_mapped_texture());
+    // m_imgui_pass = new ImguiRenderer(m_context);
+    // m_destructor_queue.add_to_queue([&] { delete m_imgui_pass; });
+
+    m_blit_to_swapchain = new BlitToSwapchain(m_context, m_tone_mapping_pass->get_tone_mapped_texture());
     m_destructor_queue.add_to_queue([&] { delete m_blit_to_swapchain; });
 }
 
@@ -73,7 +76,7 @@ void pvp::Renderer::prepare_frame()
     ZoneNamedN(AcquireNextImage, "Acquire Next Image", true);
     VkResult result = vkAcquireNextImageKHR(
         m_context.device->get_device(),
-        m_swapchain.get_swapchain(),
+        m_context.swapchain->get_swapchain(),
         UINT64_MAX,
         m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
         VK_NULL_HANDLE,
@@ -81,7 +84,7 @@ void pvp::Renderer::prepare_frame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        m_swapchain.recreate_swapchain();
+        m_context.swapchain->recreate_swapchain();
         // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -92,20 +95,21 @@ void pvp::Renderer::prepare_frame()
     ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
     VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     vkBeginCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer, &start_info);
+    TracyVkZone(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer, "Begin");
 
     ZoneNamedN(viewport_scisor, "VkViewport scissor", true);
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(m_swapchain.get_swapchain_extent().width);
-    viewport.height = static_cast<float>(m_swapchain.get_swapchain_extent().height);
+    viewport.width = static_cast<float>(m_context.swapchain->get_swapchain_extent().width);
+    viewport.height = static_cast<float>(m_context.swapchain->get_swapchain_extent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
-    scissor.extent = m_swapchain.get_swapchain_extent();
+    scissor.extent = m_context.swapchain->get_swapchain_extent();
     vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
 }
 
@@ -124,7 +128,6 @@ void pvp::Renderer::draw()
 
 void pvp::Renderer::end_frame()
 {
-    ZoneScoped;
     ZoneNamedN(end_command_buffer, "end command buffer", true);
     vkEndCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer);
 
@@ -167,7 +170,7 @@ void pvp::Renderer::end_frame()
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = &m_frame_syncers.render_finished_semaphores[m_double_buffer_frame].handle;
 
-    VkSwapchainKHR swap_chains[] = { m_swapchain.get_swapchain() };
+    VkSwapchainKHR swap_chains[] = { m_context.swapchain->get_swapchain() };
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &m_current_swapchain_index;
@@ -176,7 +179,7 @@ void pvp::Renderer::end_frame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        m_swapchain.recreate_swapchain();
+        m_context.swapchain->recreate_swapchain();
         // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS)
@@ -184,5 +187,5 @@ void pvp::Renderer::end_frame()
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    m_double_buffer_frame = (m_double_buffer_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
 }

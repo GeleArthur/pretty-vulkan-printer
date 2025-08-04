@@ -22,6 +22,10 @@ namespace pvp
 
         return VK_FALSE;
     }
+    void Debugger::glfw_error_callback(int error, const char* description)
+    {
+        spdlog::error("{}, {}", error, description);
+    }
     void Debugger::start_debug_label(VkCommandBuffer buffer, const std::string& name, glm::vec3 color)
     {
 #ifdef _DEBUG

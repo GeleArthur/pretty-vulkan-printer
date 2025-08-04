@@ -12,9 +12,8 @@
 
 namespace pvp
 {
-    BlitToSwapchain::BlitToSwapchain(const Context& context, Swapchain& swapchain, Image& source)
-        : m_swapchain{ swapchain }
-        , m_source_image{ source }
+    BlitToSwapchain::BlitToSwapchain(const Context& context, Image& source)
+        : m_source_image{ source }
         , m_context{ context }
     {
     }
@@ -34,14 +33,14 @@ namespace pvp
                 .layerCount = 1 },
             .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(m_source_image.get_size().width), static_cast<int32_t>(m_source_image.get_size().height), 1 } },
             .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1 },
-            .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(m_swapchain.get_swapchain_extent().width), static_cast<int32_t>(m_swapchain.get_swapchain_extent().height), 1 } },
+            .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(m_context.swapchain->get_swapchain_extent().width), static_cast<int32_t>(m_context.swapchain->get_swapchain_extent().height), 1 } },
         };
 
         const VkBlitImageInfo2 info{
             .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
             .srcImage = m_source_image.get_image(cmd),
             .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            .dstImage = m_swapchain.get_images()[swapchain_image_index],
+            .dstImage = m_context.swapchain->get_images()[swapchain_image_index],
             .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             .regionCount = 1,
             .pRegions = &region,
@@ -57,7 +56,7 @@ namespace pvp
         };
 
         image_layout_transition(cmd.command_buffer,
-                                m_swapchain.get_images()[swapchain_image_index],
+                                m_context.swapchain->get_images()[swapchain_image_index],
                                 VK_PIPELINE_STAGE_2_NONE,
                                 VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 VK_ACCESS_2_NONE,
@@ -68,7 +67,7 @@ namespace pvp
 
         vkCmdBlitImage2(cmd.command_buffer, &info);
         image_layout_transition(cmd.command_buffer,
-                                m_swapchain.get_images()[swapchain_image_index],
+                                m_context.swapchain->get_images()[swapchain_image_index],
                                 VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_ACCESS_2_TRANSFER_WRITE_BIT,

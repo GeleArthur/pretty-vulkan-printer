@@ -35,6 +35,7 @@ namespace pvp
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build(11);
 
         m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(11); });
@@ -49,7 +50,8 @@ namespace pvp
             .bind_sampler(0, m_sampler)
             .bind_image(1, m_geometry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .bind_image(2, m_geometry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .bind_image(3, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .bind_image(3, m_geometry_pass.get_metal_roughness_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .bind_image(4, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .set_layout(m_context.descriptor_creator->get_layout(11))
             .build(m_context, m_light_binding);
 
@@ -76,7 +78,6 @@ namespace pvp
             .set_format(VK_FORMAT_R32G32B32A32_SFLOAT)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-            // .set_size(m_context.swapchain->get_swapchain_extent())
             .set_screen_size_auto_update(true)
             .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
             .build(m_context, m_light_image);

@@ -40,7 +40,6 @@ namespace pvp
                                          VK_ACCESS_2_NONE,
                                          VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-        // vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, &m_scene.get_scene_descriptor().sets[0], 0, nullptr);
         vkCmdBindDescriptorSets(cmd.command_buffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 m_tone_pipeline_layout,

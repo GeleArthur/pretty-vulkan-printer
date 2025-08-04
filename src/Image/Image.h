@@ -62,10 +62,10 @@ namespace pvp
         VkImageViewCreateInfo   m_view_create_info;
         std::string             m_name;
 
-        std::array<VmaAllocation, MAX_FRAMES_IN_FLIGHT> m_allocation{};
-        std::array<VkImage, MAX_FRAMES_IN_FLIGHT>       m_image{ VK_NULL_HANDLE };
-        std::array<VkImageView, MAX_FRAMES_IN_FLIGHT>   m_view{ VK_NULL_HANDLE };
+        std::array<VmaAllocation, max_frames_in_flight> m_allocation{};
+        std::array<VkImage, max_frames_in_flight>       m_image{ VK_NULL_HANDLE };
+        std::array<VkImageView, max_frames_in_flight>   m_view{ VK_NULL_HANDLE };
 
-        std::array<VkImageLayout, MAX_FRAMES_IN_FLIGHT> m_current_layout{};
+        std::array<VkImageLayout, max_frames_in_flight> m_current_layout{};
     };
 } // namespace pvp

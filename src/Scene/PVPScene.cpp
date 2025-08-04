@@ -35,7 +35,7 @@ pvp::PvpScene::PvpScene(Context& context)
 {
     ZoneScoped;
 
-    m_command_queue.resize(MAX_FRAMES_IN_FLIGHT);
+    m_command_queue.resize(max_frames_in_flight);
 
     LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
@@ -187,7 +187,7 @@ pvp::PvpScene::PvpScene(Context& context)
         .add_flag(0)
         .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
         .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
-        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 1000)
+        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 140)
         .build(1);
 
     SamplerBuilder()

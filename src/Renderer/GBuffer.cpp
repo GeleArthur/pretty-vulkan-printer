@@ -43,7 +43,7 @@ void pvp::GBuffer::build_pipelines()
     GraphicsPipelineBuilder()
         .add_shader("shaders/gpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
         .add_shader("shaders/gpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
-        .set_color_format(std::array{ m_albedo_image.get_format(), m_normal_image.get_format() })
+        .set_color_format(std::array{ m_albedo_image.get_format(), m_normal_image.get_format(), m_metal_roughness_image.get_format() })
         .set_depth_format(m_depth_pre_pass.get_depth_image().get_format())
         .set_pipeline_layout(m_pipeline_layout)
         .set_input_attribute_description(Vertex::get_attribute_descriptions())
@@ -60,21 +60,28 @@ void pvp::GBuffer::create_images()
         .set_format(m_context.swapchain->get_swapchain_surface_format().format)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        // .set_size(m_context.swapchain->get_swapchain_extent())
         .set_screen_size_auto_update(true)
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context, m_albedo_image);
     m_destructor_queue.add_to_queue([&] { m_albedo_image.destroy(m_context); });
 
     ImageBuilder()
-        .set_format(VK_FORMAT_B8G8R8A8_UNORM)
+        .set_format(VK_FORMAT_R16G16_UNORM)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        // .set_size(m_context.swapchain->get_swapchain_extent())
         .set_screen_size_auto_update(true)
         .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context, m_normal_image);
     m_destructor_queue.add_to_queue([&] { m_normal_image.destroy(m_context); });
+
+    ImageBuilder()
+        .set_format(VK_FORMAT_R8G8B8A8_UNORM)
+        .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+        .set_screen_size_auto_update(true)
+        .set_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+        .build(m_context, m_metal_roughness_image);
+    m_destructor_queue.add_to_queue([&] { m_metal_roughness_image.destroy(m_context); });
 }
 
 void pvp::GBuffer::draw(const FrameContext& cmd)
@@ -96,6 +103,12 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
                                      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                      VK_ACCESS_2_NONE,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+    m_metal_roughness_image.transition_layout(cmd,
+                                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              VK_PIPELINE_STAGE_2_NONE,
+                                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                              VK_ACCESS_2_NONE,
+                                              VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
     ZoneNamedN(bind_texture, "Bind Scene+Texture", true);
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
@@ -106,6 +119,7 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
     RenderInfoBuilder()
         .add_color(m_albedo_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .add_color(m_normal_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_metal_roughness_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_depth(m_depth_pre_pass.get_depth_image().get_view(cmd), VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_albedo_image.get_size())
         .build(color_info);
@@ -141,13 +155,18 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
                                      VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                      VK_ACCESS_2_SHADER_READ_BIT);
+    m_metal_roughness_image.transition_layout(cmd,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                              VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                              VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                              VK_ACCESS_2_SHADER_READ_BIT);
 
-    m_depth_pre_pass.get_depth_image()
-        .transition_layout(cmd,
-                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                           VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-                           VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                           VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
-                           VK_ACCESS_2_SHADER_READ_BIT);
+    m_depth_pre_pass.get_depth_image().transition_layout(cmd,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+                                                         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                                                         VK_ACCESS_2_SHADER_READ_BIT);
     Debugger::end_debug_label(cmd.command_buffer);
 }

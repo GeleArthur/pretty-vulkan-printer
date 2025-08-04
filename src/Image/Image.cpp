@@ -84,7 +84,7 @@ namespace pvp
 
     void Image::create_images(const Context& context)
     {
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        for (int i = 0; i < max_frames_in_flight; ++i)
         {
             if (vmaCreateImage(context.allocator->get_allocator(), &m_create_info, &m_allocation_create_info, &m_image[i], &m_allocation[i], &m_allocation_info) != VK_SUCCESS)
             {
@@ -114,7 +114,7 @@ namespace pvp
 
     void Image::destroy(const Context& context) const
     {
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        for (int i = 0; i < max_frames_in_flight; ++i)
         {
             vmaDestroyImage(context.allocator->get_allocator(), m_image[i], m_allocation[i]);
             vkDestroyImageView(context.device->get_device(), m_view[i], nullptr);

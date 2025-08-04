@@ -117,6 +117,8 @@ add_executable(${PROJECT_NAME}
         src/Renderer/FrameContext.h
         src/Image/StaticImage.cpp
         src/DescriptorSets/DescriptorSets.cpp
+        src/Renderer/ImguiRenderer.cpp
+        src/Renderer/ImguiRenderer.h
 )
 
 add_subdirectory(libraries)

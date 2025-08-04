@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <cstdint>
 
-constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2; // TODO: Would like this to be dynamic
+constexpr uint32_t max_frames_in_flight = 2; // TODO: Would like this to be dynamic
+constexpr bool     is_imgui_enabeld = true;
 
 #define DISABLE_COPY(className)           \
     className(const className&) = delete; \
