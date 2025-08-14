@@ -13,6 +13,7 @@
 #include "ToneMappingPass.h"
 
 #include <VulkanExternalFunctions.h>
+#include <imgui.h>
 #include <Context/PhysicalDevice.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <Scene/PVPScene.h>
@@ -56,11 +57,11 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene)
     m_tone_mapping_pass = new ToneMappingPass(m_context, *m_light_pass);
     m_destructor_queue.add_to_queue([&] { delete m_tone_mapping_pass; });
 
-    // m_imgui_pass = new ImguiRenderer(m_context);
-    // m_destructor_queue.add_to_queue([&] { delete m_imgui_pass; });
-
     m_blit_to_swapchain = new BlitToSwapchain(m_context, m_tone_mapping_pass->get_tone_mapped_texture());
     m_destructor_queue.add_to_queue([&] { delete m_blit_to_swapchain; });
+
+    m_imgui_pass = new ImguiRenderer(m_context, m_cmd_pool_graphics_present);
+    m_destructor_queue.add_to_queue([&] { delete m_imgui_pass; });
 }
 
 void pvp::Renderer::prepare_frame()
@@ -122,6 +123,7 @@ void pvp::Renderer::draw()
     m_light_pass->draw(m_frame_contexts[m_double_buffer_frame]);
     m_tone_mapping_pass->draw(m_frame_contexts[m_double_buffer_frame]);
     m_blit_to_swapchain->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    m_imgui_pass->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();
 }
@@ -138,9 +140,15 @@ void pvp::Renderer::end_frame()
         .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
-    VkCommandBufferSubmitInfo cmd_submit_info{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        .commandBuffer = m_frame_contexts[m_double_buffer_frame].command_buffer,
+    std::array cmd_submit_info{
+        VkCommandBufferSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+            .commandBuffer = m_frame_contexts[m_double_buffer_frame].command_buffer,
+        },
+        VkCommandBufferSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+            .commandBuffer = m_imgui_pass->get_cmd(m_double_buffer_frame),
+        }
     };
 
     VkSemaphoreSubmitInfo semaphore_singled{
@@ -154,15 +162,18 @@ void pvp::Renderer::end_frame()
         .waitSemaphoreInfoCount = 1,
         .pWaitSemaphoreInfos = &semaphore_wait_for,
 
-        .commandBufferInfoCount = 1,
-        .pCommandBufferInfos = &cmd_submit_info,
+        .commandBufferInfoCount = cmd_submit_info.size(),
+        .pCommandBufferInfos = cmd_submit_info.data(),
 
         .signalSemaphoreInfoCount = 1,
         .pSignalSemaphoreInfos = &semaphore_singled,
 
     };
 
-    vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue, 1, &submit_info, m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
+    vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue,
+                   1,
+                   &submit_info,
+                   m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
 
     ZoneNamedN(present, "Queue present", true);
     VkPresentInfoKHR present_info{};
@@ -188,4 +199,12 @@ void pvp::Renderer::end_frame()
     }
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
+
+    // Update and Render additional Platform Windows
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        // TODO for OpenGL: restore current GL context.
+    }
 }

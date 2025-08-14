@@ -100,7 +100,7 @@ namespace pvp
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, m_light_binding.get_descriptor_set(cmd), 0, nullptr);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 2, 1, m_scene.get_light_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
-        RenderInfo render_color_info;
+        RenderInfoBuilderOut render_color_info;
 
         RenderInfoBuilder()
             .add_color(m_light_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)

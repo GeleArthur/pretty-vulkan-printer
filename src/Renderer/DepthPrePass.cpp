@@ -41,7 +41,7 @@ namespace pvp
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_scene.get_textures_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
-        RenderInfo depth_info;
+        RenderInfoBuilderOut depth_info;
         RenderInfoBuilder()
             .set_depth(m_depth_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
             .set_size(m_depth_image.get_size())

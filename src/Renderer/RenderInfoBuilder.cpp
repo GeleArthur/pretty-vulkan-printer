@@ -25,7 +25,7 @@ namespace pvp
         m_size = size;
         return *this;
     }
-    void RenderInfoBuilder::build(RenderInfo& render_info) const
+    void RenderInfoBuilder::build(RenderInfoBuilderOut& render_info) const
     {
         ZoneScoped;
         constexpr VkClearValue clear_values{ 0.2f, 0.2f, 0.2f, 1.0f };

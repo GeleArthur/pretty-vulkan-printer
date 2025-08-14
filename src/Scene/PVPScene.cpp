@@ -3,6 +3,7 @@
 
 #include <DestructorQueue.h>
 #include <fstream>
+#include <imgui.h>
 #include <iostream>
 #include <set>
 #include <stb_image.h>
@@ -19,6 +20,8 @@
 #include <Renderer/Swapchain.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <assimp/material.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 #include <glm/mat4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -321,6 +324,12 @@ void pvp::PvpScene::update()
         change_direction_light(0, m_direction_light);
     }
     key_pressed_last = key_pressed;
+
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+    ImGui::Render();
 }
 void pvp::PvpScene::update_render(const FrameContext& frame_context)
 {

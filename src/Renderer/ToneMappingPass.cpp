@@ -49,7 +49,7 @@ namespace pvp
                                 0,
                                 nullptr);
 
-        RenderInfo render_color_info;
+        RenderInfoBuilderOut render_color_info;
         RenderInfoBuilder()
             .add_color(m_tone_texture.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
             .set_size(m_tone_texture.get_size())

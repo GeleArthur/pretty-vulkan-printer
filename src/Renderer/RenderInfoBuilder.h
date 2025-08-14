@@ -6,15 +6,15 @@
 #include <Image/Image.h>
 #include <vulkan/vulkan.h>
 
-struct RenderInfo
-{
-    std::vector<VkRenderingAttachmentInfo> attachment_info;
-    VkRenderingAttachmentInfo              depth_info;
-    VkRenderingInfo                        rendering_info;
-};
-
 namespace pvp
 {
+    struct RenderInfoBuilderOut
+    {
+        std::vector<VkRenderingAttachmentInfo> attachment_info;
+        VkRenderingAttachmentInfo              depth_info;
+        VkRenderingInfo                        rendering_info;
+    };
+
     class RenderInfoBuilder
     {
     public:
@@ -27,7 +27,7 @@ namespace pvp
         RenderInfoBuilder& set_depth(VkImageView image, VkAttachmentLoadOp load, VkAttachmentStoreOp store);
         RenderInfoBuilder& set_size(VkExtent2D size);
 
-        void build(RenderInfo& render_info) const;
+        void build(RenderInfoBuilderOut& render_info) const;
 
     private:
         using ImageLoadStore = std::tuple<VkImageView, VkAttachmentLoadOp, VkAttachmentStoreOp>;

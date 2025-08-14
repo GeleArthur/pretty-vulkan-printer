@@ -2,8 +2,8 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <DestructorQueue.h>
-#include <GLFW/glfw3.h>
 #include <Context/Instance.h>
+#include <GLFW/glfw3.h>
 
 namespace pvp
 {

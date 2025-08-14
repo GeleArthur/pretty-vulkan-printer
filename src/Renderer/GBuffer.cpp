@@ -115,7 +115,7 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_scene.get_textures_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
     ZoneNamedN(render_info, "create render info", true);
-    RenderInfo color_info;
+    RenderInfoBuilderOut color_info;
     RenderInfoBuilder()
         .add_color(m_albedo_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .add_color(m_normal_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)

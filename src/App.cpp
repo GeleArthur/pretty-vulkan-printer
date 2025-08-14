@@ -16,6 +16,7 @@
 #include <spdlog/spdlog.h>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyVulkan.hpp>
+#include <backends/imgui_impl_glfw.h>
 
 void pvp::App::run()
 {
@@ -69,22 +70,19 @@ void pvp::App::run()
     m_renderer = new Renderer(m_context, *m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_renderer; });
 
-    std::jthread rendering_thread{ &App::run_loop, this };
-
     glfwSetWindowUserPointer(m_window_surface.get_window(), &m_context);
+
+    // std::jthread rendering_thread{ &App::run_loop, this };
 
     while (!glfwWindowShouldClose(m_window_surface.get_window()))
     {
         ZoneScoped;
-        glfwWaitEvents();
-        // glfwPollEvents()
-        // if constexpr (is_imgui_enabeld)
-        // {
-        // ImGui_ImplGlfw_v
-        // }
+        glfwPollEvents();
+        m_scene->update();
+        m_renderer->draw();
     }
 
-    rendering_thread.join();
+    // rendering_thread.join();
     vkDeviceWaitIdle(m_device.get_device());
 }
 
