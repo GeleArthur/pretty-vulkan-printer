@@ -13,13 +13,14 @@
 
 namespace pvp
 {
+    struct GlfwToRender;
     class Instance;
     class Device;
 
     class Swapchain
     {
     public:
-        explicit Swapchain(Context& context);
+        explicit Swapchain(Context& context, GlfwToRender& gtfw_to_render);
 
         DISABLE_COPY(Swapchain);
         DISABLE_MOVE(Swapchain);
@@ -41,7 +42,7 @@ namespace pvp
 
     private:
         void destroy_old_swapchain();
-        void create_the_swapchain();
+        void create_the_swapchain(GlfwToRender& gtfw_to_render);
 
         std::vector<VkImage>     m_swapchain_images;
         std::vector<VkImageView> m_swapchain_views;

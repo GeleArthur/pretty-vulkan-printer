@@ -1,9 +1,10 @@
 ﻿#include "ImguiRenderer.h"
 
-#include "RenderInfoBuilder.h"
-#include "Renderer.h"
-#include "Swapchain.h"
+#include "Renderer/RenderInfoBuilder.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/Swapchain.h"
 
+#include <GlfwToRender.h>
 #include <Context/Context.h>
 #include <Context/Device.h>
 #include <Context/PhysicalDevice.h>
@@ -14,8 +15,13 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
-pvp::ImguiRenderer::ImguiRenderer(Context& context, CommandPool& command_pool)
-    : m_context{ context }
+pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRender* glfw_to_render)
+    : m_window{ window }
+    , m_glfw_to_render{ glfw_to_render }
+    , m_context{ context }
+{
+}
+void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -24,25 +30,26 @@ pvp::ImguiRenderer::ImguiRenderer(Context& context, CommandPool& command_pool)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForVulkan(context.window_surface->get_window(), true);
+    ImGui_ImplGlfw_InitForVulkan(m_window, false);
+    // ImGui_ImplGlfw_Up
 
-    VkFormat format = context.swapchain->get_swapchain_surface_format().format;
+    VkFormat format = m_context.swapchain->get_swapchain_surface_format().format;
 
     ImGui_ImplVulkan_InitInfo info{
         .ApiVersion = VK_API_VERSION_1_3,
-        .Instance = context.instance->get_instance(),
-        .PhysicalDevice = context.physical_device->get_physical_device(),
-        .Device = context.device->get_device(),
-        .QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(context.physical_device->get_physical_device()),
-        .Queue = context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false)->queue,
-        .DescriptorPool = context.descriptor_creator->get_pool(),
+        .Instance = m_context.instance->get_instance(),
+        .PhysicalDevice = m_context.physical_device->get_physical_device(),
+        .Device = m_context.device->get_device(),
+        .QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(m_context.physical_device->get_physical_device()),
+        .Queue = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false)->queue,
+        .DescriptorPool = m_context.descriptor_creator->get_pool(),
         .RenderPass = nullptr,
         .MinImageCount = 2,
-        .ImageCount = static_cast<uint32_t>(context.swapchain->get_images().size()),
+        .ImageCount = static_cast<uint32_t>(m_context.swapchain->get_images().size()),
         .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
         .PipelineCache = nullptr,
         .Subpass = 0,
@@ -64,9 +71,17 @@ pvp::ImguiRenderer::ImguiRenderer(Context& context, CommandPool& command_pool)
 
     m_command_buffer.resize(max_frames_in_flight);
     m_command_buffer = command_pool.allocate_buffers(max_frames_in_flight);
+
+    {
+        std::lock_guard lock(m_glfw_to_render->lock);
+        io.DisplaySize.x = m_glfw_to_render->screen_width;
+        io.DisplaySize.y = m_glfw_to_render->screen_height;
+        io.DisplayFramebufferScale.x = 1.0f;
+        io.DisplayFramebufferScale.y = 1.0f;
+    }
 }
 
-pvp::ImguiRenderer::~ImguiRenderer()
+void pvp::ImguiRenderer::destroy_vulkan_context()
 {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();

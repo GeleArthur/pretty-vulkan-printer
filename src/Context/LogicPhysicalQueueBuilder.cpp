@@ -28,13 +28,13 @@ namespace pvp
         return *this;
     }
 
-    void LogicPhysicalQueueBuilder::build(const Instance& instance, const WindowSurface& window_surface, PhysicalDevice& physical_device_out, Device& device_out, QueueFamilies& queue_families_out)
+    void LogicPhysicalQueueBuilder::build(const Instance& instance, const VkSurfaceKHR& surface, PhysicalDevice& physical_device_out, Device& device_out, QueueFamilies& queue_families_out)
     {
         ZoneScoped;
 
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-        auto physical_device = get_best_device(instance, window_surface);
+        auto physical_device = get_best_device(instance, surface);
         if (physical_device == VK_NULL_HANDLE)
         {
             throw std::runtime_error("No device found that works");
@@ -111,7 +111,7 @@ namespace pvp
             const VkQueueFamilyProperties2& queue_family_property = queue_properties[queue_family_index];
 
             VkBool32 present_supported{};
-            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, queue_family_index, window_surface.get_surface(), &present_supported);
+            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, queue_family_index, surface, &present_supported);
 
             VkDeviceQueueInfo2 info{
                 .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2,
@@ -127,7 +127,7 @@ namespace pvp
         }
     }
 
-    VkPhysicalDevice LogicPhysicalQueueBuilder::get_best_device(const Instance& instance, const WindowSurface& window_surface) const
+    VkPhysicalDevice LogicPhysicalQueueBuilder::get_best_device(const Instance& instance, const VkSurfaceKHR& surface) const
     {
         uint32_t device_count = 0;
         vkEnumeratePhysicalDevices(instance.get_instance(), &device_count, nullptr);
@@ -163,9 +163,9 @@ namespace pvp
 
             // Supports swapchain
             uint32_t format_count{};
-            vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, window_surface.get_surface(), &format_count, nullptr);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
             uint32_t present_mode_count;
-            vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, window_surface.get_surface(), &present_mode_count, nullptr);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, nullptr);
 
             if (format_count <= 0 || present_mode_count <= 0)
                 continue;
@@ -174,7 +174,7 @@ namespace pvp
             // VkPhysicalDeviceFeatures2 features{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
             // vkGetPhysicalDeviceFeatures2(physical_device, &features);
 
-            if (is_supports_all_queues(physical_device, window_surface) == false)
+            if (is_supports_all_queues(physical_device, surface) == false)
             {
                 continue;
             }
@@ -199,7 +199,7 @@ namespace pvp
         return best_physical_device;
     }
 
-    bool LogicPhysicalQueueBuilder::is_supports_all_queues(const VkPhysicalDevice& physical_device, const WindowSurface& window_surface) const
+    bool LogicPhysicalQueueBuilder::is_supports_all_queues(const VkPhysicalDevice& physical_device, const VkSurfaceKHR& surface) const
     {
         std::vector<VkQueueFamilyProperties2> queue_families = get_queues(physical_device);
 
@@ -210,7 +210,7 @@ namespace pvp
         for (int family_index = 0; family_index < queue_families.size(); ++family_index)
         {
             VkBool32 is_supporting_queue{};
-            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, family_index, window_surface.get_surface(), &is_supporting_queue);
+            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, family_index, surface, &is_supporting_queue);
 
             // Force support graphics and present queue. I don't want to convert between
             if (queue_families[family_index].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT && is_supporting_queue)

@@ -5,6 +5,7 @@
 #include "../Context/PhysicalDevice.h"
 #include "Window/WindowSurface.h"
 
+#include <GlfwToRender.h>
 #include <Image/Image.h>
 #include <Context/Instance.h>
 #include <Context/Device.h>
@@ -45,15 +46,20 @@ static uint32_t get_mini_image_count(const VkSurfaceCapabilitiesKHR& capabilitie
     return image_count;
 }
 
-static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window)
+static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabilities, pvp::GlfwToRender& data)
 {
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
     {
         return capabilities.currentExtent;
     }
 
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
+    int width;
+    int height;
+    {
+        std::lock_guard lock(data.lock);
+        width = data.screen_width;
+        height = data.screen_height;
+    }
 
     const VkExtent2D actual_extent{
         std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
@@ -66,9 +72,9 @@ static VkExtent2D get_swap_chain_extent(const VkSurfaceCapabilitiesKHR& capabili
 VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
 {
     uint32_t present_mode_count;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_context.window_surface->get_surface(), &present_mode_count, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_context.surface, &present_mode_count, nullptr);
     std::vector<VkPresentModeKHR> present_modes(present_mode_count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_context.window_surface->get_surface(), &present_mode_count, present_modes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_context.physical_device->get_physical_device(), m_context.surface, &present_mode_count, present_modes.data());
 
     for (const VkPresentModeKHR& available_present_mode : present_modes)
     {
@@ -81,14 +87,14 @@ VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-pvp::Swapchain::Swapchain(Context& context)
+pvp::Swapchain::Swapchain(Context& context, GlfwToRender& gtfw_to_render)
     : m_context(context)
-    , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), m_context.window_surface->get_surface()) }
+    , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), m_context.surface) }
     , m_command_pool{ context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT }
 {
     ZoneScoped;
     m_swap_chain_destructor.add_to_queue([&] { m_command_pool.destroy(); });
-    create_the_swapchain();
+    create_the_swapchain(gtfw_to_render);
 }
 
 bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device, const VkSurfaceKHR surface)
@@ -108,19 +114,19 @@ void pvp::Swapchain::recreate_swapchain()
     // m_get_screen_size.wait(lock, [&] { return m_screen_updated; });
     // m_screen_updated = false;
 
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
-    while (width == 0 || height == 0)
-    {
-        glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
-        glfwWaitEvents();
-    }
+    // int width = 0, height = 0;
+    // glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
+    // while (width == 0 || height == 0)
+    // {
+    // glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
+    // glfwWaitEvents();
+    // }
 
-    vkDeviceWaitIdle(m_context.device->get_device());
+    // vkDeviceWaitIdle(m_context.device->get_device());
 
-    destroy_old_swapchain();
-    create_the_swapchain();
-    m_on_frame_buffer_size_changed.notify_listeners(m_context, width, height);
+    // destroy_old_swapchain();
+    // create_the_swapchain();
+    // m_on_frame_buffer_size_changed.notify_listeners(m_context, width, height);
     // window_resized(width, height); // Not happy with this but need to make it work first!!!
 
     // create_the_swapchain(m_context.device, command_buffer);
@@ -169,18 +175,18 @@ void pvp::Swapchain::destroy_old_swapchain()
     m_swapchain_views.clear();
 }
 
-void pvp::Swapchain::create_the_swapchain()
+void pvp::Swapchain::create_the_swapchain(GlfwToRender& gtfw_to_render)
 {
     ZoneScoped;
     VkSurfaceCapabilitiesKHR surface_capabilities{};
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_context.window_surface->get_surface(), &surface_capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_context.surface, &surface_capabilities);
 
-    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, m_context.window_surface->get_window());
+    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, gtfw_to_render);
     m_imagecount = get_mini_image_count(surface_capabilities);
 
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = m_context.window_surface->get_surface();
+    create_info.surface = m_context.surface;
     create_info.minImageCount = m_imagecount;
     create_info.imageFormat = m_swapchain_surface_format.format;
     create_info.imageColorSpace = m_swapchain_surface_format.colorSpace;

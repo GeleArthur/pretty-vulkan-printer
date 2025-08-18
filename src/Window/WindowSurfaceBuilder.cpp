@@ -18,7 +18,7 @@ namespace pvp
         m_title = title;
         return *this;
     }
-    void WindowSurfaceBuilder::build(const Instance& instance, WindowSurface& window_surface)
+    void WindowSurfaceBuilder::build(GLFWwindow** window)
     {
         ZoneScoped;
 
@@ -26,29 +26,29 @@ namespace pvp
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-        GLFWmonitor** monitors;
-        int           count;
+        // GLFWmonitor** monitors;
+        // int           count;
 
-        monitors = glfwGetMonitors(&count);
+        // monitors = glfwGetMonitors(&count);
 
         // int xpos, ypos;
         // glfwGetMonitorPos(monitors[0], &xpos, &ypos);
 
-        if (m_width == 0 || m_height == 0)
-        {
-            const GLFWvidmode* mode = glfwGetVideoMode(monitors[0]);
-            m_width = mode->width;
-            m_height = mode->height;
-        }
+        // if (m_width == 0 || m_height == 0)
+        // {
+        //     const GLFWvidmode* mode = glfwGetVideoMode(monitors[0]);
+        //     m_width = mode->width;
+        //     m_height = mode->height;
+        // }
 
-        window_surface.m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
+        *window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
+        glfwShowWindow(*window);
+
         // glfwSetWindowPos(window_surface.m_window, xpos, ypos);
-        glfwShowWindow(window_surface.m_window);
-
-        if (auto result = glfwCreateWindowSurface(instance.get_instance(), window_surface.m_window, nullptr, &window_surface.m_surface) != VK_SUCCESS)
-        {
-            throw std::runtime_error(std::format("Failed to create surface. {}", result));
-        }
+        // if (auto result = glfwCreateWindowSurface(instance.get_instance(), window_surface.m_window, nullptr, &window_surface.m_surface) != VK_SUCCESS)
+        // {
+        //     throw std::runtime_error(std::format("Failed to create surface. {}", result));
+        // }
 
         // glfwSetFramebufferSizeCallback(window_surface.m_window, &WindowSurface::window_resized);
     }

@@ -117,8 +117,12 @@ add_executable(${PROJECT_NAME}
         src/Renderer/FrameContext.h
         src/Image/StaticImage.cpp
         src/DescriptorSets/DescriptorSets.cpp
-        src/Renderer/ImguiRenderer.cpp
-        src/Renderer/ImguiRenderer.h
+        src/ImguiRenderer.cpp
+        src/ImguiRenderer.h
+        src/VulkanApp.cpp
+        src/VulkanApp.h
+        src/GlfwToRender.h
+        src/GlfwToRender.h
 )
 
 add_subdirectory(libraries)

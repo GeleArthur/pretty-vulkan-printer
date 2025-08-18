@@ -13,7 +13,7 @@ namespace pvp
         WindowSurfaceBuilder& set_window_size(int width, int height);
         WindowSurfaceBuilder& set_window_title(const std::string& title);
 
-        void build(const Instance& instance, WindowSurface& window_surface);
+        void build(GLFWwindow** window);
 
     private:
         int         m_width{};

@@ -11,9 +11,6 @@
 namespace pvp
 {
     class ImguiRenderer;
-}
-namespace pvp
-{
     class ToneMappingPass;
     class DepthPrePass;
     class BlitToSwapchain;
@@ -21,7 +18,7 @@ namespace pvp
     class Renderer
     {
     public:
-        explicit Renderer(Context& context, PvpScene& scene);
+        explicit Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer);
 
         void prepare_frame();
         void draw();
@@ -47,7 +44,7 @@ namespace pvp
         GBuffer*         m_geometry_draw{};
         LightPass*       m_light_pass{};
         ToneMappingPass* m_tone_mapping_pass{};
-        ImguiRenderer*   m_imgui_pass{};
+        ImguiRenderer&   m_imgui_renderer;
         BlitToSwapchain* m_blit_to_swapchain{};
 
         DestructorQueue m_destructor_queue{};

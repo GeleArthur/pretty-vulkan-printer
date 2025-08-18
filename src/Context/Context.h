@@ -3,6 +3,10 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+namespace pvp
+{
+    struct GlfwToRender;
+}
 namespace tracy
 {
     class VkCtx;
@@ -26,7 +30,9 @@ namespace pvp
         QueueFamilies*           queue_families;
         DescriptorLayoutCreator* descriptor_creator;
         Swapchain*               swapchain;
-        WindowSurface*           window_surface;
+        VkSurfaceKHR             surface;
+        // WindowSurface*           window_surface;
+        GlfwToRender* gtfw_to_render;
 
 #ifdef TRACY_ENABLE
         std::vector<tracy::VkCtx*> tracy_ctx;

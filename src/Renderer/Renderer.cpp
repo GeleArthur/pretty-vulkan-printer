@@ -9,7 +9,7 @@
 
 #include "BlitToSwapchain.h"
 #include "DepthPrePass.h"
-#include "ImguiRenderer.h"
+#include "../ImguiRenderer.h"
 #include "ToneMappingPass.h"
 
 #include <VulkanExternalFunctions.h>
@@ -20,9 +20,10 @@
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyVulkan.hpp>
 
-pvp::Renderer::Renderer(Context& context, PvpScene& scene)
+pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer)
     : m_context{ context }
     , m_scene{ scene }
+    , m_imgui_renderer(imgui_renderer)
 {
     ZoneScoped;
     m_frame_syncers = FrameSyncers(m_context);
@@ -60,8 +61,8 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene)
     m_blit_to_swapchain = new BlitToSwapchain(m_context, m_tone_mapping_pass->get_tone_mapped_texture());
     m_destructor_queue.add_to_queue([&] { delete m_blit_to_swapchain; });
 
-    m_imgui_pass = new ImguiRenderer(m_context, m_cmd_pool_graphics_present);
-    m_destructor_queue.add_to_queue([&] { delete m_imgui_pass; });
+    m_imgui_renderer.setup_vulkan_context(m_cmd_pool_graphics_present);
+    m_destructor_queue.add_to_queue([&] { m_imgui_renderer.destroy_vulkan_context(); });
 }
 
 void pvp::Renderer::prepare_frame()
@@ -86,7 +87,7 @@ void pvp::Renderer::prepare_frame()
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         m_context.swapchain->recreate_swapchain();
-        // throw std::runtime_error("failed to present swap chain image!");
+        throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
@@ -123,7 +124,7 @@ void pvp::Renderer::draw()
     m_light_pass->draw(m_frame_contexts[m_double_buffer_frame]);
     m_tone_mapping_pass->draw(m_frame_contexts[m_double_buffer_frame]);
     m_blit_to_swapchain->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
-    m_imgui_pass->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();
 }
@@ -147,7 +148,7 @@ void pvp::Renderer::end_frame()
         },
         VkCommandBufferSubmitInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .commandBuffer = m_imgui_pass->get_cmd(m_double_buffer_frame),
+            .commandBuffer = m_imgui_renderer.get_cmd(m_double_buffer_frame),
         }
     };
 
@@ -191,7 +192,7 @@ void pvp::Renderer::end_frame()
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
         m_context.swapchain->recreate_swapchain();
-        // throw std::runtime_error("failed to present swap chain image!");
+        throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS)
     {
@@ -200,11 +201,11 @@ void pvp::Renderer::end_frame()
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
 
-    // Update and Render additional Platform Windows
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        // TODO for OpenGL: restore current GL context.
-    }
+    // // Update and Render additional Platform Windows
+    // if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    // {
+    //     ImGui::UpdatePlatformWindows();
+    //     ImGui::RenderPlatformWindowsDefault();
+    //     // TODO for OpenGL: restore current GL context.
+    // }
 }

@@ -315,18 +315,18 @@ void pvp::PvpScene::update()
     PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
     change_point_light(0, light);
 
-    static bool key_pressed_last{};
-    bool        key_pressed = glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_SPACE) == GLFW_PRESS;
+    // static bool key_pressed_last{};
+    // bool        key_pressed = glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_SPACE) == GLFW_PRESS;
 
-    if (key_pressed && !key_pressed_last)
-    {
-        m_direction_light.intensity = m_direction_light.intensity > 5.0f ? 0.0f : 10.0f;
-        change_direction_light(0, m_direction_light);
-    }
-    key_pressed_last = key_pressed;
+    // if (key_pressed && !key_pressed_last)
+    // {
+    // m_direction_light.intensity = m_direction_light.intensity > 5.0f ? 0.0f : 10.0f;
+    // change_direction_light(0, m_direction_light);
+    // }
+    // key_pressed_last = key_pressed;
 
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    // ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGui::ShowDemoWindow();
     ImGui::Render();
