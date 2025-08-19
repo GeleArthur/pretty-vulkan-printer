@@ -10,13 +10,13 @@ namespace pvp
     {
     public:
         void run();
-        ~App();
 
     private:
         static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
-        GLFWwindow*                m_window{};
-        GlfwToRender               m_shared_state{};
-        std::unique_ptr<VulkanApp> m_vulkan_app;
+        GLFWwindow*     m_window{};
+        GlfwToRender    m_shared_state{};
+        VulkanApp*      m_vulkan_app{};
+        DestructorQueue m_destructor_queue;
     };
 } // namespace pvp
