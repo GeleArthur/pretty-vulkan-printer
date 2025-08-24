@@ -325,11 +325,7 @@ void pvp::PvpScene::update()
     // }
     // key_pressed_last = key_pressed;
 
-    ImGui_ImplVulkan_NewFrame();
-    // ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
     ImGui::ShowDemoWindow();
-    ImGui::Render();
 }
 void pvp::PvpScene::update_render(const FrameContext& frame_context)
 {

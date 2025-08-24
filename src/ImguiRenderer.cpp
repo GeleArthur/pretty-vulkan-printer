@@ -15,16 +15,63 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
+    {
+        std::lock_guard lock(glfw->lock);
+        glfw->screen_height = width;
+        glfw->screen_width = height;
+    }
+
+    glfw->needs_resizing.store(true);
+}
+static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
+    {
+        std::lock_guard lock(glfw->lock);
+        ImGui::GetIO().AddMousePosEvent(xpos, ypos);
+    }
+}
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
+    {
+        std::lock_guard lock(glfw->lock);
+        ImGui::GetIO().AddMouseButtonEvent(button, action);
+    }
+}
+
+static void char_call_back(GLFWwindow* window, unsigned int codepoint)
+{
+    pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
+    {
+        std::lock_guard lock(glfw->lock);
+        ImGui::GetIO().AddInputCharacter(codepoint);
+    }
+}
+ImGuiKey ImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode);
+
+static void key_call_back(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
+    {
+        std::lock_guard lock(glfw->lock);
+        ImGuiKey        imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
+        ImGui::GetIO().AddKeyEvent(imgui_key, (action == GLFW_PRESS));
+    }
+}
+
 pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRender* glfw_to_render)
     : m_window{ window }
     , m_glfw_to_render{ glfw_to_render }
     , m_context{ context }
 {
-}
-void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
-{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForVulkan(m_window, false);
+
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
@@ -33,10 +80,9 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
     // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForVulkan(m_window, false);
-    // ImGui_ImplGlfw_Up
-
+}
+void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
+{
     VkFormat format = m_context.swapchain->get_swapchain_surface_format().format;
 
     ImGui_ImplVulkan_InitInfo info{
@@ -73,12 +119,20 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
     m_command_buffer = command_pool.allocate_buffers(max_frames_in_flight);
 
     {
+        ImGuiIO&        io = ImGui::GetIO();
         std::lock_guard lock(m_glfw_to_render->lock);
         io.DisplaySize.x = m_glfw_to_render->screen_width;
         io.DisplaySize.y = m_glfw_to_render->screen_height;
         io.DisplayFramebufferScale.x = 1.0f;
         io.DisplayFramebufferScale.y = 1.0f;
     }
+
+    // TODO: These functions can only be called from main thread
+    glfwSetFramebufferSizeCallback(m_window, &framebuffer_size_callback);
+    glfwSetCursorPosCallback(m_window, &mouse_pos_callback);
+    glfwSetMouseButtonCallback(m_window, &mouse_button_callback);
+    glfwSetCharCallback(m_window, &char_call_back);
+    glfwSetKeyCallback(m_window, &key_call_back);
 }
 
 void pvp::ImguiRenderer::destroy_vulkan_context()
@@ -86,6 +140,44 @@ void pvp::ImguiRenderer::destroy_vulkan_context()
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+void pvp::ImguiRenderer::update_screen()
+{
+    if (m_glfw_to_render->needs_resizing)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        std::lock_guard lock(m_glfw_to_render->lock);
+        io.DisplaySize.x = m_glfw_to_render->screen_width;
+        io.DisplaySize.y = m_glfw_to_render->screen_height;
+        io.DisplayFramebufferScale.x = 1.0f;
+        io.DisplayFramebufferScale.y = 1.0f;
+    }
+}
+void pvp::ImguiRenderer::start_drawing()
+{
+    update_screen();
+
+    ImGui_ImplVulkan_NewFrame();
+    {
+        std::lock_guard lock(m_glfw_to_render->lock);
+        ImGui::NewFrame();
+    }
+}
+void pvp::ImguiRenderer::test_draw_demo_drawing()
+{
+    ImGui::ShowDemoWindow();
+}
+void pvp::ImguiRenderer::end_drawing()
+{
+    ImGui::EndFrame();
+    ImGui::Render();
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
 
 void pvp::ImguiRenderer::draw(const FrameContext& frame_context, int swapchain_index)

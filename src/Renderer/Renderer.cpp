@@ -200,12 +200,4 @@ void pvp::Renderer::end_frame()
     }
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
-
-    // // Update and Render additional Platform Windows
-    // if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    // {
-    //     ImGui::UpdatePlatformWindows();
-    //     ImGui::RenderPlatformWindowsDefault();
-    //     // TODO for OpenGL: restore current GL context.
-    // }
 }

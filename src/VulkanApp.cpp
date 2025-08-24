@@ -4,7 +4,8 @@
 #include <ImguiRenderer.h>
 #include <Context/InstanceBuilder.h>
 #include <Context/LogicPhysicalQueueBuilder.h>
-#include <Window/WindowSurfaceBuilder.h>
+#include <tracy/Tracy.hpp>
+
 pvp::VulkanApp::VulkanApp(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     : m_gtfw_to_render{ &gtfw_to_render }
     , m_window{ window }
@@ -57,7 +58,10 @@ void pvp::VulkanApp::run()
 
     while (m_gtfw_to_render->running)
     {
+        FrameMark;
+        m_imgui_renderer->start_drawing();
         m_scene->update();
+        m_imgui_renderer->end_drawing();
         m_renderer->draw();
     }
 

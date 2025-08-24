@@ -115,7 +115,7 @@ endif()
 
 # tracy
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(TRACY_ENABLE ON)
+    set(TRACY_ENABLE OFF)
 else()
     set(TRACY_ENABLE ON)
 endif()
