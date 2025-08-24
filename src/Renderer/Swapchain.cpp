@@ -87,14 +87,15 @@ VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-pvp::Swapchain::Swapchain(Context& context, GlfwToRender& gtfw_to_render)
+pvp::Swapchain::Swapchain(Context& context, GlfwToRender& glfw_to_render)
     : m_context(context)
     , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), m_context.surface) }
     , m_command_pool{ context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT }
+    , m_glfw_to_render{ &glfw_to_render }
 {
     ZoneScoped;
     m_swap_chain_destructor.add_to_queue([&] { m_command_pool.destroy(); });
-    create_the_swapchain(gtfw_to_render);
+    create_the_swapchain();
 }
 
 bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device, const VkSurfaceKHR surface)
@@ -110,23 +111,10 @@ bool pvp::Swapchain::does_device_support_swapchain(const VkPhysicalDevice device
 
 void pvp::Swapchain::recreate_swapchain()
 {
-    // std::unique_lock lock{ m_screen_change_mutex };
-    // m_get_screen_size.wait(lock, [&] { return m_screen_updated; });
-    // m_screen_updated = false;
+    vkDeviceWaitIdle(m_context.device->get_device());
 
-    // int width = 0, height = 0;
-    // glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
-    // while (width == 0 || height == 0)
-    // {
-    // glfwGetFramebufferSize(m_context.window_surface->get_window(), &width, &height);
-    // glfwWaitEvents();
-    // }
-
-    // vkDeviceWaitIdle(m_context.device->get_device());
-
-    // destroy_old_swapchain();
-    // create_the_swapchain();
-    // m_on_frame_buffer_size_changed.notify_listeners(m_context, width, height);
+    destroy_old_swapchain();
+    create_the_swapchain();
     // window_resized(width, height); // Not happy with this but need to make it work first!!!
 
     // create_the_swapchain(m_context.device, command_buffer);
@@ -175,13 +163,13 @@ void pvp::Swapchain::destroy_old_swapchain()
     m_swapchain_views.clear();
 }
 
-void pvp::Swapchain::create_the_swapchain(GlfwToRender& gtfw_to_render)
+void pvp::Swapchain::create_the_swapchain()
 {
     ZoneScoped;
     VkSurfaceCapabilitiesKHR surface_capabilities{};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_context.surface, &surface_capabilities);
 
-    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, gtfw_to_render);
+    m_swapchain_extent = get_swap_chain_extent(surface_capabilities, *m_glfw_to_render);
     m_imagecount = get_mini_image_count(surface_capabilities);
 
     VkSwapchainCreateInfoKHR create_info{};
@@ -248,4 +236,6 @@ void pvp::Swapchain::create_the_swapchain(GlfwToRender& gtfw_to_render)
         }
         m_swap_chain_destructor.add_to_queue([&, view_ptr = m_swapchain_views[i]] { vkDestroyImageView(m_context.device->get_device(), view_ptr, nullptr); });
     }
+
+    m_on_frame_buffer_size_changed.notify_listeners(m_context, m_swapchain_extent.width, m_swapchain_extent.height);
 }

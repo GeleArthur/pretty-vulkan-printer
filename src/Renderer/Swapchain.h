@@ -20,7 +20,7 @@ namespace pvp
     class Swapchain
     {
     public:
-        explicit Swapchain(Context& context, GlfwToRender& gtfw_to_render);
+        explicit Swapchain(Context& context, GlfwToRender& glfw_to_render);
 
         DISABLE_COPY(Swapchain);
         DISABLE_MOVE(Swapchain);
@@ -42,7 +42,7 @@ namespace pvp
 
     private:
         void destroy_old_swapchain();
-        void create_the_swapchain(GlfwToRender& gtfw_to_render);
+        void create_the_swapchain();
 
         std::vector<VkImage>     m_swapchain_images;
         std::vector<VkImageView> m_swapchain_views;
@@ -54,6 +54,7 @@ namespace pvp
         VkFormat           m_depth_format;
         int                m_imagecount;
         CommandPool        m_command_pool;
+        GlfwToRender*      m_glfw_to_render;
 
         Event<Context&, int, int> m_on_frame_buffer_size_changed;
         DestructorQueue           m_swap_chain_destructor;

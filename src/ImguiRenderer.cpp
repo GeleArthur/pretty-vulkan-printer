@@ -20,8 +20,8 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
     {
         std::lock_guard lock(glfw->lock);
-        glfw->screen_height = width;
-        glfw->screen_width = height;
+        glfw->screen_width = width;
+        glfw->screen_height = height;
     }
 
     glfw->needs_resizing.store(true);
@@ -152,12 +152,14 @@ void pvp::ImguiRenderer::update_screen()
         io.DisplaySize.y = m_glfw_to_render->screen_height;
         io.DisplayFramebufferScale.x = 1.0f;
         io.DisplayFramebufferScale.y = 1.0f;
+        m_glfw_to_render->needs_resizing = false;
     }
 }
 void pvp::ImguiRenderer::start_drawing()
 {
     update_screen();
 
+    // ImGui_ImplGlfw_NewFrame();
     ImGui_ImplVulkan_NewFrame();
     {
         std::lock_guard lock(m_glfw_to_render->lock);

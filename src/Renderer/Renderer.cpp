@@ -87,7 +87,7 @@ void pvp::Renderer::prepare_frame()
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         m_context.swapchain->recreate_swapchain();
-        throw std::runtime_error("failed to present swap chain image!");
+        // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
@@ -192,7 +192,7 @@ void pvp::Renderer::end_frame()
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
         m_context.swapchain->recreate_swapchain();
-        throw std::runtime_error("failed to present swap chain image!");
+        // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS)
     {
