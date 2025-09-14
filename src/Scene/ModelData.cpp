@@ -99,6 +99,14 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
     };
     process_node(scene->mRootNode);
 
+    {
+        int    width{};
+        int    height{};
+        int    channels{};
+        float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
+        
+    }
+
     for (const std::pair<const std::string, aiTextureType>& texture : all_textures)
     {
         int      tex_width, tex_height, channels;

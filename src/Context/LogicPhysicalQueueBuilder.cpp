@@ -90,7 +90,9 @@ namespace pvp
             .pNext = &features12
         };
 
-        VkPhysicalDeviceFeatures  device_features{};
+        VkPhysicalDeviceFeatures device_features{
+            .samplerAnisotropy = true
+        };
         VkPhysicalDeviceFeatures2 features2{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
             .pNext = &features11,

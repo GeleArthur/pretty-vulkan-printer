@@ -27,6 +27,17 @@ void pvp::StaticImage::transition_layout(VkCommandBuffer       command_buffer,
     image_layout_transition(command_buffer, m_image, src_stage_mask, dst_stage_mask, src_access_mask, dst_access_mask, m_current_layout, new_layout, range);
     m_current_layout = new_layout;
 }
+void pvp::StaticImage::transition_layout_range(VkCommandBuffer         command_buffer,
+                                               VkImageLayout           old_layout,
+                                               VkImageLayout           new_layout,
+                                               VkPipelineStageFlags2   src_stage_mask,
+                                               VkPipelineStageFlags2   dst_stage_mask,
+                                               VkAccessFlags2          src_access_mask,
+                                               VkAccessFlags2          dst_access_mask,
+                                               VkImageSubresourceRange range) const
+{
+    image_layout_transition(command_buffer, m_image, src_stage_mask, dst_stage_mask, src_access_mask, dst_access_mask, old_layout, new_layout, range);
+}
 
 void pvp::StaticImage::copy_from_buffer(VkCommandBuffer cmd, const Buffer& buffer) const
 {

@@ -36,6 +36,7 @@ namespace pvp
     {
         std::vector<ModelData>   models;
         std::vector<TextureData> textures;
+        TextureData              cube_map;
     };
 
     LoadedScene load_scene_cpu(const std::filesystem::path& path);

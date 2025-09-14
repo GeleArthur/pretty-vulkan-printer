@@ -123,6 +123,10 @@ add_executable(${PROJECT_NAME}
         src/VulkanApp.h
         src/GlfwToRender.h
         src/GlfwToRender.h
+        src/Image/StaticCubemapImage.cpp
+        src/Image/StaticCubemapImage.h
+        src/Image/StaticCubemapImageBuilder.cpp
+        src/Image/StaticCubemapImageBuilder.h
 )
 
 add_subdirectory(libraries)

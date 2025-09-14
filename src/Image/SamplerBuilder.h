@@ -28,13 +28,13 @@ namespace pvp
             .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
             .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
             .mipLodBias = 0.0f,
-            .anisotropyEnable = VK_FALSE,
-            .maxAnisotropy = 0.0f,
+            .anisotropyEnable = VK_TRUE,
+            .maxAnisotropy = 4.0f,
             .compareEnable = VK_FALSE,
-            .compareOp = VK_COMPARE_OP_ALWAYS,
+            .compareOp = VK_COMPARE_OP_NEVER,
             .minLod = 0.0f,
-            .maxLod = static_cast<float>(1),
-            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+            .maxLod = VK_LOD_CLAMP_NONE,
+            .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
             .unnormalizedCoordinates = VK_FALSE
         };
     };

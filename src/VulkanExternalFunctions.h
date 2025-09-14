@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <vulkan/vulkan.h>
 #include <utility>
+#include <vulkan/vulkan.h>
 
 namespace VulkanInstanceExtensions
 {

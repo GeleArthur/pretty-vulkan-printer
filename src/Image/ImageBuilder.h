@@ -21,6 +21,7 @@ namespace pvp
         ImageBuilder& set_usage(VkImageUsageFlags usage);
         ImageBuilder& set_aspect_flags(VkImageAspectFlags aspect_flags);
         ImageBuilder& set_memory_usage(VmaMemoryUsage memory_usage);
+        ImageBuilder& set_use_mipmap(bool enabled);
 
         void build(const Context& context, Image& image) const;
         void build(const Context& context, StaticImage& image) const;
@@ -29,6 +30,7 @@ namespace pvp
         std::string        m_name;
         VkExtent2D         m_size{};
         bool               m_use_screen_size_auto_update{};
+        bool               m_use_minimaps{};
         VkFormat           m_format{ VK_FORMAT_R8G8B8_SRGB };
         VkImageUsageFlags  m_usage{ VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT };
         VkImageAspectFlags m_aspect_flags{ VK_IMAGE_ASPECT_COLOR_BIT };

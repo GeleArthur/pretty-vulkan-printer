@@ -81,10 +81,11 @@ pvp::PvpScene::PvpScene(Context& context)
         ImageBuilder()
             .set_name(texture.name)
             .set_format(format)
-            .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+            .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
             .set_size({ texture.width, texture.height })
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
+            .set_use_mipmap(true)
             .build(m_context, gpu_image);
 
         gpu_image.transition_layout(cmd,
@@ -95,13 +96,82 @@ pvp::PvpScene::PvpScene(Context& context)
                                     VK_ACCESS_2_TRANSFER_WRITE_BIT);
         gpu_image.copy_from_buffer(cmd, staging_buffer);
         gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_ACCESS_2_NONE,
+                                    VK_ACCESS_2_TRANSFER_READ_BIT);
+
+        stbi_image_free(texture.pixels);
+
+        for (uint32_t i = 1; i < gpu_image.get_mipmap_levels(); ++i)
+        {
+            VkImageBlit2 region{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+                .srcSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                            .mipLevel = i - 1,
+                                                            .baseArrayLayer = 0,
+                                                            .layerCount = 1 },
+                .srcOffsets = { VkOffset3D{ 0, 0, 0 },
+                                VkOffset3D{ static_cast<int32_t>(texture.width >> (i - 1)),
+                                            static_cast<int32_t>(texture.height >> (i - 1)),
+                                            1 } },
+                .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                            .mipLevel = i,
+                                                            .baseArrayLayer = 0,
+                                                            .layerCount = 1 },
+                .dstOffsets = { VkOffset3D{ 0, 0, 0 },
+                                VkOffset3D{
+                                    static_cast<int32_t>(texture.width >> i),
+                                    static_cast<int32_t>(texture.height >> i),
+                                    1 } },
+            };
+
+            const VkBlitImageInfo2 info{
+                .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+                .srcImage = gpu_image.get_image(),
+                .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                .dstImage = gpu_image.get_image(),
+                .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .regionCount = 1,
+                .pRegions = &region,
+                .filter = VK_FILTER_NEAREST
+            };
+
+            VkImageSubresourceRange range{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = i,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            };
+
+            gpu_image.transition_layout_range(cmd,
+                                              VK_IMAGE_LAYOUT_UNDEFINED,
+                                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                              VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                              VK_ACCESS_2_NONE,
+                                              VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                              range);
+            vkCmdBlitImage2(cmd, &info);
+
+            gpu_image.transition_layout_range(cmd,
+                                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                              VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                              VK_ACCESS_2_TRANSFER_READ_BIT,
+                                              range);
+        }
+
+        gpu_image.transition_layout(cmd,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                     VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                     VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                                    VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                    VK_ACCESS_2_TRANSFER_READ_BIT,
                                     VK_ACCESS_2_SHADER_READ_BIT);
-
-        stbi_image_free(texture.pixels);
 
         m_gpu_textures.push_back(std::move(gpu_image));
         gpu_texture_names.push_back(texture.name);
