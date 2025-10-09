@@ -31,6 +31,8 @@ static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
     {
         std::lock_guard lock(glfw->lock);
+        glfw->mouse_pos_x = xpos;
+        glfw->mouse_pos_y = ypos;
         ImGui::GetIO().AddMousePosEvent(xpos, ypos);
     }
 }
@@ -39,6 +41,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
     {
         std::lock_guard lock(glfw->lock);
+        glfw->mouse_down[button] = action;
         ImGui::GetIO().AddMouseButtonEvent(button, action);
     }
 }
@@ -60,6 +63,7 @@ static void key_call_back(GLFWwindow* window, int key, int scancode, int action,
         std::lock_guard lock(glfw->lock);
         ImGuiKey        imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
         ImGui::GetIO().AddKeyEvent(imgui_key, (action == GLFW_PRESS));
+        glfw->keys_pressed[key] = action;
     }
 }
 

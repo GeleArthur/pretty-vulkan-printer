@@ -46,7 +46,7 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, std::
     shader_code.resize(result.cend() - result.cbegin());
     std::ranges::copy(result, shader_code.data());
 
-    shaderc::SpvCompilationResult compliedCode = compiler.AssembleToSpv(shader_code.data(), shader_code.size());
+    shaderc::SpvCompilationResult compliedCode = compiler.AssembleToSpv(shader_code.data(), shader_code.size(), options);
     if (compliedCode.GetCompilationStatus() != shaderc_compilation_status_success)
     {
         spdlog::error(compliedCode.GetErrorMessage().c_str());

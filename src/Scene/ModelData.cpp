@@ -100,17 +100,25 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
     process_node(scene->mRootNode);
 
     {
-        int    width{};
-        int    height{};
-        int    channels{};
+        int          width{};
+        int          height{};
+        int          channels{};
         float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
-        
     }
 
     for (const std::pair<const std::string, aiTextureType>& texture : all_textures)
     {
-        int      tex_width, tex_height, channels;
-        stbi_uc* pixels = stbi_load((path.parent_path() / texture.first).string().c_str(), &tex_width, &tex_height, &channels, STBI_rgb_alpha);
+        int      tex_width{}, tex_height{}, channels{};
+        stbi_uc* pixels;
+        if (texture.first[0] == '*')
+        {
+            int index = std::stoi(texture.first.substr(1));
+            pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc const*>(scene->mTextures[index]->pcData), scene->mTextures[index]->mWidth, &tex_width, &tex_height, &channels, STBI_rgb_alpha);
+        }
+        else
+        {
+            pixels = stbi_load((path.parent_path() / texture.first).string().c_str(), &tex_width, &tex_height, &channels, STBI_rgb_alpha);
+        }
 
         if (!pixels)
         {

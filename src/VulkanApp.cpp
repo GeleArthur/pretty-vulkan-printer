@@ -39,6 +39,7 @@ void pvp::VulkanApp::run()
     m_context.allocator = &m_allocator;
     m_context.queue_families = &m_queue_families;
     m_context.surface = m_surface;
+    m_context.gtfw_to_render = m_gtfw_to_render;
 
     m_context.descriptor_creator = new DescriptorLayoutCreator(m_context);
     m_destructor_queue.add_to_queue([&] { delete m_context.descriptor_creator; });

@@ -31,10 +31,10 @@
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
     , m_scene_globals{}
-    , m_camera(context)
-    , m_scene_globals_gpu{ sizeof(SceneGlobals), context.allocator->get_allocator() }
     , m_point_lights_gpu{ 16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator() }
     , m_directonal_lights_gpu{ 16 + sizeof(DirectionLight) * max_direction_lights, context.allocator->get_allocator() }
+    , m_scene_globals_gpu{ sizeof(SceneGlobals), context.allocator->get_allocator() }
+    , m_camera(context)
 {
     ZoneScoped;
 
