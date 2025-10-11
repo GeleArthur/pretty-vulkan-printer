@@ -4,6 +4,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <VulkanExternalFunctions.h>
+#include <cstring>
 #include <GLFW/glfw3.h>
 #include <Debugger/Debugger.h>
 #include <tracy/Tracy.hpp>
@@ -20,7 +21,7 @@ void pvp::InstanceBuilder::valid_extensions_check()
         if (auto extension = std::ranges::find_if(
                 extensions_available,
                 [&extension_found](const VkExtensionProperties& extension) {
-                    return strcmp(extension.extensionName, extension_found);
+                    return std::strcmp(extension.extensionName, extension_found);
                 });
             extension == extensions_available.end())
         {
@@ -86,9 +87,10 @@ void pvp::InstanceBuilder::build(Instance& instance)
     valid_extensions_check();
 
     // Create instance
-    if (vkCreateInstance(&create_info, nullptr, &instance.m_instance) != VK_SUCCESS)
+    VkResult thing = vkCreateInstance(&create_info, nullptr, &instance.m_instance);
+    if (thing != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create vkInstance");
+        throw std::runtime_error(std::format(""));
     }
     instance.m_destructor_queue.add_to_queue([&] { vkDestroyInstance(instance.m_instance, nullptr); });
 

@@ -9,4 +9,8 @@ Checks: '
   -modernize-use-trailing-return-type,
   -misc-non-private-member-variables-in-classes,
   -misc-no-recursion,
+
+CheckOptions:
+  - key: modernize-use-auto.MinTypeNameLength
+    value: 30
 ...

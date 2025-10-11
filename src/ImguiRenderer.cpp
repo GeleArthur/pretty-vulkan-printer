@@ -54,6 +54,7 @@ static void char_call_back(GLFWwindow* window, unsigned int codepoint)
         ImGui::GetIO().AddInputCharacter(codepoint);
     }
 }
+// ReSharper disable once CppInconsistentNaming
 ImGuiKey ImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode);
 
 static void key_call_back(GLFWwindow* window, int key, int scancode, int action, int mods)

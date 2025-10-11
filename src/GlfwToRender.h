@@ -1,14 +1,17 @@
 ﻿#pragma once
 #include <mutex>
+#include "GLFW/glfw3.h"
+#include <array>
+#include <atomic>
 
 namespace pvp
 {
     struct GlfwToRender
     {
-        std::mutex                     lock{};
+        std::mutex                     lock;
         float                          mouse_pos_x{};
         float                          mouse_pos_y{};
-        bool                           mouse_down[5]{ false };
+        std::array<bool, 5>            mouse_down{ false };
         std::array<int, GLFW_KEY_LAST> keys_pressed{};
 
         std::atomic<bool> needs_resizing{ false };

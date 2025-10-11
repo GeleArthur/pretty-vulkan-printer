@@ -7,6 +7,7 @@
 #include <Context/Device.h>
 #include <Renderer/Swapchain.h>
 #include <Events/Event.h>
+#include <cmath>
 
 pvp::ImageBuilder& pvp::ImageBuilder::set_name(const std::string& name)
 {
@@ -106,7 +107,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
 {
     VkExtent3D image_size = VkExtent3D(m_size.width, m_size.height, 1);
 
-    image.m_mip_map_levels = static_cast<uint32_t>(floor(log2(std::max(m_size.width, m_size.height))) + 1);
+    image.m_mip_map_levels = static_cast<uint32_t>(floor(std::log2(std::max(m_size.width, m_size.height))) + 1);
 
     VkImageCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

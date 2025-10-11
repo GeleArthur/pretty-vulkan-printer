@@ -9,6 +9,7 @@
 
 #include "BlitToSwapchain.h"
 #include "DepthPrePass.h"
+#include "GlfwToRender.h"
 #include "../ImguiRenderer.h"
 #include "ToneMappingPass.h"
 
@@ -76,22 +77,34 @@ void pvp::Renderer::prepare_frame()
     m_scene.update_render(m_frame_contexts[m_double_buffer_frame]);
 
     ZoneNamedN(AcquireNextImage, "Acquire Next Image", true);
-    VkResult result = vkAcquireNextImageKHR(
-        m_context.device->get_device(),
-        m_context.swapchain->get_swapchain(),
-        UINT64_MAX,
-        m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
-        VK_NULL_HANDLE,
-        &m_current_swapchain_index);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    if (m_context.gtfw_to_render->needs_resizing)
     {
         m_context.swapchain->recreate_swapchain();
-        // throw std::runtime_error("failed to present swap chain image!");
     }
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+
+    VkResult result{ VK_RESULT_MAX_ENUM };
+    int      count{};
+    while (result != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to acquire swap chain image!");
+        result = vkAcquireNextImageKHR(
+            m_context.device->get_device(),
+            m_context.swapchain->get_swapchain(),
+            UINT64_MAX,
+            m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
+            VK_NULL_HANDLE,
+            &m_current_swapchain_index);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            m_context.swapchain->recreate_swapchain();
+        }
+
+        count++;
+        if (count > 10)
+        {
+            throw std::runtime_error("failed to acquire swapchain image");
+        }
     }
 
     ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
@@ -189,7 +202,7 @@ void pvp::Renderer::end_frame()
 
     VkResult result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_context.gtfw_to_render->needs_resizing)
     {
         m_context.swapchain->recreate_swapchain();
         // throw std::runtime_error("failed to present swap chain image!");

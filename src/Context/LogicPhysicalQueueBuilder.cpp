@@ -9,6 +9,8 @@
 #include <Window/WindowSurface.h>
 #include "QueueFamilies.h"
 #include "Device.h"
+
+#include <cstring>
 #include <tracy/Tracy.hpp>
 
 namespace pvp
@@ -152,7 +154,7 @@ namespace pvp
                 if (std::ranges::find_if(
                         available_extensions,
                         [&](const VkExtensionProperties& ex) {
-                            return strcmp(ex.extensionName, extension);
+                            return std::strcmp(ex.extensionName, extension);
                         }) == available_extensions.end())
                 {
                     has_extension = false;

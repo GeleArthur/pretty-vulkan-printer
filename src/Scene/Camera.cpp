@@ -1,5 +1,7 @@
 ﻿#include "Camera.h"
 
+#include "imgui.h"
+
 #include <GlfwToRender.h>
 #include <Renderer/Swapchain.h>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -27,7 +29,7 @@ void pvp::Camera::update(float delta_time)
         keys = m_context.gtfw_to_render->keys_pressed;
     }
 
-    if (pressed)
+    if (pressed && !ImGui::GetIO().WantCaptureMouse)
     {
         float xoffset = xpos - m_prev_mouse_x;
         float yoffset = m_prev_mouse_y - ypos;
@@ -42,20 +44,23 @@ void pvp::Camera::update(float delta_time)
     m_prev_mouse_x = xpos;
     m_prev_mouse_y = ypos;
 
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    direction.y = sin(glm::radians(m_pitch));
-    direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    m_front = glm::normalize(direction);
+    if (!ImGui::GetIO().WantCaptureKeyboard)
+    {
+        glm::vec3 direction;
+        direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+        direction.y = sin(glm::radians(m_pitch));
+        direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+        m_front = glm::normalize(direction);
 
-    if (keys[GLFW_KEY_W] == GLFW_PRESS)
-        m_position += m_speed * m_front * delta_time;
-    if (keys[GLFW_KEY_S] == GLFW_PRESS)
-        m_position -= m_speed * m_front * delta_time;
-    if (keys[GLFW_KEY_A] == GLFW_PRESS)
-        m_position -= glm::normalize(glm::cross(m_front, m_camera_up)) * m_speed * delta_time;
-    if (keys[GLFW_KEY_D] == GLFW_PRESS)
-        m_position += glm::normalize(glm::cross(m_front, m_camera_up)) * m_speed * delta_time;
+        if (keys[GLFW_KEY_W] == GLFW_PRESS)
+            m_position += m_speed * m_front * delta_time;
+        if (keys[GLFW_KEY_S] == GLFW_PRESS)
+            m_position -= m_speed * m_front * delta_time;
+        if (keys[GLFW_KEY_A] == GLFW_PRESS)
+            m_position -= glm::normalize(glm::cross(m_front, m_camera_up)) * m_speed * delta_time;
+        if (keys[GLFW_KEY_D] == GLFW_PRESS)
+            m_position += glm::normalize(glm::cross(m_front, m_camera_up)) * m_speed * delta_time;
 
-    m_view = glm::lookAt(m_position, m_position + m_front, m_camera_up);
+        m_view = glm::lookAt(m_position, m_position + m_front, m_camera_up);
+    }
 }

@@ -5,15 +5,15 @@ include(FetchContent)
 
 # VulkanSDK
 find_package(Vulkan REQUIRED)
-if(NOT VULKAN_FOUND)
+if (NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
-endif()
+endif ()
 
 # GLM
 FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 2d4c4b4dd31fde06cfffad7915c2b3006402322f
+        GIT_TAG 12bfe6887a7d86684266742cee50a3daf8d0104a
         GIT_SHALLOW TRUE
 )
 set(GLM_ENABLE_CXX_20 ON)
@@ -96,29 +96,30 @@ message(STATUS ${Vulkan_INCLUDE_DIRS})
 
 add_library(shaderc STATIC IMPORTED)
 
-if(WIN32)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (WIN32)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         set_target_properties(shaderc PROPERTIES
                 IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combinedd.lib"
         )
-    else()
+    else ()
         set_target_properties(shaderc PROPERTIES
                 IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combined.lib"
         )
-    endif()
-else()
+    endif ()
+else ()
     set_target_properties(shaderc PROPERTIES
             IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../lib/libshaderc_combined.a"
     )
 
-endif()
+endif ()
+
 
 # tracy
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(TRACY_ENABLE OFF)
-else()
-    set(TRACY_ENABLE ON)
-endif()
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(TRACY_ENABLE OFF CACHE BOOL "" FORCE)
+else ()
+    set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+endif ()
 
 #option(TRACY_ENABLE " " ON)
 #option(TRACY_ON_DEMAND " " ON)
