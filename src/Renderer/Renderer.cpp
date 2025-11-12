@@ -22,9 +22,9 @@
 #include <tracy/TracyVulkan.hpp>
 
 pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer)
-    : m_context{ context }
-    , m_scene{ scene }
-    , m_imgui_renderer(imgui_renderer)
+    : m_context{context}
+      , m_scene{scene}
+      , m_imgui_renderer(imgui_renderer)
 {
     ZoneScoped;
     m_frame_syncers = FrameSyncers(m_context);
@@ -69,6 +69,17 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
 void pvp::Renderer::prepare_frame()
 {
     ZoneScoped;
+
+    ZoneNamedN(recreate_swapchain, "recreate_swapchain", true);
+    if (m_context.gtfw_to_render->needs_resizing)
+    {
+        m_context.swapchain->recreate_swapchain();
+        m_imgui_renderer.update_screen();
+        m_context.gtfw_to_render->needs_resizing.store(false);
+        m_frame_syncers.destroy(m_context.device->get_device());
+        m_frame_syncers = FrameSyncers(m_context);
+    }
+
     ZoneNamedN(waiting, "waiting", true);
     vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
     vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
@@ -78,16 +89,9 @@ void pvp::Renderer::prepare_frame()
 
     ZoneNamedN(AcquireNextImage, "Acquire Next Image", true);
 
-    if (m_context.gtfw_to_render->needs_resizing)
-    {
-        m_context.swapchain->recreate_swapchain();
-        m_imgui_renderer.update_screen();
-        m_context.gtfw_to_render->needs_resizing.store(false);
-    }
-
-    VkResult result{ VK_RESULT_MAX_ENUM };
-    int      count{};
-    while (result != VK_SUCCESS)
+    VkResult result{VK_RESULT_MAX_ENUM};
+    int count{};
+    while (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
         result = vkAcquireNextImageKHR(
             m_context.device->get_device(),
@@ -99,7 +103,7 @@ void pvp::Renderer::prepare_frame()
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            m_context.swapchain->recreate_swapchain();
+            return;
         }
 
         count++;
@@ -110,7 +114,7 @@ void pvp::Renderer::prepare_frame()
     }
 
     ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
-    VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    VkCommandBufferBeginInfo start_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     vkBeginCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer, &start_info);
     TracyVkZone(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer, "Begin");
 
@@ -125,7 +129,7 @@ void pvp::Renderer::prepare_frame()
     vkCmdSetViewport(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
+    scissor.offset = {0, 0};
     scissor.extent = m_context.swapchain->get_swapchain_extent();
     vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
 }
@@ -209,7 +213,8 @@ void pvp::Renderer::end_frame()
         m_context.swapchain->recreate_swapchain();
         m_imgui_renderer.update_screen();
         m_context.gtfw_to_render->needs_resizing.store(false);
-        // throw std::runtime_error("failed to present swap chain image!");
+        m_frame_syncers.destroy(m_context.device->get_device());
+        m_frame_syncers = FrameSyncers(m_context);
     }
     else if (result != VK_SUCCESS)
     {
