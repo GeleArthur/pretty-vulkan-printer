@@ -13,7 +13,7 @@ endif ()
 FetchContent_Declare(
         glm
         GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 12bfe6887a7d86684266742cee50a3daf8d0104a
+        GIT_TAG 1.0.2
         GIT_SHALLOW TRUE
 )
 set(GLM_ENABLE_CXX_20 ON)
@@ -78,11 +78,14 @@ FetchContent_MakeAvailable(spdlog)
 
 # assimp
 set(ASSIMP_BUILD_TESTS OFF)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF)
+set(CMAKE_BUILD_TYPE "Release")
 FetchContent_Declare(
         assimp
         URL https://github.com/assimp/assimp/archive/refs/tags/v6.0.2.zip
 )
 FetchContent_MakeAvailable(assimp)
+unset(CMAKE_BUILD_TYPE)
 
 message(STATUS ${Vulkan_INCLUDE_DIRS})
 
