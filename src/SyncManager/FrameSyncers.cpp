@@ -15,15 +15,15 @@ FrameSyncers::FrameSyncers(const pvp::Context& context)
 
     for (int i = 0; i < max_frames_in_flight; ++i)
     {
-        vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &image_available_semaphores[i].handle);
+        vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &acquire_semaphores[i].handle);
 
         vkCreateFence(context.device->get_device(), &fence_info, nullptr, &in_flight_fences[i].handle);
     }
 
     for (int i = 0; i < context.swapchain->get_min_image_count(); ++i)
     {
-        render_finished_semaphores.push_back(Semaphore{});
-        vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &render_finished_semaphores[i].handle);
+        submit_semaphores.push_back(Semaphore{});
+        vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &submit_semaphores[i].handle);
     }
 }
 
@@ -31,10 +31,10 @@ void FrameSyncers::destroy(const VkDevice device) const
 {
     for (int i = 0; i < max_frames_in_flight; ++i)
     {
-        image_available_semaphores[i].destroy(device);
+        acquire_semaphores[i].destroy(device);
         in_flight_fences[i].destroy(device);
     }
-    for (const Semaphore& render_finished_semaphore : render_finished_semaphores)
+    for (const Semaphore& render_finished_semaphore : submit_semaphores)
     {
         render_finished_semaphore.destroy(device);
     }

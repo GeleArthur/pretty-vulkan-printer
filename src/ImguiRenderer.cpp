@@ -26,6 +26,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
     glfw->needs_resizing.store(true);
 }
+
 static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
 {
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
@@ -36,6 +37,7 @@ static void mouse_pos_callback(GLFWwindow* window, double xpos, double ypos)
         ImGui::GetIO().AddMousePosEvent(xpos, ypos);
     }
 }
+
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
@@ -54,6 +56,7 @@ static void char_call_back(GLFWwindow* window, unsigned int codepoint)
         ImGui::GetIO().AddInputCharacter(codepoint);
     }
 }
+
 // ReSharper disable once CppInconsistentNaming
 ImGuiKey ImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode);
 
@@ -62,16 +65,16 @@ static void key_call_back(GLFWwindow* window, int key, int scancode, int action,
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
     {
         std::lock_guard lock(glfw->lock);
-        ImGuiKey        imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
+        ImGuiKey imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
         ImGui::GetIO().AddKeyEvent(imgui_key, (action == GLFW_PRESS));
         glfw->keys_pressed[key] = action;
     }
 }
 
 pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRender* glfw_to_render)
-    : m_window{ window }
-    , m_glfw_to_render{ glfw_to_render }
-    , m_context{ context }
+    : m_window{window}
+      , m_glfw_to_render{glfw_to_render}
+      , m_context{context}
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -86,6 +89,7 @@ pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRe
 
     ImGui::StyleColorsDark();
 }
+
 void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
 {
     VkFormat format = m_context.swapchain->get_swapchain_surface_format().format;
@@ -113,18 +117,19 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
             .colorAttachmentCount = 1,
             .pColorAttachmentFormats = &format,
             .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
-            .stencilAttachmentFormat = VK_FORMAT_UNDEFINED },
+            .stencilAttachmentFormat = VK_FORMAT_UNDEFINED
+        },
         .Allocator = nullptr,
         .CheckVkResultFn = nullptr,
         .MinAllocationSize = 0
     };
     ImGui_ImplVulkan_Init(&info);
 
-    m_command_buffer.resize(max_frames_in_flight);
-    m_command_buffer = command_pool.allocate_buffers(max_frames_in_flight);
+    // m_command_buffer.resize(max_frames_in_flight);
+    // m_command_buffer = command_pool.allocate_buffers(max_frames_in_flight);
 
     {
-        ImGuiIO&        io = ImGui::GetIO();
+        ImGuiIO& io = ImGui::GetIO();
         std::lock_guard lock(m_glfw_to_render->lock);
         io.DisplaySize.x = m_glfw_to_render->screen_width;
         io.DisplaySize.y = m_glfw_to_render->screen_height;
@@ -146,6 +151,7 @@ void pvp::ImguiRenderer::destroy_vulkan_context()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
+
 void pvp::ImguiRenderer::update_screen()
 {
     if (m_glfw_to_render->needs_resizing)
@@ -157,13 +163,11 @@ void pvp::ImguiRenderer::update_screen()
         io.DisplaySize.y = m_glfw_to_render->screen_height;
         io.DisplayFramebufferScale.x = 1.0f;
         io.DisplayFramebufferScale.y = 1.0f;
-        m_glfw_to_render->needs_resizing = false;
     }
 }
+
 void pvp::ImguiRenderer::start_drawing()
 {
-    update_screen();
-
     // ImGui_ImplGlfw_NewFrame();
     ImGui_ImplVulkan_NewFrame();
     {
@@ -171,10 +175,12 @@ void pvp::ImguiRenderer::start_drawing()
         ImGui::NewFrame();
     }
 }
+
 void pvp::ImguiRenderer::test_draw_demo_drawing()
 {
     ImGui::ShowDemoWindow();
 }
+
 void pvp::ImguiRenderer::end_drawing()
 {
     ImGui::EndFrame();
@@ -187,27 +193,29 @@ void pvp::ImguiRenderer::end_drawing()
     }
 }
 
-void pvp::ImguiRenderer::draw(const FrameContext& frame_context, int swapchain_index)
+void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapchain_index)
 {
-    VkCommandBuffer&         cmd = m_command_buffer[frame_context.buffer_index];
-    VkCommandBufferBeginInfo cmd_buffer_info{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-    };
+    // VkCommandBuffer&         cmd = m_command_buffer[frame_context.buffer_index];
+    // VkCommandBufferBeginInfo cmd_buffer_info{
+    // .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+    // .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    // };
 
-    vkBeginCommandBuffer(cmd, &cmd_buffer_info);
+    // vkBeginCommandBuffer(cmd, &cmd_buffer_info);
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder()
-        .add_color(m_context.swapchain->get_views()[frame_context.buffer_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_context.swapchain->get_views()[swapchain_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
 
-    vkCmdBeginRendering(cmd, &render_color_info.rendering_info);
+    vkCmdBeginRendering(frame_context.command_buffer, &render_color_info.rendering_info);
     ImDrawData* p_draw_data = ImGui::GetDrawData();
     if (p_draw_data != nullptr)
-        ImGui_ImplVulkan_RenderDrawData(p_draw_data, cmd);
-    vkCmdEndRendering(cmd);
+    {
+        ImGui_ImplVulkan_RenderDrawData(p_draw_data, frame_context.command_buffer);
+    }
+    vkCmdEndRendering(frame_context.command_buffer);
 
     VkImageSubresourceRange range{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -217,7 +225,7 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, int swapchain_i
         .layerCount = VK_REMAINING_ARRAY_LAYERS
     };
 
-    image_layout_transition(cmd,
+    image_layout_transition(frame_context.command_buffer,
                             m_context.swapchain->get_images()[swapchain_index],
                             VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -227,9 +235,10 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, int swapchain_i
                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                             range);
 
-    vkEndCommandBuffer(cmd);
+    // vkEndCommandBuffer(cmd);
 }
-VkCommandBuffer pvp::ImguiRenderer::get_cmd(int index)
-{
-    return m_command_buffer[index];
-}
+
+// VkCommandBuffer pvp::ImguiRenderer::get_cmd(int index)
+// {
+//     return m_command_buffer[index];
+// }

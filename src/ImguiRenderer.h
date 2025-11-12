@@ -7,11 +7,14 @@ namespace pvp
 {
     struct GlfwToRender;
 }
+
 struct FrameContext;
+
 namespace pvp
 {
     class CommandPool;
     struct Context;
+
     class ImguiRenderer final
     {
     public:
@@ -24,15 +27,14 @@ namespace pvp
         void test_draw_demo_drawing();
         void end_drawing();
 
-        void            draw(const FrameContext& frame_context, int swapchain_index);
+        void draw(const FrameContext& frame_context, uint32_t swapchain_index);
         VkCommandBuffer get_cmd(int index);
-
-    private:
         void update_screen();
 
+    private:
         std::vector<VkCommandBuffer> m_command_buffer;
-        GLFWwindow*                  m_window;
-        GlfwToRender*                m_glfw_to_render;
-        Context&                     m_context;
+        GLFWwindow* m_window;
+        GlfwToRender* m_glfw_to_render;
+        Context& m_context;
     };
 } // namespace pvp

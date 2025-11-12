@@ -81,6 +81,8 @@ void pvp::Renderer::prepare_frame()
     if (m_context.gtfw_to_render->needs_resizing)
     {
         m_context.swapchain->recreate_swapchain();
+        m_imgui_renderer.update_screen();
+        m_context.gtfw_to_render->needs_resizing.store(false);
     }
 
     VkResult result{ VK_RESULT_MAX_ENUM };
@@ -91,7 +93,7 @@ void pvp::Renderer::prepare_frame()
             m_context.device->get_device(),
             m_context.swapchain->get_swapchain(),
             UINT64_MAX,
-            m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
+            m_frame_syncers.acquire_semaphores.at(m_double_buffer_frame).handle,
             VK_NULL_HANDLE,
             &m_current_swapchain_index);
 
@@ -145,36 +147,36 @@ void pvp::Renderer::draw()
 void pvp::Renderer::end_frame()
 {
     ZoneNamedN(end_command_buffer, "end command buffer", true);
-    vkEndCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer);
+    vkEndCommandBuffer(m_frame_contexts.at(m_double_buffer_frame).command_buffer);
 
     ZoneNamedN(submit_queue, "submit queue", true);
-    VkSemaphoreSubmitInfo semaphore_wait_for{
+    VkSemaphoreSubmitInfo acquire_semaphores{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = m_frame_syncers.image_available_semaphores[m_double_buffer_frame].handle,
+        .semaphore = m_frame_syncers.acquire_semaphores.at(m_double_buffer_frame).handle,
         .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
     std::array cmd_submit_info{
         VkCommandBufferSubmitInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .commandBuffer = m_frame_contexts[m_double_buffer_frame].command_buffer,
+            .commandBuffer = m_frame_contexts.at(m_double_buffer_frame).command_buffer,
         },
-        VkCommandBufferSubmitInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .commandBuffer = m_imgui_renderer.get_cmd(m_double_buffer_frame),
-        }
+        // VkCommandBufferSubmitInfo{
+        // .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        // .commandBuffer = m_imgui_renderer.get_cmd(m_double_buffer_frame),
+        // }
     };
 
     VkSemaphoreSubmitInfo semaphore_singled{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = m_frame_syncers.render_finished_semaphores[m_current_swapchain_index].handle,
+        .semaphore = m_frame_syncers.submit_semaphores[m_current_swapchain_index].handle,
         .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT
     };
 
     VkSubmitInfo2 submit_info{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
         .waitSemaphoreInfoCount = 1,
-        .pWaitSemaphoreInfos = &semaphore_wait_for,
+        .pWaitSemaphoreInfos = &acquire_semaphores,
 
         .commandBufferInfoCount = cmd_submit_info.size(),
         .pCommandBufferInfos = cmd_submit_info.data(),
@@ -193,9 +195,9 @@ void pvp::Renderer::end_frame()
     VkPresentInfoKHR present_info{};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &m_frame_syncers.render_finished_semaphores[m_current_swapchain_index].handle;
+    present_info.pWaitSemaphores = &m_frame_syncers.submit_semaphores[m_current_swapchain_index].handle;
 
-    VkSwapchainKHR swap_chains[] = { m_context.swapchain->get_swapchain() };
+    VkSwapchainKHR swap_chains[] = {m_context.swapchain->get_swapchain()};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &m_current_swapchain_index;
@@ -205,6 +207,8 @@ void pvp::Renderer::end_frame()
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_context.gtfw_to_render->needs_resizing)
     {
         m_context.swapchain->recreate_swapchain();
+        m_imgui_renderer.update_screen();
+        m_context.gtfw_to_render->needs_resizing.store(false);
         // throw std::runtime_error("failed to present swap chain image!");
     }
     else if (result != VK_SUCCESS)

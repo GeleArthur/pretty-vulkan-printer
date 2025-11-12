@@ -115,6 +115,7 @@ void pvp::Swapchain::recreate_swapchain()
 
     destroy_old_swapchain();
     create_the_swapchain();
+
     // window_resized(width, height); // Not happy with this but need to make it work first!!!
 
     // create_the_swapchain(m_context.device, command_buffer);
@@ -125,6 +126,7 @@ VkSurfaceFormatKHR pvp::Swapchain::get_swapchain_surface_format() const
 {
     return m_swapchain_surface_format;
 }
+
 VkFormat pvp::Swapchain::get_depth_format() const
 {
     return m_depth_format;
@@ -134,6 +136,7 @@ VkExtent2D pvp::Swapchain::get_swapchain_extent() const
 {
     return m_swapchain_extent;
 }
+
 int pvp::Swapchain::get_min_image_count() const
 {
     return m_imagecount;
@@ -143,14 +146,17 @@ VkSwapchainKHR pvp::Swapchain::get_swapchain() const
 {
     return m_swapchain;
 }
+
 const std::vector<VkImage>& pvp::Swapchain::get_images() const
 {
     return m_swapchain_images;
 }
+
 const std::vector<VkImageView>& pvp::Swapchain::get_views() const
 {
     return m_swapchain_views;
 }
+
 Event<pvp::Context&, int, int>& pvp::Swapchain::get_on_frame_buffer_size_changed()
 {
     return m_on_frame_buffer_size_changed;

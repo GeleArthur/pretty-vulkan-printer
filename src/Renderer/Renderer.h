@@ -4,9 +4,7 @@
 #include "LightPass.h"
 #include "Swapchain.h"
 
-#include <Scene/PVPScene.h>
 #include <SyncManager/FrameSyncers.h>
-#include <tracy/TracyVulkan.hpp>
 
 namespace pvp
 {
@@ -20,11 +18,15 @@ namespace pvp
     public:
         explicit Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer);
 
+        ~Renderer() = default;
+        DISABLE_COPY(Renderer);
+        DISABLE_MOVE(Renderer);
+
         void prepare_frame();
         void draw();
         void end_frame();
 
-        uint32_t get_current_buffer_index() const
+        [[nodiscard]] uint32_t get_current_buffer_index() const
         {
             return m_double_buffer_frame;
         }

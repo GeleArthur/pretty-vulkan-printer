@@ -4,6 +4,7 @@
 #include <ImguiRenderer.h>
 #include <Context/InstanceBuilder.h>
 #include <Context/LogicPhysicalQueueBuilder.h>
+#include <Scene/PVPScene.h>
 #include <tracy/Tracy.hpp>
 
 pvp::VulkanApp::VulkanApp(GLFWwindow* window, GlfwToRender& gtfw_to_render)
@@ -11,6 +12,7 @@ pvp::VulkanApp::VulkanApp(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     , m_window{ window }
 {
 }
+
 void pvp::VulkanApp::run()
 {
     InstanceBuilder()
