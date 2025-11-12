@@ -167,7 +167,7 @@ void pvp::Renderer::end_frame()
 
     VkSemaphoreSubmitInfo semaphore_singled{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = m_frame_syncers.render_finished_semaphores[m_double_buffer_frame].handle,
+        .semaphore = m_frame_syncers.render_finished_semaphores[m_current_swapchain_index].handle,
         .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT
     };
 
@@ -193,7 +193,7 @@ void pvp::Renderer::end_frame()
     VkPresentInfoKHR present_info{};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &m_frame_syncers.render_finished_semaphores[m_double_buffer_frame].handle;
+    present_info.pWaitSemaphores = &m_frame_syncers.render_finished_semaphores[m_current_swapchain_index].handle;
 
     VkSwapchainKHR swap_chains[] = { m_context.swapchain->get_swapchain() };
     present_info.swapchainCount = 1;

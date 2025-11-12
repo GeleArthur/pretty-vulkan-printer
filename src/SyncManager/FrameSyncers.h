@@ -13,6 +13,6 @@ struct FrameSyncers
     void destroy(VkDevice device) const;
 
     std::array<Semaphore, max_frames_in_flight> image_available_semaphores;
-    std::array<Semaphore, max_frames_in_flight> render_finished_semaphores;
+    std::vector<Semaphore> render_finished_semaphores;
     std::array<Fence, max_frames_in_flight>     in_flight_fences;
 };

@@ -52,7 +52,7 @@ namespace pvp
         Context&           m_context;
         VkSurfaceFormatKHR m_swapchain_surface_format;
         VkFormat           m_depth_format;
-        int                m_imagecount;
+        uint32_t           m_imagecount;
         CommandPool        m_command_pool;
         GlfwToRender*      m_glfw_to_render;
 

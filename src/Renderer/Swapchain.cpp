@@ -37,8 +37,8 @@ static VkSurfaceFormatKHR get_best_surface_format(const VkPhysicalDevice& physic
 
 static uint32_t get_mini_image_count(const VkSurfaceCapabilitiesKHR& capabilities)
 {
-    uint32_t image_count = capabilities.minImageCount;
-    if (capabilities.maxImageCount > 0 && capabilities.minImageCount > capabilities.maxImageCount)
+    uint32_t image_count = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount)
     {
         image_count = capabilities.maxImageCount;
     }
