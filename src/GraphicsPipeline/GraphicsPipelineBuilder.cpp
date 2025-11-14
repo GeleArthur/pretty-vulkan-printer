@@ -15,6 +15,8 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     DestructorQueue                              destructor_queue;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages;
 
+    bool mesh_shader = false;
+
     for (auto& shader : m_shader_stages)
     {
         std::get<2>(shader) = ShaderLoader::load_shader_from_file(device.get_device(), std::get<0>(shader));
@@ -25,6 +27,11 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
         vert_shader_stage_info.stage = std::get<1>(shader);
         vert_shader_stage_info.pName = "main";
         pipeline_shader_stages.push_back(vert_shader_stage_info);
+
+        if (std::get<1>(shader) == VK_SHADER_STAGE_VERTEX_BIT)
+        {
+            mesh_shader = true;
+        }
     }
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
@@ -106,8 +113,12 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     pipeline_info.stageCount = pipeline_shader_stages.size();
     pipeline_info.pStages = pipeline_shader_stages.data();
 
+    // if (!mesh_shader)
+    // {
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
+    // }
+
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &rasterizer;
     pipeline_info.pMultisampleState = &multisampling;

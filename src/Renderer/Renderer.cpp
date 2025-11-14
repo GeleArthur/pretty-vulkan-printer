@@ -59,8 +59,13 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
     m_tone_mapping_pass = new ToneMappingPass(m_context, *m_light_pass);
     m_destructor_queue.add_to_queue([&] { delete m_tone_mapping_pass; });
 
+    m_mesh_shader_pass = new MeshShaderPass(m_context, *m_tone_mapping_pass);
+    m_destructor_queue.add_to_queue([&] { delete m_mesh_shader_pass; });
+
     m_blit_to_swapchain = new BlitToSwapchain(m_context, m_tone_mapping_pass->get_tone_mapped_texture());
     m_destructor_queue.add_to_queue([&] { delete m_blit_to_swapchain; });
+
+
 
     m_imgui_renderer.setup_vulkan_context(m_cmd_pool_graphics_present);
     m_destructor_queue.add_to_queue([&] { m_imgui_renderer.destroy_vulkan_context(); });
@@ -142,7 +147,9 @@ void pvp::Renderer::draw()
     m_geometry_draw->draw(m_frame_contexts[m_double_buffer_frame]);
     m_light_pass->draw(m_frame_contexts[m_double_buffer_frame]);
     m_tone_mapping_pass->draw(m_frame_contexts[m_double_buffer_frame]);
+
     m_blit_to_swapchain->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    m_mesh_shader_pass->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();

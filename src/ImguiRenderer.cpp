@@ -67,7 +67,7 @@ static void key_call_back(GLFWwindow* window, int key, int scancode, int action,
         std::lock_guard lock(glfw->lock);
         ImGuiKey imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
         ImGui::GetIO().AddKeyEvent(imgui_key, (action == GLFW_PRESS));
-        glfw->keys_pressed[key] = action;
+        glfw->keys_pressed[key] = action != GLFW_RELEASE;
     }
 }
 
@@ -174,11 +174,6 @@ void pvp::ImguiRenderer::start_drawing()
         std::lock_guard lock(m_glfw_to_render->lock);
         ImGui::NewFrame();
     }
-}
-
-void pvp::ImguiRenderer::test_draw_demo_drawing()
-{
-    ImGui::ShowDemoWindow();
 }
 
 void pvp::ImguiRenderer::end_drawing()

@@ -5,9 +5,9 @@ include(FetchContent)
 
 # VulkanSDK
 find_package(Vulkan REQUIRED)
-if (NOT VULKAN_FOUND)
+if(NOT VULKAN_FOUND)
     message(FATAL_ERROR "Vulkan SDK not installed.")
-endif ()
+endif()
 
 # GLM
 FetchContent_Declare(
@@ -81,15 +81,21 @@ FetchContent_MakeAvailable(spdlog)
 # assimp
 set(ASSIMP_BUILD_TESTS OFF)
 set(ASSIMP_WARNINGS_AS_ERRORS OFF)
-set(CMAKE_BUILD_TYPE "Release")
 FetchContent_Declare(
         assimp
         URL https://github.com/assimp/assimp/archive/refs/tags/v6.0.2.zip
 )
 FetchContent_MakeAvailable(assimp)
-unset(CMAKE_BUILD_TYPE)
 
-message(STATUS ${Vulkan_INCLUDE_DIRS})
+# meshoptimizer
+FetchContent_Declare(
+        meshoptimizer
+        GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
+        GIT_TAG v0.25
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(meshoptimizer)
+
 
 # spirv-reflect
 #add_library(spirv-reflect STATIC
@@ -101,36 +107,36 @@ message(STATUS ${Vulkan_INCLUDE_DIRS})
 
 add_library(shaderc STATIC IMPORTED)
 
-if (WIN32)
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(WIN32)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set_target_properties(shaderc PROPERTIES
                 IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combinedd.lib"
         )
-    else ()
+    else()
         set_target_properties(shaderc PROPERTIES
                 IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/shaderc_combined.lib"
         )
-    endif ()
-else ()
+    endif()
+else()
     set_target_properties(shaderc PROPERTIES
             IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../lib/libshaderc_combined.a"
     )
 
-endif ()
+endif()
 
 
 # tracy
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(TRACY_ENABLE OFF CACHE BOOL "" FORCE)
-else ()
+else()
     set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
-endif ()
+endif()
 
 #option(TRACY_ENABLE " " ON)
 #option(TRACY_ON_DEMAND " " ON)
 FetchContent_Declare(
         tracy
-        URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.12.2.zip
+        URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.13.0.zip
 )
 FetchContent_MakeAvailable(tracy)
 
@@ -146,4 +152,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         #        spirv-reflect
         shaderc
         TracyClient
+        meshoptimizer
 )

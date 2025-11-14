@@ -18,48 +18,29 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, std::
     VkShaderModuleCreateInfo create_info{};
     std::vector<char>        shader_code = load_file(path);
 
-    shaderc::Compiler compiler{};
-
     path.replace_extension();
     auto name = path.filename().string();
 
+    shaderc::Compiler compiler{};
     shaderc::CompileOptions options;
     options.SetGenerateDebugInfo();
+    options.SetTargetEnvironment(shaderc_target_env_vulkan,  shaderc_env_version_vulkan_1_4);
+    options.SetTargetSpirv(shaderc_spirv_version_1_6);
 
-    shaderc::AssemblyCompilationResult result = compiler.PreprocessGlsl(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
+    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
-        spdlog::error(result.GetErrorMessage());
+        spdlog::error("Shader compilation failed: {}",result.GetErrorMessage());
         throw;
     }
 
-    shader_code.resize(result.cend() - result.cbegin());
-    std::ranges::copy(result, shader_code.data());
-
-    result = compiler.CompileGlslToSpvAssembly(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
-    if (result.GetCompilationStatus() != shaderc_compilation_status_success)
-    {
-        spdlog::error(result.GetErrorMessage().c_str());
-        throw;
-    }
-
-    shader_code.resize(result.cend() - result.cbegin());
-    std::ranges::copy(result, shader_code.data());
-
-    shaderc::SpvCompilationResult compliedCode = compiler.AssembleToSpv(shader_code.data(), shader_code.size(), options);
-    if (compliedCode.GetCompilationStatus() != shaderc_compilation_status_success)
-    {
-        spdlog::error(compliedCode.GetErrorMessage().c_str());
-        throw;
-    }
-
-    std::vector<uint32_t> assambly_code;
-    assambly_code.resize((compliedCode.cend() - compliedCode.cbegin()));
-    std::ranges::copy(compliedCode, assambly_code.data());
+    std::vector<uint32_t> spirv_code(result.cbegin(), result.cend());
+    // assambly_code.resize((compliedCode.cend() - compliedCode.cbegin()));
+    // std::ranges::copy(compliedCode, assambly_code.data());
 
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    create_info.codeSize = assambly_code.size() * sizeof(uint32_t);
-    create_info.pCode = assambly_code.data();
+    create_info.codeSize = spirv_code.size() * sizeof(uint32_t);
+    create_info.pCode = spirv_code.data();
 
     VkShaderModule shader_module;
     if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS)

@@ -28,7 +28,7 @@ void pvp::VulkanApp::run()
     m_destructor_queue.add_to_queue([&] { vkDestroySurfaceKHR(m_instance.get_instance(), m_surface, nullptr); });
 
     LogicPhysicalQueueBuilder()
-        .set_extensions({ VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME })
+        .set_extensions({ VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_MESH_SHADER_EXTENSION_NAME })
         .build(m_instance, m_surface, m_physical_device, m_device, m_queue_families);
     m_destructor_queue.add_to_queue([&] { m_device.destroy(); });
 

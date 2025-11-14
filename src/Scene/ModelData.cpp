@@ -1,5 +1,6 @@
 ﻿#include "ModelData.h"
 
+#include <meshoptimizer.h>
 #include <numeric>
 #include <set>
 #include <stb_image.h>
@@ -26,7 +27,7 @@ glm::mat4 convert_matrix(const aiMatrix4x4& m)
 
 pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 {
-    LoadedScene    out_scene;
+    LoadedScene out_scene;
     const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
     if (scene == nullptr)
@@ -38,7 +39,8 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
     std::unordered_map<std::string, aiTextureType> all_textures;
 
     std::function<void(aiNode*)> process_node;
-    process_node = [&](aiNode* node, const aiMatrix4x4& parent_transform = aiMatrix4x4()) {
+    process_node = [&](aiNode* node, const aiMatrix4x4& parent_transform = aiMatrix4x4())
+    {
         glm::mat4 node_transform = convert_matrix(parent_transform * node->mTransformation);
 
         for (unsigned int i = 0; i < node->mNumMeshes; ++i)
@@ -73,7 +75,7 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
             if (scene->HasMaterials() && mesh->mMaterialIndex < scene->mNumMaterials)
             {
                 const aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-                aiString          tex_path;
+                aiString tex_path;
                 if (material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_path) == AI_SUCCESS)
                 {
                     model.diffuse_path = tex_path.C_Str();
@@ -100,15 +102,15 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
     process_node(scene->mRootNode);
 
     {
-        int          width{};
-        int          height{};
-        int          channels{};
+        int width{};
+        int height{};
+        int channels{};
         float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
     }
 
     for (const std::pair<const std::string, aiTextureType>& texture : all_textures)
     {
-        int      tex_width{}, tex_height{}, channels{};
+        int tex_width{}, tex_height{}, channels{};
         stbi_uc* pixels;
         if (texture.first[0] == '*')
         {
@@ -137,5 +139,6 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 
     aiReleaseImport(scene);
 
+    // meshopt_buildMeshletsBound();
     return out_scene;
 }

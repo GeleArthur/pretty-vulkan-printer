@@ -23,4 +23,5 @@ namespace VulkanInstanceExtensions
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT)
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdEndDebugUtilsLabelEXT)
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT)
+    VK_DEFINE_INSTANCE_FUNCTION(vkCmdDrawMeshTasksEXT)
 }; // namespace VulkanInstanceExtensions

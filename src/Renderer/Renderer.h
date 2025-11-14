@@ -6,6 +6,8 @@
 
 #include <SyncManager/FrameSyncers.h>
 
+#include "MeshShaderPass.h"
+
 namespace pvp
 {
     class ImguiRenderer;
@@ -48,6 +50,7 @@ namespace pvp
         ToneMappingPass* m_tone_mapping_pass{};
         ImguiRenderer&   m_imgui_renderer;
         BlitToSwapchain* m_blit_to_swapchain{};
+        MeshShaderPass*   m_mesh_shader_pass{};
 
         DestructorQueue m_destructor_queue{};
     };

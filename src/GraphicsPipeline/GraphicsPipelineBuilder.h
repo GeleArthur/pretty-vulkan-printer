@@ -23,6 +23,7 @@ namespace pvp
         GraphicsPipelineBuilder& set_depth_format(VkFormat format);
         GraphicsPipelineBuilder& set_depth_access(VkBool32 read, VkBool32 write);
 
+
         void build(const Device& device, VkPipeline& pipeline);
 
     private:

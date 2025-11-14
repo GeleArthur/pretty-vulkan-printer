@@ -68,11 +68,21 @@ namespace pvp
         device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_extensions.size());
         device_create_info.ppEnabledExtensionNames = m_extensions.data();
 
+        VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
+            .pNext = nullptr,
+            .taskShader        = VK_TRUE,
+            .meshShader        = VK_TRUE,
+            .meshShaderQueries = VK_TRUE,
+        };
+
         VkPhysicalDeviceVulkan13Features features13 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
-            .pNext = nullptr,
+            .pNext = &mesh_shader_features,
+            .shaderDemoteToHelperInvocation = VK_TRUE,
             .synchronization2 = VK_TRUE,
             .dynamicRendering = VK_TRUE,
+            .maintenance4 = VK_TRUE,
         };
 
         VkPhysicalDeviceVulkan12Features features12 = {

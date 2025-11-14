@@ -127,6 +127,8 @@ add_executable(${PROJECT_NAME}
         src/Image/StaticCubemapImage.h
         src/Image/StaticCubemapImageBuilder.cpp
         src/Image/StaticCubemapImageBuilder.h
+        src/Renderer/MeshShaderPass.cpp
+        src/Renderer/MeshShaderPass.h
 )
 
 add_subdirectory(libraries)
