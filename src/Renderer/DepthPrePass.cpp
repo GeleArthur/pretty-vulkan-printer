@@ -17,18 +17,19 @@
 namespace pvp
 {
     DepthPrePass::DepthPrePass(const Context& context, const PvpScene& scene)
-        : m_context{ context }
-        , m_scene{ scene }
+        : m_context{context}
+          , m_scene{scene}
     {
         create_images();
         build_pipelines();
     }
+
     void DepthPrePass::draw(const FrameContext& cmd)
     {
         ZoneScoped;
 
         TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "DepthPrePass");
-        Debugger::start_debug_label(cmd.command_buffer, "Depth pre pass", { 0.7, 0, 0 });
+        Debugger::start_debug_label(cmd.command_buffer, "Depth pre pass", {0.7f, 0, 0});
 
         ZoneNamedN(transition, "TransitionLayout", true);
         m_depth_image.transition_layout(cmd,
@@ -54,7 +55,7 @@ namespace pvp
             for (const Model& model : m_scene.get_models())
             {
                 ZoneScopedN("Draw");
-                VkDeviceSize offset{ 0 };
+                VkDeviceSize offset{0};
                 vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &model.vertex_data.get_buffer(), &offset);
                 vkCmdBindIndexBuffer(cmd.command_buffer, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
                 vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MaterialTransform), &model.material.transform);
@@ -74,12 +75,13 @@ namespace pvp
 
         Debugger::end_debug_label(cmd.command_buffer);
     }
+
     void DepthPrePass::build_pipelines()
     {
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(1))
-            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MaterialTransform) })
+            .add_push_constant_range(VkPushConstantRange{VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MaterialTransform)})
             .build(m_context.device->get_device(), m_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
@@ -94,6 +96,7 @@ namespace pvp
             .build(*m_context.device, m_pipeline);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline, nullptr); });
     }
+
     void DepthPrePass::create_images()
     {
         ImageBuilder()

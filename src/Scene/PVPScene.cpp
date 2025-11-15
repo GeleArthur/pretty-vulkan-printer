@@ -191,63 +191,49 @@ pvp::PvpScene::PvpScene(Context& context)
         ModelData& cpu_model = loaded_scene.models[i];
         Model& gpu_model = m_gpu_models[i];
 
-        gpu_model.index_count = cpu_model.indices.size();
+        auto transfer_to_gpu = [&context, &transfer_buffer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlagBits usage)
+        {
+            Buffer transfer_buffer{};
+            BufferBuilder()
+                .set_size(data.size_bytes())
+                .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+                .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+                .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
+                .build(context.allocator->get_allocator(), transfer_buffer);
 
-        // Vertex loading
-        Buffer transfer_buffer{};
-        BufferBuilder()
-            .set_size(cpu_model.vertices.size() * sizeof(Vertex))
-            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-            .build(context.allocator->get_allocator(), transfer_buffer);
+            transfer_buffer.copy_data_into_buffer(std::as_bytes(data));
+            transfer_buffer_deleter.add_to_queue([transfer_buffer]
+            {
+                transfer_buffer.destroy();
+            });
 
-        transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(cpu_model.vertices)));
-        transfer_buffer_deleter.add_to_queue([=] { transfer_buffer.destroy(); });
+            BufferBuilder()
+                .set_size(data.size_bytes())
+                .set_usage(usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+                .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+                .build(context.allocator->get_allocator(), gpu_buffer);
+            gpu_buffer.copy_from_buffer(cmd, transfer_buffer);
+        };
 
-        BufferBuilder()
-            .set_size(cpu_model.vertices.size() * sizeof(Vertex))
-            .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-            .build(context.allocator->get_allocator(), gpu_model.vertex_data);
-
-        gpu_model.vertex_data.copy_from_buffer(cmd, transfer_buffer);
+        transfer_to_gpu(std::span(cpu_model.vertices), gpu_model.vertex_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
         // Index loading
-        Buffer transfer_buffer_index{};
-        BufferBuilder()
-            .set_size(cpu_model.vertices.size() * sizeof(Vertex))
-            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-            .build(context.allocator->get_allocator(), transfer_buffer_index);
+        transfer_to_gpu(std::span(cpu_model.indices), gpu_model.index_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        gpu_model.index_count = cpu_model.indices.size();
 
-        transfer_buffer_index.copy_data_into_buffer(std::as_bytes(std::span(cpu_model.indices)));
-        transfer_buffer_deleter.add_to_queue([=] { transfer_buffer_index.destroy(); });
 
-        BufferBuilder()
-            .set_size(cpu_model.indices.size() * sizeof(uint32_t))
-            .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-            .build(context.allocator->get_allocator(), gpu_model.index_data);
-
-        gpu_model.index_data.copy_from_buffer(cmd, transfer_buffer_index);
+        // meshletes loading
+        transfer_to_gpu(std::span(cpu_model.vertices), gpu_model.meshlet_vertex, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        transfer_to_gpu(std::span(cpu_model.meshlets), gpu_model.meshlet_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        transfer_to_gpu(std::span(cpu_model.meshlet_triangles), gpu_model.meshlet_triangles_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        transfer_to_gpu(std::span(cpu_model.meshlet_vertices), gpu_model.meshlet_vertices_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
         gpu_model.material.transform = cpu_model.transform;
 
-        // :(
-        if (cpu_model.diffuse_path.empty())
-            gpu_model.material.diffuse_texture_index = 0;
-        else
-            gpu_model.material.diffuse_texture_index = std::ranges::find(gpu_texture_names, cpu_model.diffuse_path) - gpu_texture_names.begin();
-
-        if (cpu_model.normal_path.empty())
-            gpu_model.material.normal_texture_index = 0;
-        else
-            gpu_model.material.normal_texture_index = std::ranges::find(gpu_texture_names, cpu_model.normal_path) - gpu_texture_names.begin();
-
-        if (cpu_model.metallic_path.empty())
-            gpu_model.material.metalness_texture_index = 0;
-        else
-            gpu_model.material.metalness_texture_index = std::ranges::find(gpu_texture_names, cpu_model.metallic_path) - gpu_texture_names.begin();
+        // TODO: Better default selection
+        gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ? 0 : std::ranges::find(gpu_texture_names, cpu_model.diffuse_path) - gpu_texture_names.begin();
+        gpu_model.material.normal_texture_index = cpu_model.normal_path.empty() ? 0 : std::ranges::find(gpu_texture_names, cpu_model.normal_path) - gpu_texture_names.begin();
+        gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find(gpu_texture_names, cpu_model.metallic_path) - gpu_texture_names.begin();
     }
     cmd_pool_transfer_buffers.end_buffer(cmd);
     transfer_buffer_deleter.destroy_and_clear();
@@ -310,6 +296,10 @@ pvp::PvpScene::~PvpScene()
     {
         model.vertex_data.destroy();
         model.index_data.destroy();
+        model.meshlet_vertex.destroy();
+        model.meshlet_buffer.destroy();
+        model.meshlet_triangles_buffer.destroy();
+        model.meshlet_vertices_buffer.destroy();
     }
 
     for (StaticImage& gpu_texture : m_gpu_textures)

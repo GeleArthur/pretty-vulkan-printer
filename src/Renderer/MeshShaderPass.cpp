@@ -1,7 +1,3 @@
-//
-// Created by Equipment Desk on 13-Nov-25.
-//
-
 #include "MeshShaderPass.h"
 
 #include <VulkanExternalFunctions.h>
@@ -10,7 +6,6 @@
 
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
-#include "ToneMappingPass.h"
 
 pvp::MeshShaderPass::MeshShaderPass(const Context& context, ToneMappingPass& tone_mapping_pass) :
     m_context(context),
@@ -53,7 +48,7 @@ void pvp::MeshShaderPass::build_pipelines()
     //     .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
     //     .build(m_context, m_sampler);
     // m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });
-    //
+
     // DescriptorSetBuilder()
     //     .bind_sampler(0, m_sampler)
     //     .bind_image(1, m_geometry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
