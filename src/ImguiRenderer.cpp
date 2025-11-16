@@ -65,16 +65,16 @@ static void key_call_back(GLFWwindow* window, int key, int scancode, int action,
     pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
     {
         std::lock_guard lock(glfw->lock);
-        ImGuiKey imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
+        ImGuiKey        imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scancode);
         ImGui::GetIO().AddKeyEvent(imgui_key, (action == GLFW_PRESS));
         glfw->keys_pressed[key] = action != GLFW_RELEASE;
     }
 }
 
 pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRender* glfw_to_render)
-    : m_window{window}
-      , m_glfw_to_render{glfw_to_render}
-      , m_context{context}
+    : m_window{ window }
+    , m_glfw_to_render{ glfw_to_render }
+    , m_context{ context }
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -117,8 +117,7 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
             .colorAttachmentCount = 1,
             .pColorAttachmentFormats = &format,
             .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
-            .stencilAttachmentFormat = VK_FORMAT_UNDEFINED
-        },
+            .stencilAttachmentFormat = VK_FORMAT_UNDEFINED },
         .Allocator = nullptr,
         .CheckVkResultFn = nullptr,
         .MinAllocationSize = 0
@@ -129,7 +128,7 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
     // m_command_buffer = command_pool.allocate_buffers(max_frames_in_flight);
 
     {
-        ImGuiIO& io = ImGui::GetIO();
+        ImGuiIO&        io = ImGui::GetIO();
         std::lock_guard lock(m_glfw_to_render->lock);
         io.DisplaySize.x = m_glfw_to_render->screen_width;
         io.DisplaySize.y = m_glfw_to_render->screen_height;
@@ -222,11 +221,11 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapch
 
     image_layout_transition(frame_context.command_buffer,
                             m_context.swapchain->get_images()[swapchain_index],
-                            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
-                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                            VK_ACCESS_2_NONE,
+                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                             range);
 

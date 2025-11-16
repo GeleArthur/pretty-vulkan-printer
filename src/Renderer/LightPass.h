@@ -30,7 +30,7 @@ namespace pvp
         Image           m_light_image{};
         Sampler         m_sampler{};
 
-        DescriptorSets m_light_binding;
+        DescriptorSets m_texture_binding;
 
         // UniformBuffer<glm::vec2>* m_screensize_buffer;
 

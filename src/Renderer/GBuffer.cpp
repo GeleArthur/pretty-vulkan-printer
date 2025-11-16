@@ -164,9 +164,9 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
 
     m_depth_pre_pass.get_depth_image().transition_layout(cmd,
                                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+                                                         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
                                                          VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                          VK_ACCESS_2_SHADER_READ_BIT);
     Debugger::end_debug_label(cmd.command_buffer);
 }

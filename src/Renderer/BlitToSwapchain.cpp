@@ -34,7 +34,7 @@ namespace pvp
 
         image_layout_transition(cmd.command_buffer,
                                 m_context.swapchain->get_images()[swapchain_image_index],
-                                VK_PIPELINE_STAGE_2_NONE,
+                                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                 VK_ACCESS_2_NONE,
                                 VK_ACCESS_2_TRANSFER_WRITE_BIT,
@@ -66,16 +66,16 @@ namespace pvp
         };
 
         vkCmdBlitImage2(cmd.command_buffer, &info);
-        // REMOVED BECAUSE IMGUI IS GOING TO DO IT
-        // image_layout_transition(cmd.command_buffer,
-        //                         m_context.swapchain->get_images()[swapchain_image_index],
-        //                         VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-        //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        //                         VK_ACCESS_2_TRANSFER_WRITE_BIT,
-        //                         VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
-        //                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        //                         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        //                         range);
+
+        image_layout_transition(cmd.command_buffer,
+                                m_context.swapchain->get_images()[swapchain_image_index],
+                                VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
+                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                range);
         Debugger::end_debug_label(cmd.command_buffer);
     }
 } // namespace pvp

@@ -20,6 +20,11 @@ namespace pvp
         m_uniform_buffers.emplace_back(binding, &buffer);
         return *this;
     }
+    DescriptorSetBuilder& DescriptorSetBuilder::bind_buffer_ssbo(uint32_t binding, const Buffer& buffer)
+    {
+        m_buffers_ssbo.emplace_back(binding, buffer);
+        return *this;
+    }
     DescriptorSetBuilder& DescriptorSetBuilder::bind_image(uint32_t binding, Image& image, VkImageLayout layout)
     {
         m_images.emplace_back(binding, &image, layout);
@@ -40,9 +45,15 @@ namespace pvp
     {
         descriptor.m_context = &context;
 
-        for (int frame_index = 0; frame_index < max_frames_in_flight; ++frame_index)
+        int frames = m_is_dynamic ? max_frames_in_flight : 1;
+
+        for (int frame_index = 0; frame_index < frames; ++frame_index)
         {
             VkDescriptorSetAllocateInfo alloc_info{};
+            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            alloc_info.descriptorPool = context.descriptor_creator->get_pool();
+            alloc_info.descriptorSetCount = 1;
+            alloc_info.pSetLayouts = &m_descriptor_layout;
 
             // Bindless
             unsigned int                                       image_count{};
@@ -60,15 +71,9 @@ namespace pvp
                 alloc_info.pNext = &variable_count;
             }
 
-            // DescriptorSet
-            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            alloc_info.descriptorPool = context.descriptor_creator->get_pool();
-            alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &m_descriptor_layout;
-
-            if (vkAllocateDescriptorSets(context.device->get_device(), &alloc_info, &descriptor.m_sets[frame_index]) != VK_SUCCESS)
+            if (VkResult error = vkAllocateDescriptorSets(context.device->get_device(), &alloc_info, &descriptor.m_sets[frame_index]); error != VK_SUCCESS)
             {
-                throw std::runtime_error("failed to allocate descriptor sets!");
+                throw std::runtime_error("failed to allocate descriptor sets");
             }
 
             for (const BufferInfo& buffer : m_uniform_buffers)
@@ -155,6 +160,25 @@ namespace pvp
                 write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
                 write.descriptorCount = 1;
                 write.pImageInfo = &sampler_info;
+
+                vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
+            }
+
+            for (const auto& buffer : m_buffers_ssbo)
+            {
+                VkDescriptorBufferInfo buffer_info{};
+                buffer_info.buffer = std::get<1>(buffer).get_buffer();
+                buffer_info.offset = 0;
+                buffer_info.range = std::get<1>(buffer).get_size();
+
+                VkWriteDescriptorSet write{};
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstSet = descriptor.m_sets[frame_index];
+                write.dstBinding = std::get<0>(buffer);
+                write.dstArrayElement = 0;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                write.descriptorCount = 1;
+                write.pBufferInfo = &buffer_info;
 
                 vkUpdateDescriptorSets(context.device->get_device(), 1, &write, 0, nullptr);
             }

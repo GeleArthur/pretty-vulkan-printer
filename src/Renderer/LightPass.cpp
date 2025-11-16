@@ -53,7 +53,7 @@ namespace pvp
             .bind_image(3, m_geometry_pass.get_metal_roughness_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .bind_image(4, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .set_layout(m_context.descriptor_creator->get_layout(11))
-            .build(m_context, m_light_binding);
+            .build(m_context, m_texture_binding);
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
@@ -97,7 +97,7 @@ namespace pvp
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, m_light_binding.get_descriptor_set(cmd), 0, nullptr);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, m_texture_binding.get_descriptor_set(cmd), 0, nullptr);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 2, 1, m_scene.get_light_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
         RenderInfoBuilderOut render_color_info;
@@ -117,9 +117,9 @@ namespace pvp
         m_light_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                        VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                                        VK_ACCESS_2_TRANSFER_READ_BIT);
+                                        VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
         Debugger::end_debug_label(cmd.command_buffer);
     }
 } // namespace pvp

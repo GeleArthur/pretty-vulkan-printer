@@ -6,10 +6,12 @@
 
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
+#include "DescriptorSets/DescriptorLayoutBuilder.h"
+#include "Scene/PVPScene.h"
 
-pvp::MeshShaderPass::MeshShaderPass(const Context& context, ToneMappingPass& tone_mapping_pass) :
-    m_context(context),
-    m_tone_mapping_pass(tone_mapping_pass)
+pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scene)
+    : m_context(context)
+    , m_scene(scene)
 {
     build_pipelines();
 }
@@ -25,7 +27,15 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
     vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-    VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, 1, 1, 1);
+    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+
+    for (const Model& model : m_scene.get_models())
+    {
+        ZoneScopedN("Draw");
+        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
+        VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, model.meshlet_count, 1, 1);
+    }
 
     vkCmdEndRendering(cmd.command_buffer);
 }
@@ -59,6 +69,9 @@ void pvp::MeshShaderPass::build_pipelines()
     //     .build(m_context, m_light_binding);
 
     PipelineLayoutBuilder()
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout(17))
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform) })
         .build(m_context.device->get_device(), m_pipeline_layout);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 

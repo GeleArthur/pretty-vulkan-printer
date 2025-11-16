@@ -22,9 +22,9 @@
 #include <tracy/TracyVulkan.hpp>
 
 pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer)
-    : m_context{context}
-      , m_scene{scene}
-      , m_imgui_renderer(imgui_renderer)
+    : m_context{ context }
+    , m_scene{ scene }
+    , m_imgui_renderer(imgui_renderer)
 {
     ZoneScoped;
     m_frame_syncers = FrameSyncers(m_context);
@@ -59,13 +59,11 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
     m_tone_mapping_pass = new ToneMappingPass(m_context, *m_light_pass);
     m_destructor_queue.add_to_queue([&] { delete m_tone_mapping_pass; });
 
-    m_mesh_shader_pass = new MeshShaderPass(m_context, *m_tone_mapping_pass);
+    m_mesh_shader_pass = new MeshShaderPass(m_context, m_scene);
     m_destructor_queue.add_to_queue([&] { delete m_mesh_shader_pass; });
 
     m_blit_to_swapchain = new BlitToSwapchain(m_context, m_tone_mapping_pass->get_tone_mapped_texture());
     m_destructor_queue.add_to_queue([&] { delete m_blit_to_swapchain; });
-
-
 
     m_imgui_renderer.setup_vulkan_context(m_cmd_pool_graphics_present);
     m_destructor_queue.add_to_queue([&] { m_imgui_renderer.destroy_vulkan_context(); });
@@ -94,8 +92,8 @@ void pvp::Renderer::prepare_frame()
 
     ZoneNamedN(AcquireNextImage, "Acquire Next Image", true);
 
-    VkResult result{VK_RESULT_MAX_ENUM};
-    int count{};
+    VkResult result{ VK_RESULT_MAX_ENUM };
+    int      count{};
     while (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
         result = vkAcquireNextImageKHR(
@@ -119,7 +117,7 @@ void pvp::Renderer::prepare_frame()
     }
 
     ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
-    VkCommandBufferBeginInfo start_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     vkBeginCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer, &start_info);
     TracyVkZone(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer, "Begin");
 
@@ -134,7 +132,7 @@ void pvp::Renderer::prepare_frame()
     vkCmdSetViewport(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
-    scissor.offset = {0, 0};
+    scissor.offset = { 0, 0 };
     scissor.extent = m_context.swapchain->get_swapchain_extent();
     vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
 }
@@ -149,7 +147,7 @@ void pvp::Renderer::draw()
     m_tone_mapping_pass->draw(m_frame_contexts[m_double_buffer_frame]);
 
     m_blit_to_swapchain->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
-    m_mesh_shader_pass->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    // m_mesh_shader_pass->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();
@@ -208,7 +206,7 @@ void pvp::Renderer::end_frame()
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = &m_frame_syncers.submit_semaphores[m_current_swapchain_index].handle;
 
-    VkSwapchainKHR swap_chains[] = {m_context.swapchain->get_swapchain()};
+    VkSwapchainKHR swap_chains[] = { m_context.swapchain->get_swapchain() };
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &m_current_swapchain_index;

@@ -71,8 +71,8 @@ namespace pvp
         VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
             .pNext = nullptr,
-            .taskShader        = VK_TRUE,
-            .meshShader        = VK_TRUE,
+            .taskShader = VK_TRUE,
+            .meshShader = VK_TRUE,
             .meshShaderQueries = VK_TRUE,
         };
 
@@ -88,12 +88,18 @@ namespace pvp
         VkPhysicalDeviceVulkan12Features features12 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
             .pNext = &features13,
+            .storageBuffer8BitAccess = VK_TRUE,
             .descriptorIndexing = VK_TRUE,
             .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
             .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
             .descriptorBindingPartiallyBound = VK_TRUE,
             .descriptorBindingVariableDescriptorCount = VK_TRUE,
             .runtimeDescriptorArray = VK_TRUE,
+            .scalarBlockLayout = VK_TRUE,
+            .timelineSemaphore = VK_TRUE,
+            .bufferDeviceAddress = VK_TRUE,
+            .vulkanMemoryModel = VK_TRUE,
+            .vulkanMemoryModelDeviceScope = VK_TRUE,
 
         };
 
@@ -103,12 +109,17 @@ namespace pvp
         };
 
         VkPhysicalDeviceFeatures device_features{
-            .samplerAnisotropy = true
+            .robustBufferAccess = VK_TRUE,
+            .samplerAnisotropy = VK_TRUE,
+            .vertexPipelineStoresAndAtomics = VK_TRUE,
+            .fragmentStoresAndAtomics = VK_TRUE,
+            .shaderInt64 = VK_TRUE,
+
         };
         VkPhysicalDeviceFeatures2 features2{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
             .pNext = &features11,
-            .features = device_features
+            .features = device_features,
         };
 
         device_create_info.pNext = &features2;

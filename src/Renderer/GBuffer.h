@@ -42,6 +42,9 @@ namespace pvp
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};
 
+        VkPipelineLayout m_meshlets_pipeline_layout{};
+        VkPipeline       m_meshlets_albedo_pipeline{};
+
         DestructorQueue m_destructor_queue{};
     };
 } // namespace pvp
