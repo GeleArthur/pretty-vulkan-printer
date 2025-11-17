@@ -30,7 +30,7 @@ void static generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
 {
     constexpr size_t max_vertices = 64;
     constexpr size_t max_triangles = 124;
-    constexpr float cone_weight = 0.0f;
+    constexpr float  cone_weight = 0.0f;
 
     std::vector<uint8_t> meshlet_triangles_u8;
 
@@ -47,8 +47,7 @@ void static generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
         verticies[i + 2] = mesh_in->mVertices[i].z;
     }
 
-
-    size_t meshletCount = meshopt_buildMeshlets(
+    size_t const meshletCount = meshopt_buildMeshlets(
         model_out.meshlets.data(),
         model_out.meshlet_vertices.data(),
         meshlet_triangles_u8.data(),
@@ -78,9 +77,9 @@ void static generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
             uint32_t i1 = 3 * i + 1 + meshlet.triangle_offset;
             uint32_t i2 = 3 * i + 2 + meshlet.triangle_offset;
 
-            uint8_t vIdx0 = meshlet_triangles_u8[i0];
-            uint8_t vIdx1 = meshlet_triangles_u8[i1];
-            uint8_t vIdx2 = meshlet_triangles_u8[i2];
+            uint8_t  vIdx0 = meshlet_triangles_u8[i0];
+            uint8_t  vIdx1 = meshlet_triangles_u8[i1];
+            uint8_t  vIdx2 = meshlet_triangles_u8[i2];
             uint32_t packed = ((static_cast<uint32_t>(vIdx0) & 0xFF) << 0) |
                 ((static_cast<uint32_t>(vIdx1) & 0xFF) << 8) |
                 ((static_cast<uint32_t>(vIdx2) & 0xFF) << 16);
@@ -94,7 +93,7 @@ void static generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
 
 pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 {
-    LoadedScene out_scene;
+    LoadedScene    out_scene{};
     const aiScene* scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
     if (scene == nullptr)
@@ -105,10 +104,9 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 
     std::unordered_map<std::string, aiTextureType> all_textures;
 
-    std::function<void(aiNode*)> process_node;
-    process_node = [&](aiNode* node, const aiMatrix4x4& parent_transform = aiMatrix4x4())
-    {
-        glm::mat4 node_transform = convert_matrix(parent_transform * node->mTransformation);
+    std::function<void(const aiNode*, const aiMatrix4x4& parent_transform)> process_node;
+    process_node = [&](const aiNode* node, const aiMatrix4x4& parent_transform) {
+        const aiMatrix4x4 world_matrix = parent_transform * node->mTransformation;
 
         for (unsigned int i = 0; i < node->mNumMeshes; ++i)
         {
@@ -116,8 +114,8 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 
             ModelData model;
             model.vertices.reserve(mesh->mNumVertices);
-            model.indices.reserve(mesh->mNumFaces * 3);
-            model.transform = node_transform;
+            model.indices.reserve(mesh->mNumFaces * 3u);
+            model.transform = convert_matrix(world_matrix);
 
             for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
             {
@@ -139,11 +137,10 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
                     model.indices.push_back(face.mIndices[j]);
             }
 
-
             if (scene->HasMaterials() && mesh->mMaterialIndex < scene->mNumMaterials)
             {
                 const aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-                aiString tex_path;
+                aiString          tex_path;
                 if (material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_path) == AI_SUCCESS)
                 {
                     model.diffuse_path = tex_path.C_Str();
@@ -163,25 +160,26 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 
             generate_meshlet(model, mesh);
 
-
             out_scene.models.push_back(std::move(model));
         }
 
-        for (unsigned int c = 0; c < node->mNumChildren; ++c)
-            process_node(node->mChildren[c]);
+        for (unsigned int child_index = 0; child_index < node->mNumChildren; ++child_index)
+        {
+            process_node(node->mChildren[child_index], world_matrix);
+        }
     };
-    process_node(scene->mRootNode);
+    process_node(scene->mRootNode, aiMatrix4x4());
 
     {
-        int width{};
-        int height{};
-        int channels{};
+        int          width{};
+        int          height{};
+        int          channels{};
         float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
     }
 
     for (const std::pair<const std::string, aiTextureType>& texture : all_textures)
     {
-        int tex_width{}, tex_height{}, channels{};
+        int      tex_width{}, tex_height{}, channels{};
         stbi_uc* pixels;
         if (texture.first[0] == '*')
         {
@@ -210,7 +208,6 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 
     aiReleaseImport(scene);
 
-
     // std::vector<meshopt_Meshlet> meshlets;
     // std::vector<uint32_t> meshlet_vertices;
     // std::vector<uint8_t> meshlet_triangles;
@@ -219,7 +216,5 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 
     // aiMesh* mesh = horse_testing->mMeshes[0];
 
-
     return out_scene;
 }
-

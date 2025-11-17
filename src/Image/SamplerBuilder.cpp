@@ -7,6 +7,7 @@
 
 #include <Context/Context.h>
 #include <Context/Device.h>
+#include <tracy/Tracy.hpp>
 
 pvp::SamplerBuilder& pvp::SamplerBuilder::set_filter(const VkFilter filter)
 {
@@ -31,6 +32,7 @@ pvp::SamplerBuilder& pvp::SamplerBuilder::set_address_mode(const VkSamplerAddres
 
 void pvp::SamplerBuilder::build(const Context& context, Sampler& sampler) const
 {
+    ZoneScoped;
     if (vkCreateSampler(context.device->get_device(), &m_sampler_info, nullptr, &sampler.handle) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create texture sampler!");

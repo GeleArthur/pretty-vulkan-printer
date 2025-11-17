@@ -13,7 +13,7 @@ namespace pvp
     class GBuffer final
     {
     public:
-        explicit GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& depth);
+        explicit GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& pass);
         void draw(const FrameContext& cmd);
 
         Image& get_albedo_image()
@@ -34,10 +34,11 @@ namespace pvp
         void            create_images();
         const Context&  m_context;
         const PvpScene& m_scene;
-        DepthPrePass&   m_depth_pre_pass;
-        Image           m_albedo_image{};
-        Image           m_normal_image{};
-        Image           m_metal_roughness_image{};
+
+        DepthPrePass& m_depth_pre_pass;
+        Image         m_albedo_image{};
+        Image         m_normal_image{};
+        Image         m_metal_roughness_image{};
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_albedo_pipeline{};

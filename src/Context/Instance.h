@@ -9,11 +9,10 @@ namespace pvp
     public:
         explicit Instance() = default;
         [[nodiscard]] const VkInstance& get_instance() const;
-        void destroy();
 
     private:
         friend class InstanceBuilder;
-        VkInstance m_instance{ nullptr };
+        VkInstance      m_instance{ nullptr };
         DestructorQueue m_destructor_queue{};
     };
 } // namespace pvp

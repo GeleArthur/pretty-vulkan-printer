@@ -8,7 +8,7 @@ namespace pvp
     {
     public:
         explicit Device() = default;
-        void destroy() const;
+        ~Device();
 
         [[nodiscard]] VkDevice get_device() const;
 

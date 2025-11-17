@@ -16,7 +16,6 @@ namespace pvp
     {
     public:
         DescriptorSetBuilder& set_layout(VkDescriptorSetLayout layout);
-        DescriptorSetBuilder& set_dynamic(bool isDynamic);
 
         DescriptorSetBuilder& bind_uniform_buffer(uint32_t binding, const UniformBuffer& buffer);
         DescriptorSetBuilder& bind_buffer_ssbo(uint32_t binding, const Buffer& buffer);

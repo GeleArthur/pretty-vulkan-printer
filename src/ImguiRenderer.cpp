@@ -14,6 +14,7 @@
 #include <Window/WindowSurface.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+#include <tracy/Tracy.hpp>
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -167,6 +168,7 @@ void pvp::ImguiRenderer::update_screen()
 
 void pvp::ImguiRenderer::start_drawing()
 {
+    ZoneScoped;
     // ImGui_ImplGlfw_NewFrame();
     ImGui_ImplVulkan_NewFrame();
     {
@@ -177,6 +179,7 @@ void pvp::ImguiRenderer::start_drawing()
 
 void pvp::ImguiRenderer::end_drawing()
 {
+    ZoneScoped;
     ImGui::EndFrame();
     ImGui::Render();
 

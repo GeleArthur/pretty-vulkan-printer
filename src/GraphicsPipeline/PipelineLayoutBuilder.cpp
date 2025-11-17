@@ -1,9 +1,11 @@
 ﻿#include "PipelineLayoutBuilder.h"
 
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 
 void PipelineLayoutBuilder::build(const VkDevice device, VkPipelineLayout& pipeline_layout) const
 {
+    ZoneScoped;
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = static_cast<uint32_t>(m_descriptor_layouts.size());

@@ -20,10 +20,10 @@
 #include <tracy/TracyVulkan.hpp>
 #include <tracy/Tracy.hpp>
 
-pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& depth)
+pvp::GBuffer::GBuffer(const Context& context, const PvpScene& scene, DepthPrePass& pass)
     : m_context(context)
     , m_scene(scene)
-    , m_depth_pre_pass(depth)
+    , m_depth_pre_pass{ pass }
 {
     ZoneScoped;
     create_images();

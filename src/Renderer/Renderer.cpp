@@ -24,7 +24,13 @@
 pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer)
     : m_context{ context }
     , m_scene{ scene }
-    , m_imgui_renderer(imgui_renderer)
+    , m_depth_pre_pass{ context, scene }
+    , m_geometry_draw{ context, scene, m_depth_pre_pass }
+    , m_light_pass{ context, scene, m_geometry_draw, m_depth_pre_pass }
+    , m_tone_mapping_pass{ context, m_light_pass }
+    , m_imgui_renderer{ imgui_renderer }
+    , m_blit_to_swapchain{ context, m_tone_mapping_pass.get_tone_mapped_texture() }
+    , m_mesh_shader_pass{ context, scene }
 {
     ZoneScoped;
     m_frame_syncers = FrameSyncers(m_context);
@@ -46,24 +52,6 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
         TracyVkContextName(context_tracy, "VULKAN", 1);
 #endif
     }
-
-    m_depth_pre_pass = new DepthPrePass(m_context, m_scene);
-    m_destructor_queue.add_to_queue([&] { delete m_depth_pre_pass; });
-
-    m_geometry_draw = new GBuffer(m_context, scene, *m_depth_pre_pass);
-    m_destructor_queue.add_to_queue([&] { delete m_geometry_draw; });
-
-    m_light_pass = new LightPass(m_context, m_scene, *m_geometry_draw, *m_depth_pre_pass);
-    m_destructor_queue.add_to_queue([&] { delete m_light_pass; });
-
-    m_tone_mapping_pass = new ToneMappingPass(m_context, *m_light_pass);
-    m_destructor_queue.add_to_queue([&] { delete m_tone_mapping_pass; });
-
-    m_mesh_shader_pass = new MeshShaderPass(m_context, m_scene);
-    m_destructor_queue.add_to_queue([&] { delete m_mesh_shader_pass; });
-
-    m_blit_to_swapchain = new BlitToSwapchain(m_context, m_tone_mapping_pass->get_tone_mapped_texture());
-    m_destructor_queue.add_to_queue([&] { delete m_blit_to_swapchain; });
 
     m_imgui_renderer.setup_vulkan_context(m_cmd_pool_graphics_present);
     m_destructor_queue.add_to_queue([&] { m_imgui_renderer.destroy_vulkan_context(); });
@@ -141,13 +129,13 @@ void pvp::Renderer::draw()
 {
     ZoneScoped;
     prepare_frame();
-    m_depth_pre_pass->draw(m_frame_contexts[m_double_buffer_frame]);
-    m_geometry_draw->draw(m_frame_contexts[m_double_buffer_frame]);
-    m_light_pass->draw(m_frame_contexts[m_double_buffer_frame]);
-    m_tone_mapping_pass->draw(m_frame_contexts[m_double_buffer_frame]);
+    m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
 
-    m_blit_to_swapchain->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
-    // m_mesh_shader_pass->draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    // m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();

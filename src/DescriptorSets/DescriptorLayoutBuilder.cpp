@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <Context/Device.h>
+#include <tracy/Tracy.hpp>
 
 namespace pvp
 {
@@ -30,6 +31,7 @@ namespace pvp
 
     DescriptorLayoutCreator& DescriptorLayoutBuilder::build(uint32_t index)
     {
+        ZoneScoped;
         VkDescriptorSetLayoutBindingFlagsCreateInfo extra_flags{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
             .bindingCount = static_cast<uint32_t>(m_flags.size()),

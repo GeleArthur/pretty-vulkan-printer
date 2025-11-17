@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 
-void pvp::Device::destroy() const
+pvp::Device::~Device()
 {
     vkDestroyDevice(m_device, nullptr);
 }

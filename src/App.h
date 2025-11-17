@@ -14,7 +14,6 @@ namespace pvp
     private:
         GLFWwindow*     m_window{};
         GlfwToRender    m_shared_state{};
-        VulkanApp*      m_vulkan_app{};
         DestructorQueue m_destructor_queue;
     };
 } // namespace pvp

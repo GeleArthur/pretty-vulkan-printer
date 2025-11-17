@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <Context/Device.h>
 #include <UniformBuffers/UniformBuffer.h>
+#include <tracy/Tracy.hpp>
 #include <vulkan/vulkan.h>
 
 namespace pvp
@@ -43,12 +44,14 @@ namespace pvp
 
     void DescriptorSetBuilder::build(const Context& context, DescriptorSets& descriptor) const
     {
+        ZoneScoped;
         descriptor.m_context = &context;
 
         int frames = m_is_dynamic ? max_frames_in_flight : 1;
 
         for (int frame_index = 0; frame_index < frames; ++frame_index)
         {
+            ZoneScoped;
             VkDescriptorSetAllocateInfo alloc_info{};
             alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             alloc_info.descriptorPool = context.descriptor_creator->get_pool();

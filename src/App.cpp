@@ -31,9 +31,7 @@ void pvp::App::run()
     glfwGetWindowSize(m_window, &m_shared_state.screen_width, &m_shared_state.screen_height);
     glfwSetWindowUserPointer(m_window, &m_shared_state);
 
-    m_vulkan_app = new VulkanApp(m_window, m_shared_state);
-    std::jthread rendering_thread{ &VulkanApp::run, m_vulkan_app };
-    m_destructor_queue.add_to_queue([&] { delete m_vulkan_app; });
+    std::thread rendering_thread{ VulkanApp::run, m_window, std::ref(m_shared_state) };
 
     while (!glfwWindowShouldClose(m_window))
     {

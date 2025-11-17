@@ -100,7 +100,7 @@ const VkInstance& pvp::Instance::get_instance() const
     return m_instance;
 }
 
-void pvp::Instance::destroy()
-{
-    m_destructor_queue.destroy_and_clear();
-}
+// void pvp::Instance::destroy()
+// {
+//     m_destructor_queue.destroy_and_clear();
+// }

@@ -1,7 +1,16 @@
 ﻿#include "ShaderLoader.h"
+
+#include <tracy/Tracy.hpp>
+
 #include <fstream>
 #include <shaderc/shaderc.hpp>
 #include <spdlog/spdlog.h>
+
+namespace
+{
+    shaderc::Compiler       compiler{};
+    shaderc::CompileOptions options{};
+} // namespace
 
 std::vector<char> ShaderLoader::load_file(const std::filesystem::path& path)
 {
@@ -13,24 +22,23 @@ std::vector<char> ShaderLoader::load_file(const std::filesystem::path& path)
     return buffer;
 }
 
-VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, std::filesystem::path path)
+VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const std::filesystem::path& path)
 {
+    ZoneScoped;
+
     VkShaderModuleCreateInfo create_info{};
     std::vector<char>        shader_code = load_file(path);
 
-    path.replace_extension();
-    auto name = path.filename().string();
+    std::string name = path.filename().string();
 
-    shaderc::Compiler compiler{};
-    shaderc::CompileOptions options;
     options.SetGenerateDebugInfo();
-    options.SetTargetEnvironment(shaderc_target_env_vulkan,  shaderc_env_version_vulkan_1_4);
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
     options.SetTargetSpirv(shaderc_spirv_version_1_6);
 
     shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
-        spdlog::error("Shader compilation failed: {}",result.GetErrorMessage());
+        spdlog::error("Shader compilation failed: {}", result.GetErrorMessage());
         throw;
     }
 

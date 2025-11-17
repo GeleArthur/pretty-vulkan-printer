@@ -6,67 +6,67 @@
 #include <Context/LogicPhysicalQueueBuilder.h>
 #include <Scene/PVPScene.h>
 #include <tracy/Tracy.hpp>
+#include <vulkan/vulkan.hpp>
 
-pvp::VulkanApp::VulkanApp(GLFWwindow* window, GlfwToRender& gtfw_to_render)
-    : m_gtfw_to_render{ &gtfw_to_render }
-    , m_window{ window }
+void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
 {
-}
-
-void pvp::VulkanApp::run()
-{
+    ZoneScoped;
+    Instance instance{};
     InstanceBuilder()
         .enable_debugging(true)
         .set_app_name("pretty vulkan printer")
-        .build(m_instance);
-    m_destructor_queue.add_to_queue([&] { m_instance.destroy(); });
+        .build(instance);
 
-    if (auto result = glfwCreateWindowSurface(m_instance.get_instance(), m_window, nullptr, &m_surface) != VK_SUCCESS)
+    DestructorQueue destructor_queue;
+    VkSurfaceKHR    surface{};
+    if (auto result = glfwCreateWindowSurface(instance.get_instance(), window, nullptr, &surface) != VK_SUCCESS)
     {
         throw std::runtime_error(std::format("Failed to create surface. {}", result));
     }
-    m_destructor_queue.add_to_queue([&] { vkDestroySurfaceKHR(m_instance.get_instance(), m_surface, nullptr); });
+    destructor_queue.add_to_queue([&] { vkDestroySurfaceKHR(instance.get_instance(), surface, nullptr); });
 
+    Device         device;
+    PhysicalDevice physical_device;
+    QueueFamilies  queue_families;
     LogicPhysicalQueueBuilder()
         .set_extensions({ VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_MESH_SHADER_EXTENSION_NAME })
-        .build(m_instance, m_surface, m_physical_device, m_device, m_queue_families);
-    m_destructor_queue.add_to_queue([&] { m_device.destroy(); });
+        .build(instance, surface, physical_device, device, queue_families);
 
-    create_allocator(m_allocator, m_instance, m_device, m_physical_device);
-    m_destructor_queue.add_to_queue([&] { m_allocator.destroy(); });
+    PvpVmaAllocator m_allocator{};
+    create_allocator(m_allocator, instance, device, physical_device);
 
-    m_context.instance = &m_instance;
-    m_context.physical_device = &m_physical_device;
-    m_context.device = &m_device;
-    m_context.allocator = &m_allocator;
-    m_context.queue_families = &m_queue_families;
-    m_context.surface = m_surface;
-    m_context.gtfw_to_render = m_gtfw_to_render;
+    Context context{};
+    context.instance = &instance;
+    context.physical_device = &physical_device;
+    context.device = &device;
+    context.allocator = &m_allocator;
+    context.queue_families = &queue_families;
+    context.surface = surface;
+    context.gtfw_to_render = &gtfw_to_render;
 
-    m_context.descriptor_creator = new DescriptorLayoutCreator(m_context);
-    m_destructor_queue.add_to_queue([&] { delete m_context.descriptor_creator; });
+    DescriptorLayoutCreator descriptor_creator = DescriptorLayoutCreator(context);
+    context.descriptor_creator = &descriptor_creator;
 
-    m_swapchain = new Swapchain(m_context, *m_gtfw_to_render);
-    m_destructor_queue.add_to_queue([&] { delete m_swapchain; });
-    m_context.swapchain = m_swapchain;
+    Swapchain swapchain = Swapchain(context, gtfw_to_render);
+    context.swapchain = &swapchain;
 
-    m_scene = new PvpScene(m_context);
-    m_destructor_queue.add_to_queue([&] { delete m_scene; });
+    PvpScene scene = PvpScene(context);
 
-    m_imgui_renderer = new ImguiRenderer(m_context, m_window, m_gtfw_to_render);
-    m_destructor_queue.add_to_queue([&] { delete m_imgui_renderer; });
+    ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);
 
-    m_renderer = new Renderer(m_context, *m_scene, *m_imgui_renderer);
-    m_destructor_queue.add_to_queue([&] { delete m_renderer; });
+    Renderer renderer = Renderer(context, scene, imgui_renderer);
 
-    while (m_gtfw_to_render->running)
+    while (gtfw_to_render.running)
     {
         FrameMark;
-        m_imgui_renderer->start_drawing();
-        m_scene->update();
-        m_imgui_renderer->end_drawing();
-        m_renderer->draw();
+        ZoneScoped;
+        imgui_renderer.start_drawing();
+        scene.update();
+        imgui_renderer.end_drawing();
+        renderer.draw();
     }
 
-    vkDeviceWaitIdle(m_context.device->get_device());
+    vkDeviceWaitIdle(context.device->get_device());
+
+    // m_destructor_queue.destroy_and_clear();
 }

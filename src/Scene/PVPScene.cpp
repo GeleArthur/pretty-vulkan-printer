@@ -23,6 +23,10 @@
 #include <tracy/Tracy.hpp>
 #include <glm/glm.hpp>
 
+static void generate_default_textures()
+{
+}
+
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
     , m_scene_globals{}
@@ -35,8 +39,9 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_command_queue.resize(max_frames_in_flight);
 
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/scene.gltf"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/scene.gltf"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -278,7 +283,7 @@ pvp::PvpScene::PvpScene(Context& context)
         .bind_uniform_buffer(1, m_directonal_lights_gpu)
         .build(m_context, m_point_descriptor);
 
-    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 0 };
+    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 100 };
 
     add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
@@ -362,6 +367,7 @@ void pvp::PvpScene::change_direction_light(uint32_t light_index, const Direction
 
 void pvp::PvpScene::update()
 {
+    ZoneScoped;
     static auto start_time = std::chrono::high_resolution_clock::now();
     static auto last_time = std::chrono::high_resolution_clock::now();
     const auto  current_time = std::chrono::high_resolution_clock::now();

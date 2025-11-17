@@ -10,8 +10,11 @@
 
 #include "ShaderLoader.h"
 
+#include <tracy/Tracy.hpp>
+
 void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipeline)
 {
+    ZoneScoped;
     DestructorQueue                              destructor_queue;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages;
 
