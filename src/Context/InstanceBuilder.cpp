@@ -66,6 +66,7 @@ void pvp::InstanceBuilder::build(Instance& instance)
     if (m_is_debugging)
     {
         m_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
         m_layers.push_back("VK_LAYER_KHRONOS_validation");
     }
 

@@ -2,7 +2,7 @@
 #pragma shader_stage(mesh)
 #extension GL_EXT_mesh_shader: enable
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 layout (triangles) out;
 layout (max_vertices = 64, max_primitives = 128) out;
@@ -27,17 +27,17 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
     vec3 position;
 } sceneInfo;
 
-layout (std140, set = 1, binding = 0) readonly buffer MeshletIn {
+layout (std430, set = 1, binding = 0) readonly buffer MeshletIn {
     Meshlet Meshlets[];
 };
 layout (std140, set = 1, binding = 1) readonly buffer VertexIn {
     Vertex Vertices[];
 };
-layout (std140, set = 1, binding = 2) readonly buffer VertexIndicesIn {
+layout (std430, set = 1, binding = 2) readonly buffer VertexIndicesIn {
     uint VertexIndices[];
 };
 
-layout (std140, set = 1, binding = 3) readonly buffer TriangleIndicesIn {
+layout (std430, set = 1, binding = 3) readonly buffer TriangleIndicesIn {
     uint TriangleIndices[];
 };
 
@@ -85,6 +85,9 @@ void main()
         gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(vIdx0, vIdx1, vIdx2);
     }
 
+    //    if (gl_LocalInvocationID.x == 1) {
+    //    }
+
     if (gl_LocalInvocationID.x < m.VertexCount) {
         uint vertexIndex = m.VertexOffset + gl_LocalInvocationID.x;
         vertexIndex = VertexIndices[vertexIndex];
@@ -99,6 +102,9 @@ void main()
         float(gl_WorkGroupID.x & 7) / 8);
         vertexColor[gl_LocalInvocationID.x] = color;
     }
+
+    //    gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = vec4(1.0f);
+
 
 
     // Set up 3 vertices, 1 triangle

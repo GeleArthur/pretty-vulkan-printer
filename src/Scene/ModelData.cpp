@@ -62,7 +62,7 @@ void static generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
 
     auto& last = model_out.meshlets[meshletCount - 1];
     model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
-    model_out.meshlet_triangles.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3)); // TODO: Understand this? Align 4 bytes
+    meshlet_triangles_u8.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3)); // TODO: Understand this? Align 4 bytes
     model_out.meshlets.resize(meshletCount);
 
     for (auto& meshlet : model_out.meshlets)

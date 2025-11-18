@@ -11,6 +11,7 @@
 void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
 {
     ZoneScoped;
+    // TODO: Deiced to remove all the destructors and add destroy to all classes.
     Instance instance{};
     InstanceBuilder()
         .enable_debugging(true)

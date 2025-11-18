@@ -8,7 +8,7 @@ namespace pvp
 {
     class PvpScene;
     struct GlfwToRender;
-}
+} // namespace pvp
 
 struct FrameContext;
 
@@ -31,13 +31,12 @@ namespace pvp
         void start_drawing();
         void end_drawing();
 
-        void draw(const FrameContext& frame_context, uint32_t swapchain_index);
+        void draw(const FrameContext& cmd, uint32_t swapchain_index);
         void update_screen();
 
     private:
-        std::vector<VkCommandBuffer> m_command_buffer;
-        GLFWwindow* m_window;
+        GLFWwindow*   m_window;
         GlfwToRender* m_glfw_to_render;
-        Context& m_context;
+        Context&      m_context;
     };
 } // namespace pvp

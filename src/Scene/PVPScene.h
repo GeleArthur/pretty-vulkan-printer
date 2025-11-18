@@ -36,10 +36,10 @@ namespace pvp
         // Meshlet data
         uint32_t       meshlet_count;
         DescriptorSets meshlet_descriptor_set;
-        Buffer         meshlet_vertex;
-        Buffer         meshlet_buffer;
-        Buffer         meshlet_vertices_buffer;
-        Buffer         meshlet_triangles_buffer;
+        // Buffer         meshlet_vertex;
+        Buffer meshlet_buffer;
+        Buffer meshlet_vertices_buffer;
+        Buffer meshlet_triangles_buffer;
     };
 
     struct SceneGlobals

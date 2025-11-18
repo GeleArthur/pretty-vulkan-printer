@@ -9,6 +9,7 @@
 #include <Context/Device.h>
 #include <Context/PhysicalDevice.h>
 #include <Context/QueueFamilies.h>
+#include <Debugger/Debugger.h>
 #include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <Image/TransitionLayout.h>
 #include <Window/WindowSurface.h>
@@ -190,7 +191,7 @@ void pvp::ImguiRenderer::end_drawing()
     }
 }
 
-void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapchain_index)
+void pvp::ImguiRenderer::draw(const FrameContext& cmd, uint32_t swapchain_index)
 {
     // VkCommandBuffer&         cmd = m_command_buffer[frame_context.buffer_index];
     // VkCommandBufferBeginInfo cmd_buffer_info{
@@ -199,6 +200,7 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapch
     // };
 
     // vkBeginCommandBuffer(cmd, &cmd_buffer_info);
+    Debugger::start_debug_label(cmd.command_buffer, "Imgui", { 27, 146, 220 });
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder()
@@ -206,13 +208,13 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapch
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
 
-    vkCmdBeginRendering(frame_context.command_buffer, &render_color_info.rendering_info);
+    vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
     ImDrawData* p_draw_data = ImGui::GetDrawData();
     if (p_draw_data != nullptr)
     {
-        ImGui_ImplVulkan_RenderDrawData(p_draw_data, frame_context.command_buffer);
+        ImGui_ImplVulkan_RenderDrawData(p_draw_data, cmd.command_buffer);
     }
-    vkCmdEndRendering(frame_context.command_buffer);
+    vkCmdEndRendering(cmd.command_buffer);
 
     VkImageSubresourceRange range{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -222,7 +224,7 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapch
         .layerCount = VK_REMAINING_ARRAY_LAYERS
     };
 
-    image_layout_transition(frame_context.command_buffer,
+    image_layout_transition(cmd.command_buffer,
                             m_context.swapchain->get_images()[swapchain_index],
                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                             VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
@@ -231,6 +233,8 @@ void pvp::ImguiRenderer::draw(const FrameContext& frame_context, uint32_t swapch
                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                             range);
+
+    Debugger::end_debug_label(cmd.command_buffer);
 
     // vkEndCommandBuffer(cmd);
 }

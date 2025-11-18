@@ -8,10 +8,10 @@ namespace pvp
 {
     struct Vertex
     {
-        glm::vec3 pos;
-        glm::vec2 uv;
-        glm::vec3 normal;
-        glm::vec3 tangent;
+        alignas(16) glm::vec3 pos;
+        alignas(16) glm::vec2 uv;
+        alignas(16) glm::vec3 normal;
+        alignas(16) glm::vec3 tangent;
 
         static constexpr auto get_attribute_descriptions()
         {

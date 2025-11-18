@@ -2,6 +2,7 @@
 #include "ModelData.h"
 
 #include <DestructorQueue.h>
+#include <VulkanExternalFunctions.h>
 #include <imgui.h>
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
@@ -39,8 +40,8 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_command_queue.resize(max_frames_in_flight);
 
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/scene.gltf"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/scene.gltf"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
@@ -184,7 +185,7 @@ pvp::PvpScene::PvpScene(Context& context)
         ModelData& cpu_model = loaded_scene.models[i];
         Model&     gpu_model = m_gpu_models[i];
 
-        auto transfer_to_gpu = [&context, &transfer_buffer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlagBits usage) {
+        auto transfer_to_gpu = [&context, &transfer_buffer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlags usage, const std::string& name = "") {
             Buffer transfer_buffer{};
             BufferBuilder()
                 .set_size(data.size_bytes())
@@ -204,28 +205,40 @@ pvp::PvpScene::PvpScene(Context& context)
                 .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
                 .build(context.allocator->get_allocator(), gpu_buffer);
             gpu_buffer.copy_from_buffer(cmd, transfer_buffer);
+
+            if (!name.empty())
+            {
+                VkDebugMarkerObjectNameInfoEXT nameInfo{};
+                nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
+                nameInfo.pNext = nullptr;
+                nameInfo.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+                nameInfo.object = (uint64_t)(gpu_buffer.get_buffer());
+                nameInfo.pObjectName = name.c_str();
+
+                VulkanInstanceExtensions::vkDebugMarkerSetObjectNameEXT(context.device->get_device(), &nameInfo);
+            }
         };
 
-        transfer_to_gpu(std::span(cpu_model.vertices), gpu_model.vertex_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        transfer_to_gpu(std::span(cpu_model.vertices), gpu_model.vertex_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Mesh vertex data");
 
         // Index loading
-        transfer_to_gpu(std::span(cpu_model.indices), gpu_model.index_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        transfer_to_gpu(std::span(cpu_model.indices), gpu_model.index_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, "indcies");
         gpu_model.index_count = cpu_model.indices.size();
         gpu_model.meshlet_count = cpu_model.meshlets.size();
 
         // meshletes loading
-        transfer_to_gpu(std::span(cpu_model.meshlets), gpu_model.meshlet_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-        transfer_to_gpu(std::span(cpu_model.vertices), gpu_model.meshlet_vertex, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-        transfer_to_gpu(std::span(cpu_model.meshlet_triangles), gpu_model.meshlet_triangles_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-        transfer_to_gpu(std::span(cpu_model.meshlet_vertices), gpu_model.meshlet_vertices_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        transfer_to_gpu(std::span<meshopt_Meshlet>(cpu_model.meshlets), gpu_model.meshlet_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlets");
+        // transfer_to_gpu(std::span<Vertex>(cpu_model.vertices), gpu_model.meshlet_vertex, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        transfer_to_gpu(std::span(cpu_model.meshlet_triangles), gpu_model.meshlet_triangles_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet triangle");
+        transfer_to_gpu(std::span(cpu_model.meshlet_vertices), gpu_model.meshlet_vertices_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet vertex index");
 
         DescriptorSetBuilder{}
             // .set_dynamic(false)
             .set_layout(m_context.descriptor_creator->get_layout(17))
             .bind_buffer_ssbo(0, gpu_model.meshlet_buffer)
-            .bind_buffer_ssbo(1, gpu_model.meshlet_vertex)
-            .bind_buffer_ssbo(2, gpu_model.meshlet_triangles_buffer)
-            .bind_buffer_ssbo(3, gpu_model.meshlet_vertices_buffer)
+            .bind_buffer_ssbo(1, gpu_model.vertex_data)
+            .bind_buffer_ssbo(2, gpu_model.meshlet_vertices_buffer)
+            .bind_buffer_ssbo(3, gpu_model.meshlet_triangles_buffer)
             .build(m_context, gpu_model.meshlet_descriptor_set);
 
         gpu_model.material.transform = cpu_model.transform;
@@ -296,7 +309,7 @@ pvp::PvpScene::~PvpScene()
     {
         model.vertex_data.destroy();
         model.index_data.destroy();
-        model.meshlet_vertex.destroy();
+        // model.meshlet_vertex.destroy();
         model.meshlet_buffer.destroy();
         model.meshlet_triangles_buffer.destroy();
         model.meshlet_vertices_buffer.destroy();

@@ -10,6 +10,7 @@
 #include "QueueFamilies.h"
 #include "Device.h"
 
+#include <VulkanExternalFunctions.h>
 #include <cstring>
 #include <tracy/Tracy.hpp>
 
@@ -35,6 +36,7 @@ namespace pvp
         ZoneScoped;
 
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 
         auto physical_device = get_best_device(instance, surface);
         if (physical_device == VK_NULL_HANDLE)
@@ -128,6 +130,7 @@ namespace pvp
         {
             throw std::runtime_error("failed to create logical device!");
         }
+        VulkanInstanceExtensions::register_device(device_out.m_device);
 
         queue_families_out.m_queues.reserve(all_queues.size());
 
