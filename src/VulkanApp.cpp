@@ -30,7 +30,7 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     PhysicalDevice physical_device;
     QueueFamilies  queue_families;
     LogicPhysicalQueueBuilder()
-        .set_extensions({ VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_MESH_SHADER_EXTENSION_NAME })
+        .set_extensions({ VK_EXT_MESH_SHADER_EXTENSION_NAME })
         .build(instance, surface, physical_device, device, queue_families);
 
     PvpVmaAllocator m_allocator{};

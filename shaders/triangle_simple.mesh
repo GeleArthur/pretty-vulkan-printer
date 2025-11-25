@@ -36,11 +36,9 @@ layout (std140, set = 1, binding = 1) readonly buffer VertexIn {
 layout (std430, set = 1, binding = 2) readonly buffer VertexIndicesIn {
     uint VertexIndices[];
 };
-
 layout (std430, set = 1, binding = 3) readonly buffer TriangleIndicesIn {
     uint TriangleIndices[];
 };
-
 
 layout (push_constant) uniform PushConstant {
     mat4x4 model;
@@ -49,23 +47,21 @@ layout (push_constant) uniform PushConstant {
     uint metalness_texture_index;
 } pc;
 
-
 layout (location = 0) out vec3 vertexColor[];
 
+#define AS_GROUP_SIZE 32
+struct Payload {
+    uint MeshletIndices[AS_GROUP_SIZE];
+};
 
-
-// Per-vertex outputs
-//layout (location=0) out MeshOutput{
-//    vec4 Position;
-//    vec3 Color;
-//} out0[];
-//layout (location=0) out vec4 out0[];
-//layout (location=1) perprimitiveEXT out vec4 out1[];
+layout (location = 0) in Payload payload;
 
 void main()
 {
+    uint meshletIndex = payload.MeshletIndices[gl_WorkGroupID.x];
+
     //    uint index = gl_GlobalInvocationID.x;
-    Meshlet m = Meshlets[gl_WorkGroupID.x];
+    Meshlet m = Meshlets[meshletIndex];
 
     SetMeshOutputsEXT(m.VertexCount, m.TriangleCount);
 

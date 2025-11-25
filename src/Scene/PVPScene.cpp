@@ -41,7 +41,7 @@ pvp::PvpScene::PvpScene(Context& context)
     m_command_queue.resize(max_frames_in_flight);
 
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/scene.gltf"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
@@ -57,7 +57,7 @@ pvp::PvpScene::PvpScene(Context& context)
     {
         ZoneScopedN("Texture");
         ZoneTextF(texture.name.c_str());
-        VkDeviceSize image_size = texture.width * texture.height * 4;
+        VkDeviceSize image_size = texture.width * texture.height * texture.channels;
 
         Buffer staging_buffer{};
         BufferBuilder()
@@ -72,11 +72,11 @@ pvp::PvpScene::PvpScene(Context& context)
         VkFormat format;
         switch (texture.type)
         {
-            case aiTextureType_NORMALS:
-                format = VK_FORMAT_R8G8B8A8_UNORM;
+            case aiTextureType_DIFFUSE:
+                format = VK_FORMAT_R8G8B8A8_SRGB;
                 break;
             default:
-                format = VK_FORMAT_R8G8B8A8_SRGB;
+                format = VK_FORMAT_R8G8B8A8_UNORM;
         }
 
         StaticImage gpu_image;
@@ -325,7 +325,7 @@ pvp::PvpScene::~PvpScene()
 
 uint32_t pvp::PvpScene::add_point_light(const PointLight& light)
 {
-    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    for (std::vector<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
     {
         command_queue.push_back([light](int buffer_index, PvpScene& scene) {
             void*          light_base = scene.m_point_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
@@ -339,7 +339,7 @@ uint32_t pvp::PvpScene::add_point_light(const PointLight& light)
 
 void pvp::PvpScene::change_point_light(uint32_t light_index, const PointLight& light)
 {
-    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    for (std::vector<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
     {
         command_queue.push_back([light, light_index](int buffer_index, PvpScene& scene) {
             void* light_base = scene.m_point_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
@@ -352,7 +352,7 @@ void pvp::PvpScene::change_point_light(uint32_t light_index, const PointLight& l
 
 uint32_t pvp::PvpScene::add_direction_light(const DirectionLight& light)
 {
-    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    for (std::vector<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
     {
         command_queue.push_back([light](int buffer_index, PvpScene& scene) {
             void*     light_base = scene.m_directonal_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
@@ -367,7 +367,7 @@ uint32_t pvp::PvpScene::add_direction_light(const DirectionLight& light)
 
 void pvp::PvpScene::change_direction_light(uint32_t light_index, const DirectionLight& light)
 {
-    for (std::deque<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
+    for (std::vector<std::function<void(int, PvpScene&)>>& command_queue : m_command_queue)
     {
         command_queue.push_back([light, light_index](int buffer_index, PvpScene& scene) {
             void* light_base = scene.m_directonal_lights_gpu.get_buffer(buffer_index).get_allocation_info().pMappedData;
@@ -452,11 +452,17 @@ void pvp::PvpScene::update()
 void pvp::PvpScene::update_render(const FrameContext& frame_context)
 {
     auto& commands_buffer = m_command_queue[frame_context.buffer_index];
-    while (!commands_buffer.empty())
+    for (std::function<void(int, PvpScene&)>& func : commands_buffer)
     {
-        commands_buffer.front()(frame_context.buffer_index, *this);
-        commands_buffer.pop_front();
+        func(frame_context.buffer_index, *this);
     }
+    commands_buffer.clear();
+
+    // while (!commands_buffer.empty())
+    // {
+    //     commands_buffer.front()(frame_context.buffer_index, *this);
+    //     commands_buffer.pop_front();
+    // }
 
     m_scene_globals_gpu.update(frame_context.buffer_index, m_scene_globals);
 }

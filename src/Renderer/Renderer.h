@@ -45,7 +45,7 @@ namespace pvp
         FrameSyncers m_frame_syncers{};
 
         CommandPool                                    m_cmd_pool_graphics_present{};
-        std::array<FrameContext, max_frames_in_flight> m_frame_contexts;
+        std::array<FrameContext, max_frames_in_flight> m_frame_contexts{};
 
         DepthPrePass    m_depth_pre_pass;
         GBuffer         m_geometry_draw;

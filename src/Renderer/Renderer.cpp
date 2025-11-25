@@ -21,6 +21,27 @@
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyVulkan.hpp>
 
+static void transfur_swapchain(pvp::Context& context, FrameContext& cmd, uint32_t swapchain_index)
+{
+    constexpr VkImageSubresourceRange range{
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS
+    };
+
+    pvp::image_layout_transition(cmd.command_buffer,
+                                 context.swapchain->get_images()[swapchain_index],
+                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+                                 VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                 VK_ACCESS_2_NONE,
+                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                 range);
+}
+
 pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_renderer)
     : m_context{ context }
     , m_scene{ scene }
@@ -120,7 +141,7 @@ void pvp::Renderer::prepare_frame()
     vkCmdSetViewport(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
+    scissor.offset = VkOffset2D{ 0, 0 };
     scissor.extent = m_context.swapchain->get_swapchain_extent();
     vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
 }
@@ -129,14 +150,15 @@ void pvp::Renderer::draw()
 {
     ZoneScoped;
     prepare_frame();
-    m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    // m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    // m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
+    // m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    // m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
 
-    m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    // m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    transfur_swapchain(m_context, m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
     end_frame();
 }
@@ -194,9 +216,9 @@ void pvp::Renderer::end_frame()
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = &m_frame_syncers.submit_semaphores[m_current_swapchain_index].handle;
 
-    VkSwapchainKHR swap_chains[] = { m_context.swapchain->get_swapchain() };
+    VkSwapchainKHR swap_chains = { m_context.swapchain->get_swapchain() };
     present_info.swapchainCount = 1;
-    present_info.pSwapchains = swap_chains;
+    present_info.pSwapchains = &swap_chains;
     present_info.pImageIndices = &m_current_swapchain_index;
 
     VkResult result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);

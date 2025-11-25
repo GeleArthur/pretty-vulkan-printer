@@ -10,32 +10,32 @@
 
 #include "ShaderLoader.h"
 
+#include <execution>
 #include <tracy/Tracy.hpp>
 
 void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipeline)
 {
     ZoneScoped;
     DestructorQueue                              destructor_queue;
-    std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages;
+    std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages(m_shader_stages.size());
 
     bool mesh_shader = false;
 
-    for (auto& shader : m_shader_stages)
-    {
+    std::transform(std::execution::par_unseq, m_shader_stages.begin(), m_shader_stages.end(), pipeline_shader_stages.begin(), [&](auto& shader) {
         std::get<2>(shader) = ShaderLoader::load_shader_from_file(device.get_device(), std::get<0>(shader));
+
+        if (std::get<1>(shader) == VK_SHADER_STAGE_VERTEX_BIT)
+        {
+            mesh_shader = true;
+        }
 
         VkPipelineShaderStageCreateInfo vert_shader_stage_info{};
         vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vert_shader_stage_info.module = std::get<2>(shader);
         vert_shader_stage_info.stage = std::get<1>(shader);
         vert_shader_stage_info.pName = "main";
-        pipeline_shader_stages.push_back(vert_shader_stage_info);
-
-        if (std::get<1>(shader) == VK_SHADER_STAGE_VERTEX_BIT)
-        {
-            mesh_shader = true;
-        }
-    }
+        return vert_shader_stage_info;
+    });
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

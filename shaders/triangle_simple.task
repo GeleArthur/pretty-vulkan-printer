@@ -1,0 +1,20 @@
+#version 460
+#pragma shader_stage(task)
+#extension GL_EXT_mesh_shader: enable
+
+#define AS_GROUP_SIZE 32
+layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+struct Payload {
+    uint MeshletIndices[AS_GROUP_SIZE];
+};
+
+taskPayloadSharedEXT Payload payload;
+
+void main()
+{
+    payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
+
+    EmitMeshTasksEXT(AS_GROUP_SIZE, 1, 1);
+}
+

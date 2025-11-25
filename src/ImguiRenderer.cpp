@@ -216,24 +216,6 @@ void pvp::ImguiRenderer::draw(const FrameContext& cmd, uint32_t swapchain_index)
     }
     vkCmdEndRendering(cmd.command_buffer);
 
-    VkImageSubresourceRange range{
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .baseMipLevel = 0,
-        .levelCount = VK_REMAINING_MIP_LEVELS,
-        .baseArrayLayer = 0,
-        .layerCount = VK_REMAINING_ARRAY_LAYERS
-    };
-
-    image_layout_transition(cmd.command_buffer,
-                            m_context.swapchain->get_images()[swapchain_index],
-                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_ACCESS_2_NONE,
-                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                            range);
-
     Debugger::end_debug_label(cmd.command_buffer);
 
     // vkEndCommandBuffer(cmd);

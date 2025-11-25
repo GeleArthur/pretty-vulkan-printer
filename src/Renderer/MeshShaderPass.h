@@ -22,12 +22,14 @@ namespace pvp
 
     private:
         void           build_pipelines();
+        void           create_images();
         const Context& m_context;
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_pipeline{};
         const PvpScene&  m_scene;
 
+        Image           m_depth_image;
         DestructorQueue m_destructor_queue{};
     };
 } // namespace pvp

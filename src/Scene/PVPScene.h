@@ -119,7 +119,8 @@ namespace pvp
         UniformBuffer            m_directonal_lights_gpu;
         UniformBuffer            m_scene_globals_gpu;
 
-        std::vector<std::deque<std::function<void(int, PvpScene&)>>> m_command_queue;
+        // TODO: ILO3 Optimzation
+        std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;
 
         Camera         m_camera;
         DirectionLight m_direction_light{};

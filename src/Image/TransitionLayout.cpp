@@ -1,7 +1,5 @@
 ﻿#include "TransitionLayout.h"
 
-#include "../../cmake-build-x64-release/_deps/spdlog-src/include/spdlog/spdlog.h"
-
 namespace pvp
 {
     void image_layout_transition(
