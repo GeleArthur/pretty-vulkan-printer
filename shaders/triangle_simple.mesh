@@ -54,7 +54,7 @@ struct Payload {
     uint MeshletIndices[AS_GROUP_SIZE];
 };
 
-layout (location = 0) in Payload payload;
+taskPayloadSharedEXT Payload payload;
 
 void main()
 {
