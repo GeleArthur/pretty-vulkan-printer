@@ -6,7 +6,6 @@
 #include <assimp/material.h>
 #include <glm/mat4x4.hpp>
 
-
 namespace pvp
 {
     struct Context;
@@ -15,10 +14,10 @@ namespace pvp
 
     struct TextureData
     {
-        std::string name;
-        uint32_t width;
-        uint32_t height;
-        uint32_t channels;
+        std::string   name;
+        uint32_t      width;
+        uint32_t      height;
+        uint32_t      channels;
         aiTextureType type;
 
         stbi_uc* pixels;
@@ -26,24 +25,25 @@ namespace pvp
 
     struct ModelData
     {
-        std::vector<Vertex> vertices;
+        std::vector<Vertex>   vertices;
         std::vector<uint32_t> indices;
-        glm::mat4x4 transform;
-        std::string diffuse_path;
-        std::string metallic_path;
-        std::string normal_path;
+        glm::mat4x4           transform;
+        std::string           diffuse_path;
+        std::string           metallic_path;
+        std::string           normal_path;
 
         // MESHLETS
         std::vector<meshopt_Meshlet> meshlets;
-        std::vector<uint32_t> meshlet_vertices;
-        std::vector<uint32_t> meshlet_triangles;
+        std::vector<uint32_t>        meshlet_vertices;
+        std::vector<uint32_t>        meshlet_triangles;
+        std::vector<glm::vec4>       meshlet_sphere_bounds;
     };
 
     struct LoadedScene
     {
-        std::vector<ModelData> models;
+        std::vector<ModelData>   models;
         std::vector<TextureData> textures;
-        TextureData cube_map;
+        TextureData              cube_map;
     };
 
     LoadedScene load_scene_cpu(const std::filesystem::path& path);

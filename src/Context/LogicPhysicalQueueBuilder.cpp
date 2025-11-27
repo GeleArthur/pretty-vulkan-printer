@@ -37,6 +37,7 @@ namespace pvp
 
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
         m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+        m_extensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
         auto physical_device = get_best_device(instance, surface);
         if (physical_device == VK_NULL_HANDLE)
@@ -98,6 +99,7 @@ namespace pvp
             .descriptorBindingVariableDescriptorCount = VK_TRUE,
             .runtimeDescriptorArray = VK_TRUE,
             .scalarBlockLayout = VK_TRUE,
+            .hostQueryReset = VK_TRUE,
             .timelineSemaphore = VK_TRUE,
             .bufferDeviceAddress = VK_TRUE,
             .vulkanMemoryModel = VK_TRUE,

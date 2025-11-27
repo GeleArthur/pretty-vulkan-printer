@@ -11,7 +11,7 @@
 void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
 {
     ZoneScoped;
-    // TODO: Deiced to remove all the destructors and add destroy to all classes.
+    // TODO: Deiced to remove all the destructors and add destroy to all classes. I am feeling destroy
     Instance instance{};
     InstanceBuilder()
         .enable_debugging(true)
@@ -33,14 +33,14 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
         .set_extensions({ VK_EXT_MESH_SHADER_EXTENSION_NAME })
         .build(instance, surface, physical_device, device, queue_families);
 
-    PvpVmaAllocator m_allocator{};
-    create_allocator(m_allocator, instance, device, physical_device);
+    PvpVmaAllocator allocator{};
+    create_allocator(allocator, instance, device, physical_device);
 
     Context context{};
     context.instance = &instance;
     context.physical_device = &physical_device;
     context.device = &device;
-    context.allocator = &m_allocator;
+    context.allocator = &allocator;
     context.queue_families = &queue_families;
     context.surface = surface;
     context.gtfw_to_render = &gtfw_to_render;

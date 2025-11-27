@@ -11,10 +11,15 @@ struct Payload {
 
 taskPayloadSharedEXT Payload payload;
 
+layout (std430, set = 1, binding = 3) readonly buffer SphereBoundsIn {
+    vec4 SphereBounds[];
+};
+
 void main()
 {
     payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
 
+    //    if (gl_LocalInvocationID.x == 0) {
     EmitMeshTasksEXT(AS_GROUP_SIZE, 1, 1);
+    //    }
 }
-

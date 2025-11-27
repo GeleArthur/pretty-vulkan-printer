@@ -237,4 +237,6 @@ void pvp::Renderer::end_frame()
     }
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
+
+    m_context.invocation_count = m_mesh_shader_pass.get_invocations_count();
 }

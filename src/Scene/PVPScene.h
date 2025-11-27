@@ -40,6 +40,7 @@ namespace pvp
         Buffer meshlet_buffer;
         Buffer meshlet_vertices_buffer;
         Buffer meshlet_triangles_buffer;
+        Buffer meshlet_sphere_bounds_buffer;
     };
 
     struct SceneGlobals
@@ -119,7 +120,6 @@ namespace pvp
         UniformBuffer            m_directonal_lights_gpu;
         UniformBuffer            m_scene_globals_gpu;
 
-        // TODO: ILO3 Optimzation
         std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;
 
         Camera         m_camera;

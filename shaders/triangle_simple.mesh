@@ -63,7 +63,10 @@ void main()
     //    uint index = gl_GlobalInvocationID.x;
     Meshlet m = Meshlets[meshletIndex];
 
-    SetMeshOutputsEXT(m.VertexCount, m.TriangleCount);
+    if (gl_LocalInvocationIndex == 0)
+    {
+        SetMeshOutputsEXT(m.VertexCount, m.TriangleCount);
+    }
 
     if (gl_LocalInvocationID.x < m.TriangleCount) {
         //

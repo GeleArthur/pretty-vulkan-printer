@@ -15,10 +15,12 @@ namespace pvp
     {
     public:
         explicit MeshShaderPass(const Context& context, const PvpScene& scene);
-        void draw(const FrameContext& cmd, uint32_t swapchain_image_index);
         ~MeshShaderPass() = default;
         DISABLE_COPY(MeshShaderPass);
         DISABLE_MOVE(MeshShaderPass);
+
+        void                    draw(const FrameContext& cmd, uint32_t swapchain_image_index);
+        std::array<uint64_t, 2> get_invocations_count() const;
 
     private:
         void           build_pipelines();
@@ -30,6 +32,7 @@ namespace pvp
         const PvpScene&  m_scene;
 
         Image           m_depth_image;
+        VkQueryPool     m_query_pool;
         DestructorQueue m_destructor_queue{};
     };
 } // namespace pvp

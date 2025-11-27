@@ -18,10 +18,25 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
 {
     create_images();
     build_pipelines();
+
+    VkQueryPoolCreateInfo pool{
+        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .queryType = VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT,
+        .queryCount = 1,
+        .pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT | VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT
+    };
+    vkCreateQueryPool(context.device->get_device(), &pool, nullptr, &m_query_pool);
+    m_destructor_queue.add_to_queue([&] { vkDestroyQueryPool(m_context.device->get_device(), m_query_pool, nullptr); });
 }
 
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
+    vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
+
+    vkCmdBeginQuery(cmd.command_buffer, m_query_pool, 0, 0);
+
     // VkImageSubresourceRange range{
     //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
     //     .baseMipLevel = 0,
@@ -80,6 +95,15 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
                             VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             range);
+
+    vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
+}
+
+std::array<uint64_t, 2> pvp::MeshShaderPass::get_invocations_count() const
+{
+    std::array<uint64_t, 2> data{};
+    vkGetQueryPoolResults(m_context.device->get_device(), m_query_pool, 0, 1, sizeof(uint64_t) * data.size(), data.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    return data;
 }
 
 void pvp::MeshShaderPass::build_pipelines()

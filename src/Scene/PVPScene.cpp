@@ -40,8 +40,8 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_command_queue.resize(max_frames_in_flight);
 
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
@@ -175,6 +175,7 @@ pvp::PvpScene::PvpScene(Context& context)
         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
+        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT)
         .build(17);
 
     DestructorQueue transfer_buffer_deleter{};
@@ -231,6 +232,7 @@ pvp::PvpScene::PvpScene(Context& context)
         // transfer_to_gpu(std::span<Vertex>(cpu_model.vertices), gpu_model.meshlet_vertex, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
         transfer_to_gpu(std::span(cpu_model.meshlet_triangles), gpu_model.meshlet_triangles_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet triangle");
         transfer_to_gpu(std::span(cpu_model.meshlet_vertices), gpu_model.meshlet_vertices_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet vertex index");
+        transfer_to_gpu(std::span(cpu_model.meshlet_sphere_bounds), gpu_model.meshlet_sphere_bounds_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet sphere bounds");
 
         DescriptorSetBuilder{}
             // .set_dynamic(false)
@@ -239,6 +241,7 @@ pvp::PvpScene::PvpScene(Context& context)
             .bind_buffer_ssbo(1, gpu_model.vertex_data)
             .bind_buffer_ssbo(2, gpu_model.meshlet_vertices_buffer)
             .bind_buffer_ssbo(3, gpu_model.meshlet_triangles_buffer)
+            .bind_buffer_ssbo(4, gpu_model.meshlet_sphere_bounds_buffer)
             .build(m_context, gpu_model.meshlet_descriptor_set);
 
         gpu_model.material.transform = cpu_model.transform;
@@ -313,6 +316,7 @@ pvp::PvpScene::~PvpScene()
         model.meshlet_buffer.destroy();
         model.meshlet_triangles_buffer.destroy();
         model.meshlet_vertices_buffer.destroy();
+        model.meshlet_sphere_bounds_buffer.destroy();
     }
 
     for (StaticImage& gpu_texture : m_gpu_textures)
@@ -396,8 +400,8 @@ void pvp::PvpScene::update()
         m_camera.get_position()
     };
 
-    PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
-    change_point_light(0, light);
+    // PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
+    // change_point_light(0, light);
 
     // static bool key_pressed_last{};
     // bool        key_pressed = glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_SPACE) == GLFW_PRESS;
@@ -411,7 +415,6 @@ void pvp::PvpScene::update()
 
     // ImGui::ShowDemoWindow();
 
-    // TODO: Pure cringe. Have a copy of the lights on the cpu please.
     if (ImGui::Begin("Debug"))
     {
         ImGui::Text("fps: %f", 1.0f / delta_time);
@@ -423,6 +426,7 @@ void pvp::PvpScene::update()
         }
 
         ImGui::Separator();
+        // TODO: Pure cringe. Have a copy of the lights on the cpu please.
         void* light_base = (m_point_lights_gpu.get_buffer(0).get_allocation_info().pMappedData);
 
         for (uint32_t i = 0; i < *static_cast<uint32_t*>(light_base); ++i)
@@ -445,6 +449,9 @@ void pvp::PvpScene::update()
             ImGui::Separator();
             ImGui::PopID();
         }
+
+        ImGui::Text("TASK_SHADER_INVOCATIONS: %i", m_context.invocation_count[0]);
+        ImGui::Text("MESH_SHADER_INVOCATIONS: %i", m_context.invocation_count[1]);
     }
     ImGui::End();
 }

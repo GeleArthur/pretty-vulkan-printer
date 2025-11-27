@@ -51,7 +51,7 @@ namespace
             verticies[i + 2] = mesh_in->mVertices[i].z;
         }
 
-        size_t const meshletCount = meshopt_buildMeshlets(
+        size_t const meshlet_count = meshopt_buildMeshlets(
             model_out.meshlets.data(),
             model_out.meshlet_vertices.data(),
             meshlet_triangles_u8.data(),
@@ -64,10 +64,10 @@ namespace
             max_triangles,
             cone_weight);
 
-        auto& last = model_out.meshlets[meshletCount - 1];
+        auto& last = model_out.meshlets[meshlet_count - 1];
         model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
         meshlet_triangles_u8.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3)); // TODO: Understand this? Align 4 bytes
-        model_out.meshlets.resize(meshletCount);
+        model_out.meshlets.resize(meshlet_count);
 
         for (auto& meshlet : model_out.meshlets)
         {
@@ -81,17 +81,30 @@ namespace
                 uint32_t i1 = 3 * i + 1 + meshlet.triangle_offset;
                 uint32_t i2 = 3 * i + 2 + meshlet.triangle_offset;
 
-                uint8_t  vIdx0 = meshlet_triangles_u8[i0];
-                uint8_t  vIdx1 = meshlet_triangles_u8[i1];
-                uint8_t  vIdx2 = meshlet_triangles_u8[i2];
-                uint32_t packed = ((static_cast<uint32_t>(vIdx0) & 0xFF) << 0) |
-                    ((static_cast<uint32_t>(vIdx1) & 0xFF) << 8) |
-                    ((static_cast<uint32_t>(vIdx2) & 0xFF) << 16);
+                uint8_t  vertex_id0 = meshlet_triangles_u8[i0];
+                uint8_t  vertex_id1 = meshlet_triangles_u8[i1];
+                uint8_t  vertex_id2 = meshlet_triangles_u8[i2];
+                uint32_t packed = ((static_cast<uint32_t>(vertex_id0) & 0xFF) << 0) |
+                    ((static_cast<uint32_t>(vertex_id1) & 0xFF) << 8) |
+                    ((static_cast<uint32_t>(vertex_id2) & 0xFF) << 16);
                 model_out.meshlet_triangles.push_back(packed);
             }
 
             // Update triangle offset for current meshlet
             meshlet.triangle_offset = triangle_offset;
+        }
+
+        model_out.meshlet_sphere_bounds.reserve(model_out.meshlets.size());
+        for (const auto& meshlet : model_out.meshlets)
+        {
+            meshopt_Bounds bounds = meshopt_computeMeshletBounds(
+                &model_out.meshlet_vertices[meshlet.vertex_offset],
+                &meshlet_triangles_u8[meshlet.triangle_offset],
+                meshlet.triangle_count,
+                verticies.data(),
+                verticies.size(),
+                sizeof(glm::vec3));
+            model_out.meshlet_sphere_bounds.push_back(glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
         }
     }
 
@@ -188,6 +201,7 @@ namespace
             write_vector(out_stream, model.meshlets);
             write_vector(out_stream, model.meshlet_vertices);
             write_vector(out_stream, model.meshlet_triangles);
+            write_vector(out_stream, model.meshlet_sphere_bounds);
         }
 
         auto save_texture = [&](const pvp::TextureData& texture) {
@@ -230,6 +244,7 @@ namespace
             read_vector(in_stream, model.meshlets);
             read_vector(in_stream, model.meshlet_vertices);
             read_vector(in_stream, model.meshlet_triangles);
+            read_vector(in_stream, model.meshlet_sphere_bounds);
         }
 
         auto load_texture = [&](pvp::TextureData& texture) {

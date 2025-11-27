@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <array>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -32,7 +33,8 @@ namespace pvp
         Swapchain*               swapchain;
         VkSurfaceKHR             surface;
         // WindowSurface*           window_surface;
-        GlfwToRender* gtfw_to_render;
+        GlfwToRender*           gtfw_to_render;
+        std::array<uint64_t, 2> invocation_count{};
 
 #ifdef TRACY_ENABLE
         std::vector<tracy::VkCtx*> tracy_ctx;
