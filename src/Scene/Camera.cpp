@@ -69,7 +69,7 @@ pvp::FrustumCone pvp::Camera::get_cone()
     FrustumCone cone = {};
     cone.tip = m_position;
     cone.direction = m_front;
-    cone.height = 100.0f;             // far clip from perspective matrix
+    cone.height = 20.0f;              // far clip from perspective matrix
     cone.angle = glm::radians(45.0f); // Guessing fov
 
     // if (fitFarClip)

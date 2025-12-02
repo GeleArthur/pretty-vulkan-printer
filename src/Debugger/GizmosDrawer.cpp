@@ -26,7 +26,9 @@ pvp::GizmosDrawer::GizmosDrawer(Context& context, const PvpScene& scene)
 void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
     if (m_sphere_count == 0)
+    {
         return;
+    }
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
@@ -84,7 +86,7 @@ void pvp::GizmosDrawer::build_buffers()
         .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
         .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
         .build(m_context.allocator->get_allocator(), m_sphere_buffer);
-    m_destructor_queue.add_to_queue([&]{m_sphere_buffer.destroy();});
+    m_destructor_queue.add_to_queue([&] { m_sphere_buffer.destroy(); });
 }
 
 void pvp::GizmosDrawer::build_pipelines()

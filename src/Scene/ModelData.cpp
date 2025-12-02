@@ -29,6 +29,28 @@ namespace
         return out;
     }
 
+    void writeOBJ(const std::vector<glm::vec4>& points, const std::string& filename)
+    {
+        std::ofstream file(filename);
+
+        if (!file.is_open())
+        {
+            std::cerr << "Error: Could not open file " << filename << std::endl;
+            return;
+        }
+
+        // Write header comment
+        file << "# OBJ file with " << points.size() << " vertices\n";
+        // Write vertices
+        for (const auto& point : points)
+        {
+            file << "v " << point.x << " " << point.y << " " << point.z << " " << point.w << " " << "0.0" << " " << "0.0" << "\n";
+        }
+
+        file.close();
+        std::cout << "Successfully wrote " << points.size() << " vertices to " << filename << std::endl;
+    }
+
     // TODO: cache on disk
     void generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
     {
@@ -107,6 +129,8 @@ namespace
                 sizeof(float) * 3);
             model_out.meshlet_sphere_bounds.push_back(glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
         }
+
+        writeOBJ(model_out.meshlet_sphere_bounds, "OutPounts.obj");
     }
 
     std::string cached_string(const std::filesystem::path& path)

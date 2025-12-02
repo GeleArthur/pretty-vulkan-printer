@@ -39,7 +39,7 @@ void main()
         SetMeshOutputsEXT(segments, segments);
     }
 
-    vec4 sphere = vec4(vec3(pc.model * spheres[gl_WorkGroupID.x]), spheres[gl_WorkGroupID.x].w);
+    vec4 sphere = vec4(vec3(pc.model * vec4(spheres[gl_WorkGroupID.x].xyz, 1.0f)), spheres[gl_WorkGroupID.x].w);
 
     vec3 forward = normalize(sceneInfo.position - sphere.xyz);
     vec3 right = normalize(cross(vec3(0, 1, 0), forward));
@@ -50,7 +50,7 @@ void main()
     if (idx <= segments) {
         if (idx == 0) {
             // Center vertex
-            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(sphere.xyz,1.0);
+            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(sphere.xyz, 1.0);
         }
         else
         {
@@ -72,7 +72,7 @@ void main()
     }
 
     if (idx < segments) {
-        gl_PrimitiveTriangleIndicesEXT[idx] = uvec3(0, idx+1, (idx + 1) % segments + 1);
+        gl_PrimitiveTriangleIndicesEXT[idx] = uvec3(0, idx + 1, (idx + 1) % segments + 1);
     }
 
 

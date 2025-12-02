@@ -53,7 +53,6 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             range);
 
-
     vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
 
     vkCmdBeginQuery(cmd.command_buffer, m_query_pool, 0, 0);
@@ -74,15 +73,12 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     {
         ZoneScopedN("Draw");
         vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
-        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, sizeof(MaterialTransform), sizeof(uint32_t), &model.meshlet_count);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
         uint32_t thread_group_count_x = model.meshlet_count / 32 + 1;
         VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, thread_group_count_x, 1, 1);
     }
 
     vkCmdEndRendering(cmd.command_buffer);
-
-
 
     vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
 }
