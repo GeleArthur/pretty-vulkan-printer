@@ -11,6 +11,12 @@
 #include "MeshShaderPass.h"
 #include "ToneMappingPass.h"
 
+#include <Debugger/GizmosDrawer.h>
+
+namespace pvp
+{
+    class GizmosDrawer;
+}
 namespace pvp
 {
     class ImguiRenderer;
@@ -54,6 +60,7 @@ namespace pvp
         ImguiRenderer&  m_imgui_renderer;
         BlitToSwapchain m_blit_to_swapchain;
         MeshShaderPass  m_mesh_shader_pass;
+        GizmosDrawer    m_gizmos_drawer;
 
         DestructorQueue m_destructor_queue{};
     };

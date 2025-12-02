@@ -12,8 +12,12 @@
 #include <Image/TransitionLayout.h>
 #include <Renderer/RenderInfoBuilder.h>
 #include <Renderer/Swapchain.h>
-pvp::GizmosDrawer::GizmosDrawer(Context& context)
+
+#include "Scene/PVPScene.h"
+
+pvp::GizmosDrawer::GizmosDrawer(Context& context, const PvpScene& scene)
     : m_context{ context }
+    , m_scene{ scene }
 {
     build_pipelines();
     build_buffers();
@@ -21,7 +25,7 @@ pvp::GizmosDrawer::GizmosDrawer(Context& context)
 
 void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
-    if (m_drawables.empty())
+    if (m_sphere_count == 0)
         return;
 
     RenderInfoBuilderOut render_color_info;
@@ -34,20 +38,9 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_sphere_descriptor.get_descriptor_set(cmd), 0, nullptr);
 
-    {
-        VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, thread_group_count_x, 1, 1);
-    }
-
-    // for (const Model& model : m_scene.get_models())
-    // {
-    //     ZoneScopedN("Draw");
-    //     vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
-    //     vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, sizeof(MaterialTransform), sizeof(uint32_t), &model.meshlet_count);
-    //     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
-    //     uint32_t thread_group_count_x = model.meshlet_count / 32 + 1;
-    //     VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, thread_group_count_x, 1, 1);
-    // }
+    VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, m_drawables.size(), 1, 1);
 
     vkCmdEndRendering(cmd.command_buffer);
 
@@ -61,39 +54,48 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     image_layout_transition(cmd.command_buffer,
                             m_context.swapchain->get_images()[swapchain_image_index],
-                            VK_PIPELINE_STAGE_2_NONE,
+                            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_2_NONE,
+                            VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
                             VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             range);
 
-    vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
+    m_sphere_count = 0;
 }
 
 void pvp::GizmosDrawer::draw_sphere(const GizmosSphere& sphere)
 {
-    m_drawables.push_back(std::variant<GizmosSphere>(sphere));
+    static_cast<GizmosSphere*>(m_sphere_buffer.get_allocation_info().pMappedData)[m_sphere_count++] = sphere;
 }
+
 void pvp::GizmosDrawer::build_buffers()
 {
     BufferBuilder{}
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .set_size(sizeof(uint32_t) + sizeof(GizmosSphere) * 10)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+        .set_size(sizeof(GizmosSphere) * 10)
+        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
         .build(m_context.allocator->get_allocator(), m_sphere_buffer);
-
-    BufferBuilder{}
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-        .set_size(sizeof(uint32_t) + sizeof(GizmosSphere) * 10)
-        .build(m_context.allocator->get_allocator(), m_sphere_staging_buffer);
 }
+
 void pvp::GizmosDrawer::build_pipelines()
 {
+    VkDescriptorSetLayout layout = m_context.descriptor_creator->get_layout().add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT).get();
+
+    DescriptorSetBuilder{}
+        .set_layout(layout)
+        .bind_buffer_ssbo(0, m_sphere_buffer)
+        .build(m_context, m_sphere_descriptor);
+
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+        .add_descriptor_layout(layout)
         .build(m_context.device->get_device(), m_pipeline_layout);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr);
+    });
 
     GraphicsPipelineBuilder()
         .add_shader("shaders/gizmos.vert", VK_SHADER_STAGE_VERTEX_BIT)

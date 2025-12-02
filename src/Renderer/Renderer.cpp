@@ -52,6 +52,7 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
     , m_imgui_renderer{ imgui_renderer }
     , m_blit_to_swapchain{ context, m_tone_mapping_pass.get_tone_mapped_texture() }
     , m_mesh_shader_pass{ context, scene }
+    , m_gizmos_drawer{ context, scene }
 {
     ZoneScoped;
     m_frame_syncers = FrameSyncers(m_context);
@@ -148,6 +149,8 @@ void pvp::Renderer::prepare_frame()
 
 void pvp::Renderer::draw()
 {
+    m_gizmos_drawer.draw_sphere(GizmosSphere{ { 0, 0, 0 }, 10 });
+
     ZoneScoped;
     prepare_frame();
     // m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
@@ -157,6 +160,7 @@ void pvp::Renderer::draw()
     // m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
 
     m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    m_gizmos_drawer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     transfur_swapchain(m_context, m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);
