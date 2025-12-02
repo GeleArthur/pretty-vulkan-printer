@@ -45,9 +45,10 @@ namespace pvp
 
     struct SceneGlobals
     {
-        glm::mat4x4 camera_view;
-        glm::mat4x4 camera_projection;
-        glm::vec3   positon;
+        alignas(16) glm::mat4x4 camera_view;
+        alignas(16) glm::mat4x4 camera_projection;
+        alignas(16) glm::vec3 positon;
+        alignas(16) FrustumCone cone;
     };
 
     struct alignas(16) PointLight

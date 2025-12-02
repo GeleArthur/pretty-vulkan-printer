@@ -64,3 +64,41 @@ void pvp::Camera::update(float delta_time)
         m_view = glm::lookAt(m_position, m_position + m_front, m_camera_up);
     }
 }
+pvp::FrustumCone pvp::Camera::get_cone()
+{
+    FrustumCone cone = {};
+    cone.tip = m_position;
+    cone.direction = m_front;
+    cone.height = 100.0f;             // far clip from perspective matrix
+    cone.angle = glm::radians(45.0f); // Guessing fov
+
+    // if (fitFarClip)
+    // {
+    //     // View projection matrix
+    //     auto& VP = this->GetViewProjectionMatrix();
+    //     // Inverse view projection matrix
+    //     auto invVP = glm::inverse(VP);
+    //     // Clip space coordinates
+    //     auto csFarTL = glm::vec3(-1, 1, 1);
+    //     auto csFarBL = glm::vec3(-1, -1, 1);
+    //     auto csFarBR = glm::vec3(1, -1, 1);
+    //     auto csFarTR = glm::vec3(1, 1, 1);
+    //     // Transform into view coordinates using inverse view projection matrix
+    //     auto farTL = invVP * glm::vec4(csFarTL, 1.0f);
+    //     auto farBL = invVP * glm::vec4(csFarBL, 1.0f);
+    //     auto farBR = invVP * glm::vec4(csFarBR, 1.0f);
+    //     auto farTR = invVP * glm::vec4(csFarTR, 1.0f);
+    //     // Divide to finalize unproject
+    //     farTL /= farTL.w;
+    //     farBL /= farBL.w;
+    //     farBR /= farBR.w;
+    //     farTR /= farTR.w;
+    //     // Find center of far clip plane
+    //     auto farCenter = (farTL + farBL + farBR + farTR) / 4.0f;
+    //     // Distance from far clip plane center to top left corner of far clip plane
+    //     float r = glm::distance(farCenter, farTL);
+    //     // Calculate angle using arctan
+    //     cone.Angle = 2.0f * atan(r / mFarClip);
+    // }
+    return cone;
+}

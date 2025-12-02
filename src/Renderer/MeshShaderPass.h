@@ -31,8 +31,8 @@ namespace pvp
         VkPipeline       m_pipeline{};
         const PvpScene&  m_scene;
 
-        Image           m_depth_image;
-        VkQueryPool     m_query_pool;
+        Image           m_depth_image{};
+        VkQueryPool     m_query_pool{};
         DestructorQueue m_destructor_queue{};
     };
 } // namespace pvp

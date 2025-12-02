@@ -1,24 +1,34 @@
 ﻿#pragma once
+#include "CommonDescriptorLayouts.h"
+
+#include <globalconst.h>
+#include <iostream>
 #include <vulkan/vulkan.hpp>
 
 #include <vector>
 #include <Context/Context.h>
+
+enum class DiscriptorTag;
 namespace pvp
 {
-    class DescriptorLayoutCreator;
     class DescriptorLayoutBuilder final
     {
     public:
+        explicit DescriptorLayoutBuilder(DescriptorLayoutCreator& creator);
+        DISABLE_COPY(DescriptorLayoutBuilder);
+        DISABLE_MOVE(DescriptorLayoutBuilder);
         DescriptorLayoutBuilder& add_binding(VkDescriptorType type, VkShaderStageFlags stage, uint32_t amount = 1u);
+        DescriptorLayoutBuilder& set_tag(DiscriptorTag tag);
+        DescriptorLayoutBuilder& from_tag(DiscriptorTag tag);
         DescriptorLayoutBuilder& add_flag(VkDescriptorBindingFlags flag);
-        DescriptorLayoutCreator& build(uint32_t index);
+        VkDescriptorSetLayout    get();
 
     private:
-        friend class DescriptorLayoutCreator;
-        explicit DescriptorLayoutBuilder(const Context& context, DescriptorLayoutCreator& creator);
+        DescriptorLayoutCreator&                  m_creator;
         std::vector<VkDescriptorSetLayoutBinding> m_bindings;
         std::vector<VkDescriptorBindingFlags>     m_flags;
-        DescriptorLayoutCreator&                  m_creator;
-        const Context&                            m_context;
+        DiscriptorTag                             m_from_tag{ DiscriptorTag::nothing };
+        DiscriptorTag                             m_set_tag{ DiscriptorTag::nothing };
+        std::size_t                               get_hash() const;
     };
 } // namespace pvp

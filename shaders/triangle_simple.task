@@ -1,12 +1,14 @@
 #version 460
 #pragma shader_stage(task)
 #extension GL_EXT_mesh_shader: enable
+#extension GL_KHR_shader_subgroup_ballot: enable
 
 #define AS_GROUP_SIZE 32
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 struct Payload {
     uint MeshletIndices[AS_GROUP_SIZE];
+    bool visable[AS_GROUP_SIZE];
 };
 
 taskPayloadSharedEXT Payload payload;
@@ -15,11 +17,67 @@ layout (std430, set = 1, binding = 3) readonly buffer SphereBoundsIn {
     vec4 SphereBounds[];
 };
 
+struct FrustumCone
+{
+    vec3 Tip;
+    float Height;
+    vec3 Direction;
+    float Angle;
+};
+
+layout (set = 0, binding = 0) uniform SceneGlobals {
+    mat4x4 camera_view;
+    mat4x4 camera_projection;
+    vec3 position;
+    FrustumCone camera_frustom;
+} sceneInfo;
+
+layout (push_constant) uniform PushConstant {
+    mat4 model;
+    uint diffuse_texture_index;
+    uint normal_texture_index;
+    uint metalness_texture_index;
+    uint meshlet_count;
+} pc;
+
+bool VisibleFrustumCone(vec4 sphere)
+{
+    // Cone and sphere are within intersectable range
+    vec3 v0 = sphere.xyz - sceneInfo.camera_frustom.Tip;
+    float d0 = dot(v0, sceneInfo.camera_frustom.Direction);
+    bool i0 = (d0 <= (sceneInfo.camera_frustom.Height + sphere.w));
+
+    float cs = cos(sceneInfo.camera_frustom.Angle * 0.5);
+    float sn = sin(sceneInfo.camera_frustom.Angle * 0.5);
+    float a = dot(v0, sceneInfo.camera_frustom.Direction);
+    float b = a * sn / cs;
+    float c = sqrt(dot(v0, v0) - (a * a));
+    float d = c - b;
+    float e = d * cs;
+    bool i1 = (e < sphere.w);
+
+    return i0 && i1;
+}
+
+
 void main()
 {
-    payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
+    bool visible = false;
 
-    //    if (gl_LocalInvocationID.x == 0) {
-    EmitMeshTasksEXT(AS_GROUP_SIZE, 1, 1);
+    //    if (gl_GlobalInvocationID.x < pc.meshlet_count) {
+    vec4 spherebounds = vec4(vec3(pc.model * SphereBounds[gl_LocalInvocationID.x]), SphereBounds[gl_LocalInvocationID.x].w);
+    visible = VisibleFrustumCone(spherebounds);
     //    }
+
+    //    uvec4 ballot = subgroupBallot(visible);
+
+    //    if (visible) {
+    //        uint index = subgroupBallotExclusiveBitCount(ballot);
+    payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
+    payload.visable[gl_LocalInvocationID.x] = visible;
+    //    }
+
+    //    uint visible_count = subgroupBallotBitCount(ballot);
+
+    EmitMeshTasksEXT(AS_GROUP_SIZE, 1, 1);
 }

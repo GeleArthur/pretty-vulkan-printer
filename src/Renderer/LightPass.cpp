@@ -30,15 +30,6 @@ namespace pvp
     void LightPass::build_pipelines()
     {
         ZoneScoped;
-        m_context.descriptor_creator->create_layout()
-            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .build(11);
-
-        m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(11); });
 
         SamplerBuilder()
             .set_filter(VK_FILTER_LINEAR)
@@ -52,13 +43,20 @@ namespace pvp
             .bind_image(2, m_geometry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .bind_image(3, m_geometry_pass.get_metal_roughness_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .bind_image(4, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .set_layout(m_context.descriptor_creator->get_layout(11))
+            .set_layout(m_context.descriptor_creator->get_layout()
+                            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                            .set_tag(DiscriptorTag::gbuffers)
+                            .get())
             .build(m_context, m_texture_binding);
 
         PipelineLayoutBuilder()
-            .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-            .add_descriptor_layout(m_context.descriptor_creator->get_layout(11))
-            .add_descriptor_layout(m_context.descriptor_creator->get_layout(3))
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::gbuffers).get())
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::lights).get())
             .build(m_context.device->get_device(), m_light_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_light_pipeline_layout, nullptr); });
 

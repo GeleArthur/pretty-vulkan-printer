@@ -6,6 +6,7 @@
 
 #include <Context/Device.h>
 #include <Debugger/Debugger.h>
+#include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
@@ -79,8 +80,8 @@ namespace pvp
     void DepthPrePass::build_pipelines()
     {
         PipelineLayoutBuilder()
-            .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-            .add_descriptor_layout(m_context.descriptor_creator->get_layout(1))
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::bindless_textures).get())
             .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MaterialTransform) })
             .build(m_context.device->get_device(), m_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });

@@ -74,19 +74,21 @@ namespace pvp
     void ToneMappingPass::build_pipelines()
     {
         ZoneScoped;
-        m_context.descriptor_creator->create_layout()
-            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-            .build(12);
+        ;
 
-        m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(12); });
+        // m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(12); });
 
         DescriptorSetBuilder()
             .bind_image(0, m_light_pass.get_light_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .set_layout(m_context.descriptor_creator->get_layout(12))
+            .set_layout(m_context.descriptor_creator->get_layout()
+                            .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                            .get())
             .build(m_context, m_tone_binding);
 
         PipelineLayoutBuilder()
-            .add_descriptor_layout(m_context.descriptor_creator->get_layout(12))
+            .add_descriptor_layout(m_context.descriptor_creator->get_layout()
+                                       .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                                       .get())
             .build(m_context.device->get_device(), m_tone_pipeline_layout);
         m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_tone_pipeline_layout, nullptr); });
 

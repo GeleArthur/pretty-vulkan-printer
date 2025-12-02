@@ -40,8 +40,8 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_command_queue.resize(max_frames_in_flight);
 
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
@@ -170,14 +170,6 @@ pvp::PvpScene::PvpScene(Context& context)
         gpu_texture_names.push_back(texture.name);
     }
 
-    m_context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT)
-        .build(17);
-
     DestructorQueue transfer_buffer_deleter{};
     m_gpu_models.resize(loaded_scene.models.size());
     for (int i = 0; i < loaded_scene.models.size(); ++i)
@@ -235,8 +227,14 @@ pvp::PvpScene::PvpScene(Context& context)
         transfer_to_gpu(std::span(cpu_model.meshlet_sphere_bounds), gpu_model.meshlet_sphere_bounds_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet sphere bounds");
 
         DescriptorSetBuilder{}
-            // .set_dynamic(false)
-            .set_layout(m_context.descriptor_creator->get_layout(17))
+            .set_layout(m_context.descriptor_creator->get_layout()
+                            .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                            .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                            .set_tag(DiscriptorTag::meshlets)
+                            .get())
             .bind_buffer_ssbo(0, gpu_model.meshlet_buffer)
             .bind_buffer_ssbo(1, gpu_model.vertex_data)
             .bind_buffer_ssbo(2, gpu_model.meshlet_vertices_buffer)
@@ -260,17 +258,6 @@ pvp::PvpScene::PvpScene(Context& context)
     // m_point_lights_gpu = UniformBuffer(16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator());
     // m_directonal_lights_gpu = UniformBuffer(16 + sizeof(DirectionLight) * max_direction_lights, context.allocator->get_allocator());
 
-    context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)
-        .build(0);
-
-    context.descriptor_creator->create_layout()
-        .add_flag(0)
-        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)
-        .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
-        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT, 140)
-        .build(1);
-
     SamplerBuilder()
         .set_filter(VK_FILTER_LINEAR)
         .set_mipmap(VK_SAMPLER_MIPMAP_MODE_LINEAR)
@@ -278,23 +265,31 @@ pvp::PvpScene::PvpScene(Context& context)
         .build(m_context, m_shadered_sampler);
 
     DescriptorSetBuilder()
-        .set_layout(m_context.descriptor_creator->get_layout(0))
+        .set_layout(context.descriptor_creator->get_layout()
+                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                        .set_tag(DiscriptorTag::scene_globals)
+                        .get())
         .bind_uniform_buffer(0, m_scene_globals_gpu)
         .build(m_context, m_scene_binding);
 
     DescriptorSetBuilder()
-        .set_layout(m_context.descriptor_creator->get_layout(1))
+        .set_layout(context.descriptor_creator->get_layout()
+                        .add_flag(0)
+                        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT, 140)
+                        .set_tag(DiscriptorTag::bindless_textures)
+                        .get())
         .bind_sampler(0, m_shadered_sampler)
         .bind_image_array(1, m_gpu_textures)
         .build(context, m_all_textures);
 
-    m_context.descriptor_creator->create_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-        .build(3);
-
     DescriptorSetBuilder()
-        .set_layout(m_context.descriptor_creator->get_layout(3))
+        .set_layout(m_context.descriptor_creator->get_layout()
+                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                        .set_tag(DiscriptorTag::lights)
+                        .get())
         .bind_uniform_buffer(0, m_point_lights_gpu)
         .bind_uniform_buffer(1, m_directonal_lights_gpu)
         .build(m_context, m_point_descriptor);
@@ -394,10 +389,11 @@ void pvp::PvpScene::update()
 
     m_camera.update(delta_time);
 
-    m_scene_globals = {
+    m_scene_globals = SceneGlobals{
         m_camera.get_view_matrix(),
         m_camera.get_projection_matrix(),
-        m_camera.get_position()
+        m_camera.get_position(),
+        m_camera.get_cone(),
     };
 
     // PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };

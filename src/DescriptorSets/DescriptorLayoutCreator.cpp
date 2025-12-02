@@ -42,24 +42,65 @@ pvp::DescriptorLayoutCreator::~DescriptorLayoutCreator()
     }
     vkDestroyDescriptorPool(m_context.device->get_device(), m_pool, nullptr);
 }
-
-pvp::DescriptorLayoutBuilder pvp::DescriptorLayoutCreator::create_layout()
+pvp::DescriptorLayoutBuilder pvp::DescriptorLayoutCreator::get_layout()
 {
-    return DescriptorLayoutBuilder{ m_context, *this };
+    return DescriptorLayoutBuilder{ *this };
 }
 
-void pvp::DescriptorLayoutCreator::add_layout(uint32_t index, VkDescriptorSetLayout layout)
-{
-    if (m_layouts.contains(index))
-    {
-        spdlog::warn("Overwriting descriptor set layout: {} ", index);
-        vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
-    }
+// VkDescriptorSetLayout pvp::DescriptorLayoutCreator::layout(const DescriptorLayoutBuilder& build)
+// {
+//     size_t hash = build.get_hash();
+//     if (m_layouts.contains(hash))
+//     {
+//         return m_layouts.at(hash);
+//     }
+//
+//     ZoneScoped;
+//     VkDescriptorSetLayoutBindingFlagsCreateInfo extra_flags{
+//         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+//         .bindingCount = static_cast<uint32_t>(build.m_flags.size()),
+//         .pBindingFlags = build.m_flags.data()
+//     };
+//
+//     const VkDescriptorSetLayoutCreateInfo layout_info{
+//         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+//         .pNext = &extra_flags,
+//         .flags = 0,
+//         .bindingCount = static_cast<uint32_t>(build.m_bindings.size()),
+//         .pBindings = build.m_bindings.data()
+//     };
+//
+//     VkDescriptorSetLayout result;
+//     if (vkCreateDescriptorSetLayout(m_context.device->get_device(), &layout_info, nullptr, &result) != VK_SUCCESS)
+//     {
+//         throw std::runtime_error("failed to create descriptor set layout!");
+//     }
+//     m_layouts[hash] = result;
+//
+//     return result;
+// }
+// pvp::DescriptorLayoutBuilder& pvp::DescriptorLayoutCreator::build()
+// {
+//     return DescriptorLayoutBuilder{ this };
+// }
 
-    m_layouts[index] = layout;
-}
-void pvp::DescriptorLayoutCreator::remove_layout(uint32_t index)
-{
-    vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
-    m_layouts.erase(index);
-}
+// pvp::DescriptorLayoutBuilder pvp::DescriptorLayoutCreator::create_layout()
+// {
+//     return DescriptorLayoutBuilder{ m_context, *this };
+// }
+//
+// void pvp::DescriptorLayoutCreator::add_layout(uint32_t index, VkDescriptorSetLayout layout)
+// {
+//     if (m_layouts.contains(index))
+//     {
+//         spdlog::warn("Overwriting descriptor set layout: {} ", index);
+//         vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
+//     }
+//
+//     m_layouts[index] = layout;
+// }
+// void pvp::DescriptorLayoutCreator::remove_layout(uint32_t index)
+// {
+//     vkDestroyDescriptorSetLayout(m_context.device->get_device(), m_layouts[index], nullptr);
+//     m_layouts.erase(index);
+// }

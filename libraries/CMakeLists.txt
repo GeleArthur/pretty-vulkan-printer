@@ -121,9 +121,22 @@ else()
     set_target_properties(shaderc PROPERTIES
             IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../lib/libshaderc_combined.a"
     )
-
 endif()
 
+add_library(slang STATIC IMPORTED)
+if(WIN32)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(slang PROPERTIES
+                IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/slangd.lib"
+        )
+    else()
+        set_target_properties(slang PROPERTIES
+                IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../Lib/slang.lib"
+        )
+    endif()
+else()
+    #TODO
+endif()
 
 # tracy
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -147,6 +160,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         glfw
         imgui
         spdlog
+        slang
         assimp
         Vulkan::Vulkan
         #        spirv-reflect

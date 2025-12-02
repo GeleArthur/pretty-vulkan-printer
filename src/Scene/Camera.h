@@ -4,11 +4,21 @@
 #include <glm/vec3.hpp>
 namespace pvp
 {
+    struct FrustumCone
+    {
+        glm::vec3 tip;
+        float     height;
+        glm::vec3 direction;
+        float     angle;
+    };
+
     class Camera final
     {
     public:
         explicit Camera(const Context& context);
         void update(float delta_time);
+
+        FrustumCone get_cone();
 
         const glm::mat4x4& get_view_matrix() const
         {
@@ -18,7 +28,6 @@ namespace pvp
         {
             return m_projection;
         };
-
         const glm::vec3& get_position() const
         {
             return m_position;

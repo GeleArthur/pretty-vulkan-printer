@@ -52,9 +52,7 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     context.swapchain = &swapchain;
 
     PvpScene scene = PvpScene(context);
-
     ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);
-
     Renderer renderer = Renderer(context, scene, imgui_renderer);
 
     while (gtfw_to_render.running)

@@ -33,30 +33,13 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
 
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
+    ZoneScoped;
     vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
 
     vkCmdBeginQuery(cmd.command_buffer, m_query_pool, 0, 0);
 
-    // VkImageSubresourceRange range{
-    //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-    //     .baseMipLevel = 0,
-    //     .levelCount = VK_REMAINING_MIP_LEVELS,
-    //     .baseArrayLayer = 0,
-    //     .layerCount = VK_REMAINING_ARRAY_LAYERS
-    // };
-    //
-    // image_layout_transition(cmd.command_buffer,
-    //                         m_context.swapchain->get_images()[swapchain_image_index],
-    //                         VK_PIPELINE_STAGE_2_NONE,
-    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //                         VK_ACCESS_2_NONE,
-    //                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-    //                         VK_IMAGE_LAYOUT_UNDEFINED,
-    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //                         range);
-
     RenderInfoBuilderOut render_color_info;
-    RenderInfoBuilder()
+    RenderInfoBuilder{}
         .add_color(m_context.swapchain->get_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_depth(m_depth_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
@@ -70,7 +53,8 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     for (const Model& model : m_scene.get_models())
     {
         ZoneScopedN("Draw");
-        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, sizeof(MaterialTransform), sizeof(uint32_t), &model.meshlet_count);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
         uint32_t thread_group_count_x = model.meshlet_count / 32 + 1;
         VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, thread_group_count_x, 1, 1);
@@ -99,6 +83,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
 }
 
+// TODO: replace
 std::array<uint64_t, 2> pvp::MeshShaderPass::get_invocations_count() const
 {
     std::array<uint64_t, 2> data{};
@@ -109,35 +94,11 @@ std::array<uint64_t, 2> pvp::MeshShaderPass::get_invocations_count() const
 void pvp::MeshShaderPass::build_pipelines()
 {
     ZoneScoped;
-    // m_context.descriptor_creator->create_layout()
-    //     .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-    //     .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-    //     .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-    //     .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-    //     .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-    //     .build(11);
-
-    // m_destructor_queue.add_to_queue([&] { m_context.descriptor_creator->remove_layout(11); });
-
-    // SamplerBuilder()
-    //     .set_filter(VK_FILTER_LINEAR)
-    //     .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
-    //     .build(m_context, m_sampler);
-    // m_destructor_queue.add_to_queue([&] { vkDestroySampler(m_context.device->get_device(), m_sampler.handle, nullptr); });
-
-    // DescriptorSetBuilder()
-    //     .bind_sampler(0, m_sampler)
-    //     .bind_image(1, m_geometry_pass.get_albedo_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    //     .bind_image(2, m_geometry_pass.get_normal_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    //     .bind_image(3, m_geometry_pass.get_metal_roughness_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    //     .bind_image(4, m_depth_pre_pass.get_depth_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    //     .set_layout(m_context.descriptor_creator->get_layout(11))
-    //     .build(m_context, m_light_binding);
-
     PipelineLayoutBuilder()
-        .add_descriptor_layout(m_context.descriptor_creator->get_layout(0))
-        .add_descriptor_layout(m_context.descriptor_creator->get_layout(17))
-        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform) })
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::meshlets).get())
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform) + sizeof(uint32_t) })
+        // .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, sizeof(MaterialTransform), sizeof(uint32_t) })
         .build(m_context.device->get_device(), m_pipeline_layout);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
 
@@ -147,6 +108,7 @@ void pvp::MeshShaderPass::build_pipelines()
         .add_shader("shaders/triangle_simple.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_depth_format(m_depth_image.get_format())
         .set_depth_access(VK_TRUE, VK_TRUE)
+        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout)
         .build(*m_context.device, m_pipeline);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline, nullptr); });

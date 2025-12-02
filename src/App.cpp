@@ -1,18 +1,12 @@
 ﻿#include "App.h"
 
-#include "Context/LogicPhysicalQueueBuilder.h"
-
-#include <Context/InstanceBuilder.h>
 #include <Debugger/Debugger.h>
 #include <GLFW/glfw3.h>
-#include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <Renderer/Renderer.h>
 #include <Scene/PVPScene.h>
-#include <SyncManager/FrameSyncers.h>
 #include <Window/WindowSurfaceBuilder.h>
 #include <spdlog/spdlog.h>
 #include <tracy/Tracy.hpp>
-#include <tracy/TracyVulkan.hpp>
 
 void pvp::App::run()
 {
