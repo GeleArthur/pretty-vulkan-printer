@@ -1,8 +1,10 @@
 #version 450
-#pragma shader_stage(vertex)
+#pragma shader_stage(mesh)
+#extension GL_EXT_mesh_shader: enable
 
 layout (triangles) out;
 layout (max_vertices = 128, max_primitives = 128) out;
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 layout (set = 0, binding = 0) uniform SceneGlobals {
     mat4x4 camera_view;
@@ -14,7 +16,9 @@ layout (std430, set = 1, binding = 0) readonly buffer SpheresBuffer {
     vec4 spheres[];
 };
 
-layout (location = 0) out vec4 color;
+layout (location = 0) out vec4 color[];
+
+const float PI = 3.14159265359;
 
 void main()
 {
@@ -24,9 +28,9 @@ void main()
         SetMeshOutputsEXT(segments, segments);
     }
 
-    vec4 sphere = spheres[gl_WorkGroupID.x].xyzw; //????
+    vec4 sphere = spheres[gl_WorkGroupID.x]; //????
 
-    vec3 forward = normalize(position - sphere.xyz);
+    vec3 forward = normalize(sceneInfo.position - sphere.xyz);
     vec3 right = normalize(cross(vec3(0, 1, 0), forward));
     vec3 up = cross(forward, right);
 
@@ -35,8 +39,10 @@ void main()
     if (idx <= segments) {
         if (idx == 0) {
             // Center vertex
-            gl_MeshVerticesEXT[0].gl_Position = sphere.xyz;
-        } else {
+            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(sphere.xyz,1.0);
+        }
+        else
+        {
             // Circle perimeter vertices
             float angle = 2.0 * PI * float(idx - 1) / float(segments);
 
@@ -46,15 +52,19 @@ void main()
             // Transform to world space using billboard basis
             vec3 worldPos = sphere.xyz + right * x + up * y;
 
-            gl_MeshVerticesEXT[idx].gl_Position = worldPos;
+            vec4 clipPos = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(worldPos, 1.0);
+
+            gl_MeshVerticesEXT[idx].gl_Position = clipPos;
         }
 
-        vertexColor[idx] = vec4(1.0);
+        color[idx] = vec4(0.1, 0.1, 0.1, 1.0);
     }
 
     if (idx < segments) {
-        gl_PrimitiveTriangleIndicesEXT[idx] = vec3(idx, idx + 1, idx + 2);
+        gl_PrimitiveTriangleIndicesEXT[idx] = uvec3(0, idx+1, (idx + 1) % segments + 1);
     }
+
+
 
 
     //    gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * pc.model * vec4(inPosition, 1.0);

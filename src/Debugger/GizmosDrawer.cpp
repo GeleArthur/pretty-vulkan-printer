@@ -19,8 +19,8 @@ pvp::GizmosDrawer::GizmosDrawer(Context& context, const PvpScene& scene)
     : m_context{ context }
     , m_scene{ scene }
 {
-    build_pipelines();
     build_buffers();
+    build_pipelines();
 }
 
 void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
@@ -30,7 +30,7 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
-        .add_color(m_context.swapchain->get_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_context.swapchain->get_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
 
@@ -40,27 +40,27 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_sphere_descriptor.get_descriptor_set(cmd), 0, nullptr);
 
-    VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, m_drawables.size(), 1, 1);
+    VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, m_sphere_count, 1, 1);
 
     vkCmdEndRendering(cmd.command_buffer);
 
-    VkImageSubresourceRange range{
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .baseMipLevel = 0,
-        .levelCount = VK_REMAINING_MIP_LEVELS,
-        .baseArrayLayer = 0,
-        .layerCount = VK_REMAINING_ARRAY_LAYERS
-    };
+    // VkImageSubresourceRange range{
+    //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    //     .baseMipLevel = 0,
+    //     .levelCount = VK_REMAINING_MIP_LEVELS,
+    //     .baseArrayLayer = 0,
+    //     .layerCount = VK_REMAINING_ARRAY_LAYERS
+    // };
 
-    image_layout_transition(cmd.command_buffer,
-                            m_context.swapchain->get_images()[swapchain_image_index],
-                            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                            range);
+    // image_layout_transition(cmd.command_buffer,
+    //                         m_context.swapchain->get_images()[swapchain_image_index],
+    //                         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //                         VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
+    //                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //                         range);
 
     m_sphere_count = 0;
 }
@@ -78,11 +78,13 @@ void pvp::GizmosDrawer::build_buffers()
         .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
         .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
         .build(m_context.allocator->get_allocator(), m_sphere_buffer);
+    m_destructor_queue.add_to_queue([&]{m_sphere_buffer.destroy();});
 }
 
 void pvp::GizmosDrawer::build_pipelines()
 {
-    VkDescriptorSetLayout layout = m_context.descriptor_creator->get_layout().add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT).get();
+    VkDescriptorSetLayout layout = m_context.descriptor_creator->get_layout()
+        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT).get();
 
     DescriptorSetBuilder{}
         .set_layout(layout)
@@ -98,7 +100,7 @@ void pvp::GizmosDrawer::build_pipelines()
     });
 
     GraphicsPipelineBuilder()
-        .add_shader("shaders/gizmos.vert", VK_SHADER_STAGE_VERTEX_BIT)
+        .add_shader("shaders/gizmos.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
         .add_shader("shaders/gizmos.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout)

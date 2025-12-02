@@ -34,6 +34,26 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
     ZoneScoped;
+
+    VkImageSubresourceRange range{
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS
+    };
+
+    image_layout_transition(cmd.command_buffer,
+                            m_context.swapchain->get_images()[swapchain_image_index],
+                            VK_PIPELINE_STAGE_2_NONE,
+                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                            VK_ACCESS_2_NONE,
+                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                            range);
+
+
     vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
 
     vkCmdBeginQuery(cmd.command_buffer, m_query_pool, 0, 0);
@@ -62,23 +82,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     vkCmdEndRendering(cmd.command_buffer);
 
-    VkImageSubresourceRange range{
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .baseMipLevel = 0,
-        .levelCount = VK_REMAINING_MIP_LEVELS,
-        .baseArrayLayer = 0,
-        .layerCount = VK_REMAINING_ARRAY_LAYERS
-    };
 
-    image_layout_transition(cmd.command_buffer,
-                            m_context.swapchain->get_images()[swapchain_image_index],
-                            VK_PIPELINE_STAGE_2_NONE,
-                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_2_NONE,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_IMAGE_LAYOUT_UNDEFINED,
-                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                            range);
 
     vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
 }

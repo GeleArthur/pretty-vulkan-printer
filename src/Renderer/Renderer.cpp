@@ -149,7 +149,7 @@ void pvp::Renderer::prepare_frame()
 
 void pvp::Renderer::draw()
 {
-    m_gizmos_drawer.draw_sphere(GizmosSphere{ { 0, 0, 0 }, 10 });
+    m_gizmos_drawer.draw_sphere(GizmosSphere{ { 0, 0, 0 }, 1 });
 
     ZoneScoped;
     prepare_frame();

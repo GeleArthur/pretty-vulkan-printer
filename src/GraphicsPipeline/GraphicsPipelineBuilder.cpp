@@ -77,7 +77,13 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     for (auto& blend : color_blend_attachment)
     {
         blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        blend.blendEnable = VK_FALSE;
+        blend.blendEnable = VK_TRUE;
+        blend.alphaBlendOp = VK_BLEND_OP_ADD;
+        blend.colorBlendOp = VK_BLEND_OP_ADD;
+        blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
     }
 
     VkPipelineColorBlendStateCreateInfo color_blending{};
