@@ -43,12 +43,13 @@ namespace
         model_out.meshlet_vertices.resize(max_mesh_lets * max_vertices);
         meshlet_triangles_u8.resize(max_mesh_lets * max_triangles * 3);
 
-        std::vector<float> verticies(mesh_in->mNumVertices * 3);
-        for (int i = 0; i < mesh_in->mNumVertices; ++i)
+        std::vector<float> verticies;
+        verticies.reserve(mesh_in->mNumVertices * 3);
+        for (size_t i = 0; i < mesh_in->mNumVertices; ++i)
         {
-            verticies[i + 0] = mesh_in->mVertices[i].x;
-            verticies[i + 1] = mesh_in->mVertices[i].y;
-            verticies[i + 2] = mesh_in->mVertices[i].z;
+            verticies.push_back(mesh_in->mVertices[i].x);
+            verticies.push_back(mesh_in->mVertices[i].y);
+            verticies.push_back(mesh_in->mVertices[i].z);
         }
 
         size_t const meshlet_count = meshopt_buildMeshlets(
@@ -59,7 +60,7 @@ namespace
             model_out.indices.size(),
             verticies.data(),
             verticies.size(),
-            sizeof(aiVector3D),
+            sizeof(float) * 3,
             max_vertices,
             max_triangles,
             cone_weight);
@@ -103,7 +104,7 @@ namespace
                 meshlet.triangle_count,
                 verticies.data(),
                 verticies.size(),
-                sizeof(glm::vec3));
+                sizeof(float) * 3);
             model_out.meshlet_sphere_bounds.push_back(glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
         }
     }

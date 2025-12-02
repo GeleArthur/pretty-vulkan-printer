@@ -12,9 +12,20 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
     vec3 position;
 } sceneInfo;
 
-layout (std430, set = 1, binding = 0) readonly buffer SpheresBuffer {
+//layout (std430, set = 1, binding = 0) readonly buffer SpheresBuffer {
+//    vec4 spheres[];
+//};
+
+layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
     vec4 spheres[];
 };
+
+layout (push_constant) uniform PushConstant {
+    mat4 model;
+    uint diffuse_texture_index;
+    uint normal_texture_index;
+    uint metalness_texture_index;
+} pc;
 
 layout (location = 0) out vec4 color[];
 
@@ -28,7 +39,7 @@ void main()
         SetMeshOutputsEXT(segments, segments);
     }
 
-    vec4 sphere = spheres[gl_WorkGroupID.x]; //????
+    vec4 sphere = vec4(vec3(pc.model * spheres[gl_WorkGroupID.x]), spheres[gl_WorkGroupID.x].w);
 
     vec3 forward = normalize(sceneInfo.position - sphere.xyz);
     vec3 right = normalize(cross(vec3(0, 1, 0), forward));
@@ -57,7 +68,7 @@ void main()
             gl_MeshVerticesEXT[idx].gl_Position = clipPos;
         }
 
-        color[idx] = vec4(0.1, 0.1, 0.1, 1.0);
+        color[idx] = vec4(0.1, 0.1, 0.1, 0.1);
     }
 
     if (idx < segments) {

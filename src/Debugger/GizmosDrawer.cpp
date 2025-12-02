@@ -38,9 +38,15 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_sphere_descriptor.get_descriptor_set(cmd), 0, nullptr);
 
-    VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, m_sphere_count, 1, 1);
+    // VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, m_sphere_count, 1, 1);
+
+    for (const Model& model : m_scene.get_models())
+    {
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
+        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+        VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, model.meshlet_count, 1, 1);
+    }
 
     vkCmdEndRendering(cmd.command_buffer);
 
@@ -83,17 +89,20 @@ void pvp::GizmosDrawer::build_buffers()
 
 void pvp::GizmosDrawer::build_pipelines()
 {
-    VkDescriptorSetLayout layout = m_context.descriptor_creator->get_layout()
-        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT).get();
-
-    DescriptorSetBuilder{}
-        .set_layout(layout)
-        .bind_buffer_ssbo(0, m_sphere_buffer)
-        .build(m_context, m_sphere_descriptor);
+    // VkDescriptorSetLayout layout = m_context.descriptor_creator->get_layout()
+    //     .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT).get();
+    //
+    // DescriptorSetBuilder{}
+    //     .set_layout(layout)
+    //     .bind_buffer_ssbo(0, m_sphere_buffer)
+    //     .build(m_context, m_sphere_descriptor);
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
-        .add_descriptor_layout(layout)
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::meshlets).get())
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform) })
+
+        // .add_descriptor_layout(layout)
         .build(m_context.device->get_device(), m_pipeline_layout);
     m_destructor_queue.add_to_queue([&] {
         vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr);

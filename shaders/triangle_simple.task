@@ -13,7 +13,7 @@ struct Payload {
 
 taskPayloadSharedEXT Payload payload;
 
-layout (std430, set = 1, binding = 3) readonly buffer SphereBoundsIn {
+layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
     vec4 SphereBounds[];
 };
 
