@@ -40,8 +40,8 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_command_queue.resize(max_frames_in_flight);
 
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 

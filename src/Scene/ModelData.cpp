@@ -42,13 +42,61 @@ namespace
         // Write header comment
         file << "# OBJ file with " << points.size() << " vertices\n";
         // Write vertices
+        for (int i = 0; i < points.size(); ++i)
+        {
+            const glm::vec4& point = points[i];
+            file << "v " << point.x << " " << point.y << " " << point.z << " " << point.w << " " << static_cast<float>(i) << " " << "0.0" << "\n";
+        }
         for (const auto& point : points)
         {
-            file << "v " << point.x << " " << point.y << " " << point.z << " " << point.w << " " << "0.0" << " " << "0.0" << "\n";
         }
 
         file.close();
         std::cout << "Successfully wrote " << points.size() << " vertices to " << filename << std::endl;
+    }
+
+    void writeOBJMeshLets(const std::string&                  filename,
+                          const std::vector<meshopt_Meshlet>& meshlets,
+                          const std::vector<uint32_t>&        meshlet_vertices,
+                          const std::vector<uint8_t>&         meshlet_triangles,
+                          const std::vector<float>&           vertices,
+                          size_t                              meshlet_count)
+    {
+        std::ofstream file(filename);
+        if (!file.is_open())
+        {
+            throw std::runtime_error("Failed to open file: " + filename);
+        }
+
+        for (size_t i = 0; i < vertices.size(); i += 3)
+        {
+            file << "v " << vertices[i] << " " << vertices[i + 1] << " " << vertices[i + 2] << "\n";
+        }
+
+        for (size_t m = 0; m < meshlet_count; m++)
+        {
+            const auto& meshlet = meshlets[m];
+
+            file << "# Meshlet " << m << "\n";
+            file << "g meshlet_" << m << "\n";
+
+            // Write faces for this meshlet
+            for (uint32_t t = 0; t < meshlet.triangle_count; t++)
+            {
+                uint32_t tri_offset = meshlet.triangle_offset + t * 3;
+
+                uint8_t v0 = meshlet_triangles[tri_offset + 0];
+                uint8_t v1 = meshlet_triangles[tri_offset + 1];
+                uint8_t v2 = meshlet_triangles[tri_offset + 2];
+
+                uint32_t global_v0 = meshlet_vertices[meshlet.vertex_offset + v0] + 1;
+                uint32_t global_v1 = meshlet_vertices[meshlet.vertex_offset + v1] + 1;
+                uint32_t global_v2 = meshlet_vertices[meshlet.vertex_offset + v2] + 1;
+
+                file << "f " << global_v0 << " " << global_v1 << " " << global_v2 << "\n";
+            }
+        }
+        file.close();
     }
 
     // TODO: cache on disk
@@ -56,7 +104,7 @@ namespace
     {
         constexpr size_t max_vertices = 64;
         constexpr size_t max_triangles = 124;
-        constexpr float  cone_weight = 0.0f;
+        constexpr float  cone_weight = 0.1f;
 
         std::vector<uint8_t> meshlet_triangles_u8;
 
@@ -86,6 +134,8 @@ namespace
             max_vertices,
             max_triangles,
             cone_weight);
+
+        writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, verticies, meshlet_count);
 
         auto& last = model_out.meshlets[meshlet_count - 1];
         model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);

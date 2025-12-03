@@ -1,11 +1,14 @@
 ﻿#include "ShaderLoader.h"
 
+#include "globalconst.h"
+
 #include <array>
 #include <slang/slang.h>
 #include <slang/slang-com-ptr.h>
 #include <tracy/Tracy.hpp>
 
 #include <fstream>
+#include <iostream>
 #include <shaderc/shaderc.hpp>
 #include <spdlog/spdlog.h>
 
