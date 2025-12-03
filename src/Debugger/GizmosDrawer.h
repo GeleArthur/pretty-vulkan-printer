@@ -41,9 +41,9 @@ namespace pvp
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_pipeline{};
-        Buffer           m_sphere_buffer;
-        Buffer           m_sphere_staging_buffer;
-        DescriptorSets   m_sphere_descriptor;
+        // Buffer           m_sphere_buffer;
+        // Buffer           m_sphere_staging_buffer;
+        // DescriptorSets   m_sphere_descriptor;
 
         DestructorQueue m_destructor_queue;
     };

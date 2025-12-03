@@ -9,17 +9,16 @@
 pvp::Camera::Camera(const Context& context)
     : m_context(context)
 {
-    m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(context.swapchain->get_swapchain_extent().width) / static_cast<float>(context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
-    m_projection[1][1] *= -1;
-    // glfwGetCursorPos(m_context.window_surface->get_window(), &m_prev_mouse_x, &m_prev_mouse_y);
 }
 void pvp::Camera::update(float delta_time)
 {
     m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(m_context.swapchain->get_swapchain_extent().width) / static_cast<float>(m_context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
     m_projection[1][1] *= -1;
 
-    double                         xpos{}, ypos{};
-    bool                           pressed{};
+    double xpos{};
+    double ypos{};
+    bool   pressed{};
+
     std::array<int, GLFW_KEY_LAST> keys{};
     {
         std::lock_guard lock{ m_context.gtfw_to_render->lock };
@@ -69,8 +68,8 @@ pvp::FrustumCone pvp::Camera::get_cone()
     FrustumCone cone = {};
     cone.tip = m_position;
     cone.direction = m_front;
-    cone.height = 20.0f;              // far clip from perspective matrix
-    cone.angle = glm::radians(45.0f); // Guessing fov
+    cone.height = 20.0f;                     // far clip from perspective matrix
+    cone.angle = glm::radians(45.0f) * 2.0f; // Guessing fov
 
     // if (fitFarClip)
     // {

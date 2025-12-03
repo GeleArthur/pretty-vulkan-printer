@@ -46,19 +46,20 @@ bool VisibleFrustumCone(vec4 sphere)
     float d0 = dot(v0, sceneInfo.camera_frustom.Direction);
     bool i0 = (d0 <= (sceneInfo.camera_frustom.Height + sphere.w));
 
-    float diff = dot(normalize(v0), sceneInfo.camera_frustom.Direction);
-    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle * 0.5f);
+    //    float diff = dot(normalize(v0), sceneInfo.camera_frustom.Direction);
+    //    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle * 0.5f);
 
-    //    float cs = cos(sceneInfo.camera_frustom.Angle * 0.5);
-    //    float sn = sin(sceneInfo.camera_frustom.Angle * 0.5);
-    //    float a = dot(v0, sceneInfo.camera_frustom.Direction);
-    //    float b = a * sn / cs;
-    //    float c = sqrt(dot(v0, v0) - (a * a));
-    //    float d = c - b;
-    //    float e = d * cs;
-    //    bool i1 = (e < sphere.w);
+    // TODO: Find source for this code.
+    float cs = cos(sceneInfo.camera_frustom.Angle * 0.5);
+    float sn = sin(sceneInfo.camera_frustom.Angle * 0.5);
+    float a = dot(v0, sceneInfo.camera_frustom.Direction);
+    float b = a * sn / cs;
+    float c = sqrt(dot(v0, v0) - (a * a));
+    float d = c - b;
+    float e = d * cs;
+    bool i1 = (e < sphere.w);
 
-    return i0 && inside;// && i1;
+    return i0 && i1;
 }
 
 
@@ -67,19 +68,19 @@ void main()
     bool visible = false;
 
     //    if (gl_GlobalInvocationID.x < pc.meshlet_count) {
-    vec4 spherebounds = vec4(vec3(pc.model * vec4(SphereBounds[gl_LocalInvocationID.x].xyz, 1.0)), SphereBounds[gl_LocalInvocationID.x].w);
+    vec4 spherebounds = vec4(vec3(pc.model * vec4(SphereBounds[gl_GlobalInvocationID.x].xyz, 1.0)), SphereBounds[gl_GlobalInvocationID.x].w);
     visible = VisibleFrustumCone(spherebounds);
     //    }
 
-    //    uvec4 ballot = subgroupBallot(visible);
+    uvec4 ballot = subgroupBallot(visible);
 
-    //    if (visible) {
-    //        uint index = subgroupBallotExclusiveBitCount(ballot);
-    payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
-    payload.visable[gl_LocalInvocationID.x] = visible;
-    //    }
+    if (visible) {
+        uint index = subgroupBallotExclusiveBitCount(ballot);
+        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
+        payload.visable[index] = visible;
+    }
 
-    //    uint visible_count = subgroupBallotBitCount(ballot);
+    uint visible_count = subgroupBallotBitCount(ballot);
 
-    EmitMeshTasksEXT(AS_GROUP_SIZE, 1, 1);
+    EmitMeshTasksEXT(visible_count, 1, 1);
 }

@@ -75,18 +75,18 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
 void pvp::GizmosDrawer::draw_sphere(const GizmosSphere& sphere)
 {
-    static_cast<GizmosSphere*>(m_sphere_buffer.get_allocation_info().pMappedData)[m_sphere_count++] = sphere;
+    // static_cast<GizmosSphere*>(m_sphere_buffer.get_allocation_info().pMappedData)[m_sphere_count++] = sphere;
 }
 
 void pvp::GizmosDrawer::build_buffers()
 {
-    BufferBuilder{}
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
-        .set_size(sizeof(GizmosSphere) * 10)
-        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
-        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-        .build(m_context.allocator->get_allocator(), m_sphere_buffer);
-    m_destructor_queue.add_to_queue([&] { m_sphere_buffer.destroy(); });
+    // BufferBuilder{}
+    //     .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+    //     .set_size(sizeof(GizmosSphere) * 10)
+    //     .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+    //     .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+    //     .build(m_context.allocator->get_allocator(), m_sphere_buffer);
+    // m_destructor_queue.add_to_queue([&] { m_sphere_buffer.destroy(); });
 }
 
 void pvp::GizmosDrawer::build_pipelines()
