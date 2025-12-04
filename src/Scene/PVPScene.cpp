@@ -3,6 +3,7 @@
 
 #include <DestructorQueue.h>
 #include <VulkanExternalFunctions.h>
+#include <corecrt_math_defines.h>
 #include <imgui.h>
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>
@@ -38,8 +39,8 @@ pvp::PvpScene::PvpScene(Context& context)
     m_command_queue.resize(max_frames_in_flight);
 
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -396,8 +397,7 @@ void pvp::PvpScene::update()
         frustum_cone,
     };
     gizmos::draw_cone(frustum_cone.tip, frustum_cone.height, frustum_cone.direction, frustum_cone.angle);
-    gizmos::draw_cone({ 0, 5, 0 }, 5, { 0, -1, 0 }, 1.56f);
-    gizmos::draw_line({ 0, 0, 0 }, { 0, 2, 0 }, { 1, 1, 1, 1 });
+    // gizmos::draw_line({ 0, 0, 0 }, { 0, 2, 0 }, { 1, 1, 1, 1 });
 
     // PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
     // change_point_light(0, light);
@@ -451,6 +451,13 @@ void pvp::PvpScene::update()
 
         ImGui::Text("TASK_SHADER_INVOCATIONS: %i", m_context.invocation_count[0]);
         ImGui::Text("MESH_SHADER_INVOCATIONS: %i", m_context.invocation_count[1]);
+
+        ImGui::Checkbox("Update frustom", &m_camera.update_frustum);
+        bool enabeld = gizmos::is_spheres_enabled();
+        if (ImGui::Checkbox("Enable sphers", &enabeld))
+        {
+            gizmos::toggle_spheres();
+        }
     }
     ImGui::End();
 }

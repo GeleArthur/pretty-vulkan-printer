@@ -120,6 +120,9 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
     options.SetTargetSpirv(shaderc_spirv_version_1_6);
 
+    // std::filesystem::path shader_base_path = path.parent_path();
+    // options.SetIncluder(std::make_unique<NEShaderIncluder>());
+
     shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {

@@ -7,7 +7,8 @@
 namespace
 {
     std::vector<pvp::DebugVertex> lines;
-}
+    bool                          spheres_enabled;
+} // namespace
 
 void pvp::gizmos::draw_line(const glm::vec3& p1, const glm::vec3& p2, const glm::vec4& color)
 {
@@ -25,9 +26,17 @@ void pvp::gizmos::draw_cone(const glm::vec3& tip, float height, const glm::vec3&
         lines.push_back(DebugVertex{ tip, { 1, 1, 1, 1 } });
 
         double rot_angle = (i / 36.0f) * M_PI * 2.0f;
-        lines.push_back(DebugVertex{ tip + dir1 * angle * std::cosf(rot_angle) + dir2 * angle * std::sinf(rot_angle) + direction * height, { 1, 1, 1, 1 } });
+        lines.push_back(DebugVertex{ tip + (dir1 * angle * std::cosf(rot_angle) + dir2 * angle * std::sinf(rot_angle) + direction) * height, { 1, 1, 1, 1 } });
+
+        lines.push_back(DebugVertex{ tip + (dir1 * angle * std::cosf(rot_angle) + dir2 * angle * std::sinf(rot_angle) + direction) * height, { 1, 1, 1, 1 } });
+        lines.push_back(DebugVertex{ tip + (dir1 * angle * std::cosf(rot_angle + ((1 / 36.0f) * M_PI * 2.0f)) + dir2 * angle * std::sinf(rot_angle + ((1 / 36.0f) * M_PI * 2.0f)) + direction) * height, { 1, 1, 1, 1 } });
     }
 }
+void pvp::gizmos::toggle_spheres()
+{
+    spheres_enabled = !spheres_enabled;
+}
+
 const std::vector<pvp::DebugVertex>& pvp::gizmos::get_lines()
 {
     return lines;
@@ -35,4 +44,8 @@ const std::vector<pvp::DebugVertex>& pvp::gizmos::get_lines()
 void pvp::gizmos::clear()
 {
     lines.clear();
+}
+bool pvp::gizmos::is_spheres_enabled()
+{
+    return spheres_enabled;
 }

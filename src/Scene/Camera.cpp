@@ -65,11 +65,13 @@ void pvp::Camera::update(float delta_time)
 }
 pvp::FrustumCone pvp::Camera::get_cone()
 {
-    FrustumCone cone = {};
-    cone.tip = m_position;
-    cone.direction = m_front;
-    cone.height = 20.0f;              // far clip from perspective matrix
-    cone.angle = glm::radians(45.0f); // Guessing fov
+    if (update_frustum)
+    {
+        m_frustum_cone.tip = m_position;
+        m_frustum_cone.direction = m_front;
+        m_frustum_cone.height = 100.0f;             // far clip from perspective matrix
+        m_frustum_cone.angle = glm::radians(45.0f); // Guessing fov
+    }
 
     // if (fitFarClip)
     // {
@@ -99,5 +101,5 @@ pvp::FrustumCone pvp::Camera::get_cone()
     //     // Calculate angle using arctan
     //     cone.Angle = 2.0f * atan(r / mFarClip);
     // }
-    return cone;
+    return m_frustum_cone;
 }

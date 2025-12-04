@@ -36,14 +36,17 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_spheres);
-    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-
-    for (const Model& model : m_scene.get_models())
+    if (gizmos::is_spheres_enabled())
     {
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
-        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout_spheres, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
-        VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, model.meshlet_count, 1, 1);
+        vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_spheres);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+
+        for (const Model& model : m_scene.get_models())
+        {
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
+            vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout_spheres, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+            VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, model.meshlet_count, 1, 1);
+        }
     }
 
     vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_debug_lines);
@@ -98,6 +101,7 @@ void pvp::GizmosDrawer::build_pipelines()
         .set_input_binding_description(DebugVertex::get_binding_description())
         .set_topology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST)
         .set_cull_mode(VK_CULL_MODE_NONE)
+        .set_depth_access(VK_FALSE, VK_FALSE)
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout_debug_lines)
         .build(*m_context.device, m_pipeline_debug_lines);

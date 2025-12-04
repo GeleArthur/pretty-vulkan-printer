@@ -46,18 +46,19 @@ bool VisibleFrustumCone(vec4 sphere)
     float d0 = dot(v0, sceneInfo.camera_frustom.Direction);
     bool i0 = (d0 <= (sceneInfo.camera_frustom.Height + sphere.w));
 
-    //    float diff = dot(normalize(v0), sceneInfo.camera_frustom.Direction);
-    //    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle * 0.5f);
+    //    float diff = dot(normalize(v0), normalize(sceneInfo.camera_frustom.Direction));
+    //    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle);
 
     // TODO: Find source for this code.
-    float cs = cos(sceneInfo.camera_frustom.Angle * 0.5);
-    float sn = sin(sceneInfo.camera_frustom.Angle * 0.5);
+    float cs = cos(sceneInfo.camera_frustom.Angle);
+    float sn = sin(sceneInfo.camera_frustom.Angle);
     float a = dot(v0, sceneInfo.camera_frustom.Direction);
     float b = a * sn / cs;
     float c = sqrt(dot(v0, v0) - (a * a));
     float d = c - b;
     float e = d * cs;
     bool i1 = (e < sphere.w);
+    //    return inside;
 
     return i0 && i1;
 }
