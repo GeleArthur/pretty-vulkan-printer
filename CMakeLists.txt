@@ -132,6 +132,9 @@ add_executable(${PROJECT_NAME}
         src/DescriptorSets/CommonDescriptorLayouts.h
         src/Debugger/GizmosDrawer.cpp
         src/Debugger/GizmosDrawer.h
+        src/Debugger/DebugVertex.h
+        src/Debugger/Gizmos.h
+        src/Debugger/Gizmos.cpp
 )
 
 add_subdirectory(libraries)

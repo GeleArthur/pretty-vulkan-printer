@@ -10,7 +10,7 @@ void PipelineLayoutBuilder::build(const VkDevice device, VkPipelineLayout& pipel
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = static_cast<uint32_t>(m_descriptor_layouts.size());
     pipeline_layout_info.pSetLayouts = m_descriptor_layouts.data();
-    if (m_push_constant_ranges.empty() == false)
+    if (!m_push_constant_ranges.empty())
     {
         pipeline_layout_info.pushConstantRangeCount = static_cast<uint32_t>(m_push_constant_ranges.size());
         pipeline_layout_info.pPushConstantRanges = m_push_constant_ranges.data();

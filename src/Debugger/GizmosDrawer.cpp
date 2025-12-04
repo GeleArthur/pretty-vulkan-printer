@@ -1,15 +1,15 @@
 #include "GizmosDrawer.h"
 
+#include "DebugVertex.h"
+#include "Gizmos.h"
+
 #include <VulkanExternalFunctions.h>
-#include <iomanip>
 #include <Context/Device.h>
 #include <DescriptorSets/CommonDescriptorLayouts.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
-#include <Image/SamplerBuilder.h>
-#include <Image/TransitionLayout.h>
 #include <Renderer/RenderInfoBuilder.h>
 #include <Renderer/Swapchain.h>
 
@@ -25,10 +25,8 @@ pvp::GizmosDrawer::GizmosDrawer(Context& context, const PvpScene& scene)
 
 void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
-    if (m_sphere_count == 0)
-    {
-        return;
-    }
+    const std::vector<DebugVertex>& lines = gizmos::get_lines();
+    std::ranges::copy(lines, static_cast<DebugVertex*>(m_debug_lines_buffer.get_allocation_info().pMappedData));
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
@@ -38,83 +36,70 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-
-    // VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, m_sphere_count, 1, 1);
+    vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_spheres);
+    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
     for (const Model& model : m_scene.get_models())
     {
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
-        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
+        vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout_spheres, VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
         VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, model.meshlet_count, 1, 1);
     }
 
+    vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_debug_lines);
+    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_debug_lines, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+
+    VkDeviceSize offset{ 0 };
+    vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &m_debug_lines_buffer.get_buffer(), &offset);
+    vkCmdDraw(cmd.command_buffer, lines.size(), 1, 0, 0);
+
     vkCmdEndRendering(cmd.command_buffer);
-
-    // VkImageSubresourceRange range{
-    //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-    //     .baseMipLevel = 0,
-    //     .levelCount = VK_REMAINING_MIP_LEVELS,
-    //     .baseArrayLayer = 0,
-    //     .layerCount = VK_REMAINING_ARRAY_LAYERS
-    // };
-
-    // image_layout_transition(cmd.command_buffer,
-    //                         m_context.swapchain->get_images()[swapchain_image_index],
-    //                         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //                         VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
-    //                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //                         range);
-
-    m_sphere_count = 0;
-}
-
-void pvp::GizmosDrawer::draw_sphere(const GizmosSphere& sphere)
-{
-    // static_cast<GizmosSphere*>(m_sphere_buffer.get_allocation_info().pMappedData)[m_sphere_count++] = sphere;
 }
 
 void pvp::GizmosDrawer::build_buffers()
 {
-    // BufferBuilder{}
-    //     .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
-    //     .set_size(sizeof(GizmosSphere) * 10)
-    //     .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
-    //     .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-    //     .build(m_context.allocator->get_allocator(), m_sphere_buffer);
-    // m_destructor_queue.add_to_queue([&] { m_sphere_buffer.destroy(); });
+    BufferBuilder{}
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+        .set_size(sizeof(DebugVertex) * 1000)
+        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
+        .build(m_context.allocator->get_allocator(), m_debug_lines_buffer);
+    m_destructor_queue.add_to_queue([&] { m_debug_lines_buffer.destroy(); });
 }
 
 void pvp::GizmosDrawer::build_pipelines()
 {
-    // VkDescriptorSetLayout layout = m_context.descriptor_creator->get_layout()
-    //     .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT).get();
-    //
-    // DescriptorSetBuilder{}
-    //     .set_layout(layout)
-    //     .bind_buffer_ssbo(0, m_sphere_buffer)
-    //     .build(m_context, m_sphere_descriptor);
-
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::meshlets).get())
         .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT, 0, sizeof(MaterialTransform) })
-
-        // .add_descriptor_layout(layout)
-        .build(m_context.device->get_device(), m_pipeline_layout);
+        .build(m_context.device->get_device(), m_pipeline_layout_spheres);
     m_destructor_queue.add_to_queue([&] {
-        vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr);
+        vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_spheres, nullptr);
     });
 
     GraphicsPipelineBuilder()
         .add_shader("shaders/gizmos.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
         .add_shader("shaders/gizmos.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
-        .set_pipeline_layout(m_pipeline_layout)
-        .build(*m_context.device, m_pipeline);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline, nullptr); });
+        .set_pipeline_layout(m_pipeline_layout_spheres)
+        .build(*m_context.device, m_pipeline_spheres);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_spheres, nullptr); });
+
+    PipelineLayoutBuilder()
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+        .build(m_context.device->get_device(), m_pipeline_layout_debug_lines);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_debug_lines, nullptr); });
+
+    GraphicsPipelineBuilder()
+        .add_shader("shaders/debugline.vert", VK_SHADER_STAGE_VERTEX_BIT)
+        .add_shader("shaders/debugline.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
+        .set_input_attribute_description(DebugVertex::get_attribute_descriptions())
+        .set_input_binding_description(DebugVertex::get_binding_description())
+        .set_topology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST)
+        .set_cull_mode(VK_CULL_MODE_NONE)
+        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_pipeline_layout(m_pipeline_layout_debug_lines)
+        .build(*m_context.device, m_pipeline_debug_lines);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_debug_lines, nullptr); });
 }

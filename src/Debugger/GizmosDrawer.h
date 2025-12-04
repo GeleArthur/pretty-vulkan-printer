@@ -1,4 +1,6 @@
 #pragma once
+#include "DebugVertex.h"
+
 #include <DestructorQueue.h>
 #include <globalconst.h>
 #include <variant>
@@ -27,7 +29,6 @@ namespace pvp
         DISABLE_COPY(GizmosDrawer);
         DISABLE_MOVE(GizmosDrawer);
         void draw(const FrameContext& cmd, uint32_t swapchain_image_index);
-        void draw_sphere(const GizmosSphere& sphere);
 
     private:
         Context&        m_context;
@@ -37,11 +38,13 @@ namespace pvp
         void build_pipelines();
 
         std::vector<GizmosSphere> m_drawables;
-        int                       m_sphere_count{}; // TODO: bad replace
 
-        VkPipelineLayout m_pipeline_layout{};
-        VkPipeline       m_pipeline{};
-        // Buffer           m_sphere_buffer;
+        VkPipelineLayout m_pipeline_layout_spheres{};
+        VkPipeline       m_pipeline_spheres{};
+
+        VkPipelineLayout m_pipeline_layout_debug_lines{};
+        VkPipeline       m_pipeline_debug_lines{};
+        Buffer           m_debug_lines_buffer;
         // Buffer           m_sphere_staging_buffer;
         // DescriptorSets   m_sphere_descriptor;
 

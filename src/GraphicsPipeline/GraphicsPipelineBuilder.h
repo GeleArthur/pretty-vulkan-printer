@@ -22,7 +22,7 @@ namespace pvp
         GraphicsPipelineBuilder& set_color_format(const range_of<VkFormat> auto& formats);
         GraphicsPipelineBuilder& set_depth_format(VkFormat format);
         GraphicsPipelineBuilder& set_depth_access(VkBool32 read, VkBool32 write);
-
+        GraphicsPipelineBuilder& set_cull_mode(VkCullModeFlags mode);
 
         void build(const Device& device, VkPipeline& pipeline);
 
@@ -34,6 +34,7 @@ namespace pvp
         VkFormat                                                                              m_depth_format{ VK_FORMAT_D32_SFLOAT_S8_UINT };
         VkPrimitiveTopology                                                                   m_topology{ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST };
         VkPipelineLayout                                                                      m_pipeline_layout{ nullptr };
+        VkCullModeFlags                                                                       m_cull_mode{ VK_CULL_MODE_BACK_BIT };
         VkBool32                                                                              m_read{ VK_TRUE };
         VkBool32                                                                              m_write{ VK_TRUE };
     };

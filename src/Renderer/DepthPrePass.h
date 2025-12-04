@@ -12,6 +12,9 @@ namespace pvp
     {
     public:
         explicit DepthPrePass(const Context& context, const PvpScene& scene);
+        ~DepthPrePass() = default;
+        DISABLE_COPY(DepthPrePass);
+        DISABLE_MOVE(DepthPrePass);
         void draw(const FrameContext& cmd);
 
         Image& get_depth_image()
@@ -24,7 +27,7 @@ namespace pvp
         void            create_images();
         const Context&  m_context;
         const PvpScene& m_scene;
-        Image           m_depth_image{};
+        Image           m_depth_image;
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_pipeline{};

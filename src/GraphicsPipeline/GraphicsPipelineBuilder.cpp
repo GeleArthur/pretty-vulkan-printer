@@ -60,7 +60,7 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.cullMode = m_cull_mode;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -190,5 +190,10 @@ pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_depth_access(VkB
 {
     m_read = read;
     m_write = write;
+    return *this;
+}
+pvp::GraphicsPipelineBuilder& pvp::GraphicsPipelineBuilder::set_cull_mode(VkCullModeFlags mode)
+{
+    m_cull_mode = mode;
     return *this;
 }

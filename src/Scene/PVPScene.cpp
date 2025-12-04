@@ -8,6 +8,7 @@
 #include <Buffer/BufferBuilder.h>
 #include <CommandBuffer/CommandPool.h>
 #include <Context/Device.h>
+#include <Debugger/Gizmos.h>
 #include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
@@ -24,10 +25,6 @@
 #include <tracy/Tracy.hpp>
 #include <glm/glm.hpp>
 
-static void generate_default_textures()
-{
-}
-
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
     , m_scene_globals{}
@@ -41,8 +38,8 @@ pvp::PvpScene::PvpScene(Context& context)
     m_command_queue.resize(max_frames_in_flight);
 
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -387,14 +384,20 @@ void pvp::PvpScene::update()
     const float time = std::chrono::duration<float>(current_time - start_time).count();
     last_time = current_time;
 
+    gizmos::clear();
+
     m_camera.update(delta_time);
 
+    const FrustumCone frustum_cone = m_camera.get_cone();
     m_scene_globals = SceneGlobals{
         m_camera.get_view_matrix(),
         m_camera.get_projection_matrix(),
         m_camera.get_position(),
-        m_camera.get_cone(),
+        frustum_cone,
     };
+    gizmos::draw_cone(frustum_cone.tip, frustum_cone.height, frustum_cone.direction, frustum_cone.angle);
+    gizmos::draw_cone({ 0, 5, 0 }, 5, { 0, -1, 0 }, 1.56f);
+    gizmos::draw_line({ 0, 0, 0 }, { 0, 2, 0 }, { 1, 1, 1, 1 });
 
     // PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
     // change_point_light(0, light);
