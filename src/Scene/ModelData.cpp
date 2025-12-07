@@ -100,26 +100,26 @@ namespace
     }
 
     // TODO: cache on disk
-    void generate_meshlet(pvp::ModelData& model_out, const aiMesh* mesh_in)
+    void generate_meshlet(pvp::ModelData& model_out)
     {
         constexpr size_t max_vertices = 64;
-        constexpr size_t max_triangles = 124;
-        constexpr float  cone_weight = 0.1f;
+        constexpr size_t max_triangles = 126;
+        constexpr float  cone_weight = 0.0f;
 
         std::vector<uint8_t> meshlet_triangles_u8;
 
-        size_t max_mesh_lets = meshopt_buildMeshletsBound(mesh_in->mNumFaces * 3, max_vertices, max_triangles);
+        size_t max_mesh_lets = meshopt_buildMeshletsBound(model_out.indices.size(), max_vertices, max_triangles);
         model_out.meshlets.resize(max_mesh_lets);
         model_out.meshlet_vertices.resize(max_mesh_lets * max_vertices);
         meshlet_triangles_u8.resize(max_mesh_lets * max_triangles * 3);
 
-        std::vector<float> verticies;
-        verticies.reserve(mesh_in->mNumVertices * 3);
-        for (size_t i = 0; i < mesh_in->mNumVertices; ++i)
+        std::vector<float> vertices;
+        vertices.reserve(model_out.vertices.size() * 3);
+        for (pvp::Vertex& vertex : model_out.vertices)
         {
-            verticies.push_back(mesh_in->mVertices[i].x);
-            verticies.push_back(mesh_in->mVertices[i].y);
-            verticies.push_back(mesh_in->mVertices[i].z);
+            vertices.push_back(vertex.pos.x);
+            vertices.push_back(vertex.pos.y);
+            vertices.push_back(vertex.pos.z);
         }
 
         size_t const meshlet_count = meshopt_buildMeshlets(
@@ -128,19 +128,24 @@ namespace
             meshlet_triangles_u8.data(),
             model_out.indices.data(),
             model_out.indices.size(),
-            verticies.data(),
-            verticies.size(),
+            vertices.data(),
+            vertices.size(),
             sizeof(float) * 3,
             max_vertices,
             max_triangles,
             cone_weight);
 
-        writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, verticies, meshlet_count);
-
         auto& last = model_out.meshlets[meshlet_count - 1];
         model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
         meshlet_triangles_u8.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3)); // TODO: Understand this? Align 4 bytes
         model_out.meshlets.resize(meshlet_count);
+
+        for (const meshopt_Meshlet& meshlet : model_out.meshlets)
+        {
+            meshopt_optimizeMeshlet(&model_out.meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles_u8[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
+        }
+
+        writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, vertices, meshlet_count);
 
         for (auto& meshlet : model_out.meshlets)
         {
@@ -174,8 +179,8 @@ namespace
                 &model_out.meshlet_vertices[meshlet.vertex_offset],
                 &meshlet_triangles_u8[meshlet.triangle_offset],
                 meshlet.triangle_count,
-                verticies.data(),
-                verticies.size(),
+                vertices.data(),
+                vertices.size(),
                 sizeof(float) * 3);
             model_out.meshlet_sphere_bounds.push_back(glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
         }
@@ -412,7 +417,7 @@ namespace
                     }
                 }
 
-                generate_meshlet(model, mesh);
+                generate_meshlet(model);
 
                 out_scene.models.push_back(std::move(model));
             }
@@ -478,6 +483,10 @@ namespace
 
 pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 {
+    if (!std::filesystem::exists(path))
+    {
+        throw;
+    }
     LoadedScene scene;
     if (has_cache(path))
     {

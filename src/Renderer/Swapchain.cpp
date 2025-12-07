@@ -26,7 +26,7 @@ static VkSurfaceFormatKHR get_best_surface_format(const VkPhysicalDevice& physic
 
     for (auto const& format : surface_formats)
     {
-        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
             return format;
         }
@@ -89,9 +89,9 @@ VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
 
 pvp::Swapchain::Swapchain(Context& context, GlfwToRender& glfw_to_render)
     : m_context(context)
-      , m_swapchain_surface_format{get_best_surface_format(context.physical_device->get_physical_device(), m_context.surface)}
-      , m_command_pool{context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT}
-      , m_glfw_to_render{&glfw_to_render}
+    , m_swapchain_surface_format{ get_best_surface_format(context.physical_device->get_physical_device(), m_context.surface) }
+    , m_command_pool{ context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT }
+    , m_glfw_to_render{ &glfw_to_render }
 {
     ZoneScoped;
     m_swap_chain_destructor.add_to_queue([&] { m_command_pool.destroy(); });
@@ -115,7 +115,6 @@ void pvp::Swapchain::recreate_swapchain()
 
     destroy_old_swapchain();
     create_the_swapchain();
-
 
     // window_resized(width, height); // Not happy with this but need to make it work first!!!
 
@@ -189,9 +188,9 @@ void pvp::Swapchain::create_the_swapchain()
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    Queue* graphics = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false);
-    Queue* present = m_context.queue_families->get_queue_family(static_cast<VkQueueFlagBits>(0x00000000), true);
-    std::array queue_family_indices = {graphics->family_index, present->family_index};
+    Queue*     graphics = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false);
+    Queue*     present = m_context.queue_families->get_queue_family(static_cast<VkQueueFlagBits>(0x00000000), true);
+    std::array queue_family_indices = { graphics->family_index, present->family_index };
 
     if (graphics->family_index != present->family_index)
     {

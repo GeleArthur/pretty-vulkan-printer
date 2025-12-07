@@ -74,7 +74,18 @@ void main()
         SetMeshOutputsEXT(segments, segments);
     }
 
-    vec4 sphere = vec4(vec3(pc.model * vec4(spheres[gl_WorkGroupID.x].xyz, 1.0f)), spheres[gl_WorkGroupID.x].w);
+    vec3 scale = vec3(
+    length(pc.model[0].xyz), // X axis scale
+    length(pc.model[1].xyz), // Y axis scale
+    length(pc.model[2].xyz)   // Z axis scale
+    );
+    float maxScale = max(max(scale.x, scale.y), scale.z);
+
+
+    vec4 sphere = vec4(
+    vec3(pc.model * vec4(spheres[gl_WorkGroupID.x].xyz, 1.0f)),
+    spheres[gl_WorkGroupID.x].w * maxScale
+    );
 
     vec3 forward = normalize(sceneInfo.position - sphere.xyz);
     vec3 right = normalize(cross(vec3(0, 1, 0), forward));

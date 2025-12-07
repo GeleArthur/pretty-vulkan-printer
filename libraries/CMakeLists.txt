@@ -91,7 +91,7 @@ FetchContent_MakeAvailable(assimp)
 FetchContent_Declare(
         meshoptimizer
         GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
-        GIT_TAG v0.25
+        GIT_TAG 73583c335e541c139821d0de2bf5f12960a04941
         GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(meshoptimizer)

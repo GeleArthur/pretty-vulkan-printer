@@ -79,7 +79,6 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     }
 
     vkCmdEndRendering(cmd.command_buffer);
-
     vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
 }
 

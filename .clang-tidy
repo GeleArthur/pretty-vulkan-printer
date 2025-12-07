@@ -9,6 +9,7 @@ Checks: '
   -modernize-use-trailing-return-type,
   -misc-non-private-member-variables-in-classes,
   -misc-no-recursion,
+  -uppercase-literal-suffix,
 
 CheckOptions:
   - key: modernize-use-auto.MinTypeNameLength

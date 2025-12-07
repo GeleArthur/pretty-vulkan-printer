@@ -68,8 +68,18 @@ void main()
 {
     bool visible = false;
 
-    //    if (gl_GlobalInvocationID.x < pc.meshlet_count) {
-    vec4 spherebounds = vec4(vec3(pc.model * vec4(SphereBounds[gl_GlobalInvocationID.x].xyz, 1.0)), SphereBounds[gl_GlobalInvocationID.x].w);
+    vec3 scale = vec3(
+    length(pc.model[0].xyz), // X axis scale
+    length(pc.model[1].xyz), // Y axis scale
+    length(pc.model[2].xyz)   // Z axis scale
+    );
+    float maxScale = max(max(scale.x, scale.y), scale.z);
+
+    vec4 spherebounds = vec4(
+    vec3(pc.model * vec4(SphereBounds[gl_GlobalInvocationID.x].xyz, 1.0)),
+    SphereBounds[gl_GlobalInvocationID.x].w * maxScale
+    );
+
     visible = VisibleFrustumCone(spherebounds);
     //    }
 
