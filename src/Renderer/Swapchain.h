@@ -17,10 +17,11 @@ namespace pvp
     class Instance;
     class Device;
 
-    class Swapchain
+    class Swapchain final
     {
     public:
         explicit Swapchain(Context& context, GlfwToRender& glfw_to_render);
+        ~Swapchain() = default;
 
         DISABLE_COPY(Swapchain);
         DISABLE_MOVE(Swapchain);
@@ -31,7 +32,7 @@ namespace pvp
         [[nodiscard]] VkSurfaceFormatKHR get_swapchain_surface_format() const;
         [[nodiscard]] VkFormat           get_depth_format() const;
         [[nodiscard]] VkExtent2D         get_swapchain_extent() const;
-        [[nodiscard]] int                get_min_image_count() const;
+        [[nodiscard]] uint32_t           get_image_count() const;
         [[nodiscard]] VkSwapchainKHR     get_swapchain() const;
 
         [[nodiscard]] const std::vector<VkImage>&     get_images() const;
@@ -50,13 +51,13 @@ namespace pvp
         VkExtent2D               m_swapchain_extent{};
 
         Context&           m_context;
-        VkSurfaceFormatKHR m_swapchain_surface_format;
-        VkFormat           m_depth_format;
-        uint32_t           m_imagecount;
+        VkSurfaceFormatKHR m_swapchain_surface_format{};
+        VkFormat           m_depth_format{};
+        uint32_t           m_imagecount{};
         CommandPool        m_command_pool;
-        GlfwToRender*      m_glfw_to_render;
+        GlfwToRender*      m_glfw_to_render{};
 
         Event<Context&, int, int> m_on_frame_buffer_size_changed;
-        DestructorQueue           m_swap_chain_destructor;
+        DestructorQueue           m_swap_chain_destructor{};
     };
 } // namespace pvp

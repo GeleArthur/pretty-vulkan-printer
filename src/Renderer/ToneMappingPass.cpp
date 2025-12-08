@@ -6,7 +6,7 @@
 #include "Swapchain.h"
 
 #include <Context/Device.h>
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
@@ -32,7 +32,7 @@ namespace pvp
     {
         ZoneScoped;
         TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "ToneMapping");
-        Debugger::start_debug_label(cmd.command_buffer, "tone mapping", { 0.8, 0.8f, 0.0f });
+        debugger::start_debug_label(cmd.command_buffer, "tone mapping", { 0.8, 0.8f, 0.0f });
         m_tone_texture.transition_layout(cmd,
                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                          VK_PIPELINE_STAGE_2_NONE,
@@ -68,7 +68,7 @@ namespace pvp
                                          VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                          VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                          VK_ACCESS_2_TRANSFER_READ_BIT);
-        Debugger::end_debug_label(cmd.command_buffer);
+        debugger::end_debug_label(cmd.command_buffer);
     }
 
     void ToneMappingPass::build_pipelines()

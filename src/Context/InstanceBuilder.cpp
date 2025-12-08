@@ -6,7 +6,7 @@
 #include <VulkanExternalFunctions.h>
 #include <cstring>
 #include <GLFW/glfw3.h>
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <tracy/Tracy.hpp>
 
 void pvp::InstanceBuilder::valid_extensions_check()
@@ -82,7 +82,7 @@ void pvp::InstanceBuilder::build(Instance& instance)
     // Setup debug
     if (m_is_debugging)
     {
-        create_info.pNext = Debugger::get_debug_info();
+        create_info.pNext = debugger::get_debug_info();
     }
 
     valid_extensions_check();
@@ -102,7 +102,7 @@ void pvp::InstanceBuilder::build(Instance& instance)
     {
         static VkDebugUtilsMessengerEXT debug_messenger{};
 
-        const VkDebugUtilsMessengerCreateInfoEXT* convertToLValue = Debugger::get_debug_info();
+        const VkDebugUtilsMessengerCreateInfoEXT* convertToLValue = debugger::get_debug_info();
         if (VulkanInstanceExtensions::vkCreateDebugUtilsMessengerEXT(instance.m_instance, convertToLValue, nullptr, &debug_messenger) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create DebugUtilsMessengerEXT");

@@ -417,7 +417,7 @@ void pvp::PvpScene::update()
 
     if (ImGui::Begin("Debug"))
     {
-        ImGui::Text("fps: %f", 1.0f / delta_time);
+        ImGui::Text("fps: %f ms: %f", 1.0f / delta_time, delta_time * 1000.0f);
         ImGui::Text("Camera pos: x:%f, y:%f, z:%f", m_camera.get_position().x, m_camera.get_position().y, m_camera.get_position().z);
 
         if (ImGui::Button("Add light"))
@@ -450,8 +450,8 @@ void pvp::PvpScene::update()
             ImGui::PopID();
         }
 
-        ImGui::Text("TASK_SHADER_INVOCATIONS: %i", m_context.invocation_count[0]);
-        ImGui::Text("MESH_SHADER_INVOCATIONS: %i", m_context.invocation_count[1]);
+        ImGui::Text("MESH_SHADER_INVOCATIONS: %i", m_context.invocation_count[0]);
+        ImGui::Text("TASK_SHADER_INVOCATIONS: %i", m_context.invocation_count[1]);
 
         ImGui::Checkbox("Update frustom", &m_camera.update_frustum);
         bool enabeld = gizmos::is_spheres_enabled();

@@ -1,12 +1,14 @@
 #pragma once
 
+#include <VulkanExternalFunctions.h>
 #include <string>
+#include <Context/Device.h>
 #include <glm/vec3.hpp>
 #include <vulkan/vulkan.h>
 
 namespace pvp
 {
-    namespace Debugger
+    namespace debugger
     {
         VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
             VkDebugUtilsMessageSeverityFlagBitsEXT      message_severity,
@@ -34,5 +36,29 @@ namespace pvp
         void start_debug_label(VkCommandBuffer buffer, const std::string& name, glm::vec3 color);
         void end_debug_label(VkCommandBuffer buffer);
 
-    }; // namespace Debugger
+        template<typename T>
+        void add_object_name(const Device& device, const T vulkan_object, const std::string& string)
+        {
+            VkDebugUtilsObjectNameInfoEXT info{
+                .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                .objectHandle = reinterpret_cast<uint64_t>(vulkan_object),
+                .pObjectName = string.c_str()
+            };
+
+            if constexpr (std::is_same_v<T, VkInstance>)
+            {
+                info.objectType = VK_OBJECT_TYPE_INSTANCE;
+            }
+            else if constexpr (std::is_same_v<T, VkSemaphore>)
+            {
+                info.objectType = VK_OBJECT_TYPE_SEMAPHORE;
+            }
+            else
+            {
+                info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+            }
+            VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(device.get_device(), &info);
+        }
+
+    }; // namespace debugger
 } // namespace pvp

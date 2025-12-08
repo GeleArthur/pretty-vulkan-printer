@@ -16,6 +16,7 @@
 #include <VulkanExternalFunctions.h>
 #include <imgui.h>
 #include <Context/PhysicalDevice.h>
+#include <Debugger/debugger.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <Scene/PVPScene.h>
 #include <tracy/Tracy.hpp>
@@ -31,13 +32,23 @@ static void transfur_swapchain(pvp::Context& context, FrameContext& cmd, uint32_
         .layerCount = VK_REMAINING_ARRAY_LAYERS
     };
 
+    // pvp::image_layout_transition(cmd.command_buffer,
+    //                              context.swapchain->get_images()[swapchain_index],
+    //                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //                              VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+    //                              VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+    //                              VK_ACCESS_2_NONE,
+    //                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //                              VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    //                              range);
+
     pvp::image_layout_transition(cmd.command_buffer,
                                  context.swapchain->get_images()[swapchain_index],
-                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_2_NONE,
                                  VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
-                                 VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                  VK_ACCESS_2_NONE,
-                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 VK_ACCESS_2_NONE,
+                                 VK_IMAGE_LAYOUT_UNDEFINED,
                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                                  range);
 }
@@ -129,6 +140,7 @@ void pvp::Renderer::prepare_frame()
     ZoneNamedN(BeginCommandBuffer, "Begin Command Buffer", true);
     VkCommandBufferBeginInfo start_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     vkBeginCommandBuffer(m_frame_contexts[m_double_buffer_frame].command_buffer, &start_info);
+    debugger::start_debug_label(m_frame_contexts[m_double_buffer_frame].command_buffer, "START", { 1, 1, 1 });
     TracyVkZone(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer, "Begin");
 
     ZoneNamedN(viewport_scisor, "VkViewport scissor", true);
@@ -212,7 +224,7 @@ void pvp::Renderer::end_frame()
     vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue,
                    1,
                    &submit_info,
-                   m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
+                   m_frame_syncers.in_flight_fences.at(m_double_buffer_frame).handle);
 
     ZoneNamedN(present, "Queue present", true);
     VkPresentInfoKHR present_info{};

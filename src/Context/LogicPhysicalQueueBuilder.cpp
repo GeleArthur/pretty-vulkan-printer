@@ -39,7 +39,7 @@ namespace pvp
         m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
         m_extensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
-        auto physical_device = get_best_device(instance, surface);
+        VkPhysicalDevice physical_device = get_best_device(instance, surface);
         if (physical_device == VK_NULL_HANDLE)
         {
             throw std::runtime_error("No device found that works");

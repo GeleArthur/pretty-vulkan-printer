@@ -5,7 +5,7 @@
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
 
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
 #include <Image/ImageBuilder.h>
@@ -86,7 +86,7 @@ namespace pvp
     {
         ZoneScoped;
         TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "LightPass");
-        Debugger::start_debug_label(cmd.command_buffer, "Light pass", { 0, 0, 1 });
+        debugger::start_debug_label(cmd.command_buffer, "Light pass", { 0, 0, 1 });
         m_light_image.transition_layout(cmd,
                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                         VK_PIPELINE_STAGE_2_NONE,
@@ -118,6 +118,6 @@ namespace pvp
                                         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                         VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
-        Debugger::end_debug_label(cmd.command_buffer);
+        debugger::end_debug_label(cmd.command_buffer);
     }
 } // namespace pvp

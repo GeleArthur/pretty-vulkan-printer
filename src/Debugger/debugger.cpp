@@ -1,11 +1,11 @@
-#include "Debugger.h"
+#include "debugger.h"
 
 #include <VulkanExternalFunctions.h>
 #include <spdlog/spdlog.h>
 
 namespace pvp
 {
-    VkBool32 Debugger::debug_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT, VkDebugUtilsMessengerCallbackDataEXT const* p_callback_data, void*)
+    VkBool32 debugger::debug_callback(const VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT, VkDebugUtilsMessengerCallbackDataEXT const* p_callback_data, void*)
     {
         if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
@@ -22,11 +22,11 @@ namespace pvp
 
         return VK_FALSE;
     }
-    void Debugger::glfw_error_callback(int error, const char* description)
+    void debugger::glfw_error_callback(int error, const char* description)
     {
         spdlog::error("{}, {}", error, description);
     }
-    void Debugger::start_debug_label(VkCommandBuffer buffer, const std::string& name, glm::vec3 color)
+    void debugger::start_debug_label(VkCommandBuffer buffer, const std::string& name, glm::vec3 color)
     {
 #ifdef _DEBUG
         VkDebugUtilsLabelEXT debugLabel{
@@ -37,7 +37,7 @@ namespace pvp
         VulkanInstanceExtensions::vkCmdBeginDebugUtilsLabelEXT(buffer, &debugLabel);
 #endif
     }
-    void Debugger::end_debug_label(VkCommandBuffer buffer)
+    void debugger::end_debug_label(VkCommandBuffer buffer)
     {
 #ifdef _DEBUG
         VulkanInstanceExtensions::vkCmdEndDebugUtilsLabelEXT(buffer);

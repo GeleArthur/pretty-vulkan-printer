@@ -5,7 +5,7 @@
 #include "Swapchain.h"
 
 #include <Context/Device.h>
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
@@ -30,7 +30,7 @@ namespace pvp
         ZoneScoped;
 
         TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "DepthPrePass");
-        Debugger::start_debug_label(cmd.command_buffer, "Depth pre pass", { 0.7f, 0, 0 });
+        debugger::start_debug_label(cmd.command_buffer, "Depth pre pass", { 0.7f, 0, 0 });
 
         ZoneNamedN(transition, "TransitionLayout", true);
         m_depth_image.transition_layout(cmd,
@@ -74,7 +74,7 @@ namespace pvp
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT);
 
-        Debugger::end_debug_label(cmd.command_buffer);
+        debugger::end_debug_label(cmd.command_buffer);
     }
 
     void DepthPrePass::build_pipelines()

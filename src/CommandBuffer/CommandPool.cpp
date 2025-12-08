@@ -51,7 +51,10 @@ namespace pvp
         ZoneScoped;
         vkEndCommandBuffer(buffer);
 
-        VkCommandBufferSubmitInfo command_buffer_submit{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, .commandBuffer = buffer };
+        VkCommandBufferSubmitInfo command_buffer_submit{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+            .commandBuffer = buffer
+        };
 
         VkSubmitInfo2 submit_info{};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;

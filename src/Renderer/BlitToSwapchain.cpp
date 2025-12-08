@@ -4,7 +4,7 @@
 #include "RenderInfoBuilder.h"
 
 #include <Context/Device.h>
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <Image/ImageBuilder.h>
 #include <Image/TransitionLayout.h>
 #include <tracy/Tracy.hpp>
@@ -22,7 +22,7 @@ namespace pvp
     {
         ZoneScoped;
         TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "Blit To SwapChain");
-        Debugger::start_debug_label(cmd.command_buffer, "Bilt to swapchain", { 0.5f, 0.5f, 0.0f });
+        debugger::start_debug_label(cmd.command_buffer, "Bilt to swapchain", { 0.5f, 0.5f, 0.0f });
 
         VkImageSubresourceRange range{
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -76,6 +76,6 @@ namespace pvp
                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 range);
-        Debugger::end_debug_label(cmd.command_buffer);
+        debugger::end_debug_label(cmd.command_buffer);
     }
 } // namespace pvp

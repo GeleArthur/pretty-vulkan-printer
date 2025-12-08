@@ -9,7 +9,7 @@
 #include <Context/Device.h>
 #include <Context/PhysicalDevice.h>
 #include <Context/QueueFamilies.h>
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <DescriptorSets/DescriptorLayoutCreator.h>
 #include <Image/TransitionLayout.h>
 #include <Window/WindowSurface.h>
@@ -200,7 +200,7 @@ void pvp::ImguiRenderer::draw(const FrameContext& cmd, uint32_t swapchain_index)
     // };
 
     // vkBeginCommandBuffer(cmd, &cmd_buffer_info);
-    Debugger::start_debug_label(cmd.command_buffer, "Imgui", { 27, 146, 220 });
+    debugger::start_debug_label(cmd.command_buffer, "Imgui", { 27, 146, 220 });
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder()
@@ -216,7 +216,7 @@ void pvp::ImguiRenderer::draw(const FrameContext& cmd, uint32_t swapchain_index)
     }
     vkCmdEndRendering(cmd.command_buffer);
 
-    Debugger::end_debug_label(cmd.command_buffer);
+    debugger::end_debug_label(cmd.command_buffer);
 
     // vkEndCommandBuffer(cmd);
 }

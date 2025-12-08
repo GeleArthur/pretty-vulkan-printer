@@ -7,7 +7,7 @@
 
 #include <UniformBufferStruct.h>
 #include <array>
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <DescriptorSets/DescriptorLayoutBuilder.h>
 #include <DescriptorSets/DescriptorSetBuilder.h>
 #include <GraphicsPipeline/GraphicsPipelineBuilder.h>
@@ -88,7 +88,7 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
 {
     ZoneScoped;
     TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "GBuffer");
-    Debugger::start_debug_label(cmd.command_buffer, "G buffer", { 0, 1, 0 });
+    debugger::start_debug_label(cmd.command_buffer, "G buffer", { 0, 1, 0 });
 
     ZoneNamedN(transition, "TransitionLayout", true);
     m_albedo_image.transition_layout(cmd,
@@ -168,5 +168,5 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
                                                          VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                                                          VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                          VK_ACCESS_2_SHADER_READ_BIT);
-    Debugger::end_debug_label(cmd.command_buffer);
+    debugger::end_debug_label(cmd.command_buffer);
 }

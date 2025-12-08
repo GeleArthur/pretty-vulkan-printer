@@ -41,8 +41,8 @@ Event<Args...>::~Event()
 
 template<typename... Args>
 Event<Args...>::Event(Event&& other) noexcept
+    : m_function_pointers(std::move(other.m_function_pointers))
 {
-    m_function_pointers = std::move(other.m_function_pointers);
     other.m_function_pointers.clear();
 
     for (EventListener<Args...>* function : m_function_pointers)

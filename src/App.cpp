@@ -1,6 +1,6 @@
 ﻿#include "App.h"
 
-#include <Debugger/Debugger.h>
+#include <Debugger/debugger.h>
 #include <GLFW/glfw3.h>
 #include <Renderer/Renderer.h>
 #include <Scene/PVPScene.h>
@@ -12,7 +12,7 @@ void pvp::App::run()
 {
     ZoneScoped;
 
-    glfwSetErrorCallback(Debugger::glfw_error_callback);
+    glfwSetErrorCallback(debugger::glfw_error_callback);
     glfwInit();
     m_destructor_queue.add_to_queue([&] { glfwTerminate(); });
 

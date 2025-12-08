@@ -35,7 +35,7 @@ static VkSurfaceFormatKHR get_best_surface_format(const VkPhysicalDevice& physic
     return surface_formats[0]; // lol
 }
 
-static uint32_t get_mini_image_count(const VkSurfaceCapabilitiesKHR& capabilities)
+static uint32_t get_min_image_count(const VkSurfaceCapabilitiesKHR& capabilities)
 {
     uint32_t image_count = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount)
@@ -78,7 +78,7 @@ VkPresentModeKHR pvp::Swapchain::get_best_present_mode() const
 
     for (const VkPresentModeKHR& available_present_mode : present_modes)
     {
-        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
+        if (available_present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
         {
             return available_present_mode;
         }
@@ -137,7 +137,7 @@ VkExtent2D pvp::Swapchain::get_swapchain_extent() const
     return m_swapchain_extent;
 }
 
-int pvp::Swapchain::get_min_image_count() const
+uint32_t pvp::Swapchain::get_image_count() const
 {
     return m_imagecount;
 }
@@ -176,21 +176,21 @@ void pvp::Swapchain::create_the_swapchain()
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_context.physical_device->get_physical_device(), m_context.surface, &surface_capabilities);
 
     m_swapchain_extent = get_swap_chain_extent(surface_capabilities, *m_glfw_to_render);
-    m_imagecount = get_mini_image_count(surface_capabilities);
+    uint32_t min_image_count = get_min_image_count(surface_capabilities);
 
     VkSwapchainCreateInfoKHR create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     create_info.surface = m_context.surface;
-    create_info.minImageCount = m_imagecount;
+    create_info.minImageCount = min_image_count;
     create_info.imageFormat = m_swapchain_surface_format.format;
     create_info.imageColorSpace = m_swapchain_surface_format.colorSpace;
     create_info.imageExtent = m_swapchain_extent;
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    Queue*     graphics = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false);
-    Queue*     present = m_context.queue_families->get_queue_family(static_cast<VkQueueFlagBits>(0x00000000), true);
-    std::array queue_family_indices = { graphics->family_index, present->family_index };
+    Queue const* graphics = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, VK_FALSE);
+    Queue const* present = m_context.queue_families->get_queue_family(static_cast<VkQueueFlagBits>(0x00000000), VK_TRUE);
+    std::array   queue_family_indices = { graphics->family_index, present->family_index };
 
     if (graphics->family_index != present->family_index)
     {
@@ -217,12 +217,11 @@ void pvp::Swapchain::create_the_swapchain()
     }
     m_swap_chain_destructor.add_to_queue([&] { vkDestroySwapchainKHR(m_context.device->get_device(), m_swapchain, nullptr); });
 
-    uint32_t image_count{};
-    vkGetSwapchainImagesKHR(m_context.device->get_device(), m_swapchain, &image_count, nullptr);
-    m_swapchain_images.resize(image_count);
-    vkGetSwapchainImagesKHR(m_context.device->get_device(), m_swapchain, &image_count, m_swapchain_images.data());
+    vkGetSwapchainImagesKHR(m_context.device->get_device(), m_swapchain, &m_imagecount, nullptr);
+    m_swapchain_images.resize(m_imagecount);
+    vkGetSwapchainImagesKHR(m_context.device->get_device(), m_swapchain, &m_imagecount, m_swapchain_images.data());
 
-    m_swapchain_views.resize(image_count);
+    m_swapchain_views.resize(m_imagecount);
     for (size_t i = 0; i < m_swapchain_images.size(); ++i)
     {
         VkImageViewCreateInfo view_info{};
