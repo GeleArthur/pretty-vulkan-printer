@@ -22,8 +22,8 @@ add_executable(${PROJECT_NAME}
         src/tiny_obj_loader.h
         src/globalconst.h
 
-        src/Debugger/Debugger.cpp
-        src/Debugger/Debugger.h
+        src/Debugger/debugger.cpp
+        src/Debugger/debugger.h
         src/Context/Instance.cpp
         src/Context/Instance.h
         src/Context/InstanceBuilder.cpp

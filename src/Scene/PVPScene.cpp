@@ -3,7 +3,6 @@
 
 #include <DestructorQueue.h>
 #include <VulkanExternalFunctions.h>
-#include <corecrt_math_defines.h>
 #include <imgui.h>
 #include <stb_image.h>
 #include <Buffer/BufferBuilder.h>

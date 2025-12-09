@@ -128,7 +128,7 @@ namespace pvp
 
         device_create_info.pNext = &features2;
 
-        if (vkCreateDevice(physical_device, &device_create_info, nullptr, &device_out.m_device) != VK_SUCCESS)
+        if (auto result = vkCreateDevice(physical_device, &device_create_info, nullptr, &device_out.m_device); result != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create logical device!");
         }

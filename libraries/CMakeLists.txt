@@ -32,8 +32,8 @@ set(GLFW_INSTALL OFF)
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_X11 ON)
-set(GLFW_BUILD_WAYLAND OFF)
+set(GLFW_BUILD_X11 OFF)
+set(GLFW_BUILD_WAYLAND ON)
 FetchContent_Declare(
         glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -60,10 +60,10 @@ target_sources(imgui PRIVATE
         ${imgui_SOURCE_DIR}/imgui_demo.cpp
         ${imgui_SOURCE_DIR}/imgui_tables.cpp
 
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.h
         ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
 )
 
 target_link_libraries(imgui PRIVATE
@@ -135,7 +135,9 @@ if(WIN32)
         )
     endif()
 else()
-    #TODO
+    set_target_properties(slang PROPERTIES
+            IMPORTED_LOCATION "${Vulkan_INCLUDE_DIRS}/../lib/libglslang.a"
+    )
 endif()
 
 # tracy
