@@ -154,6 +154,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
         throw std::runtime_error("Failed creating image view");
     }
 
+    image.m_name = m_name;
 #if defined(_DEBUG)
 
     VkDebugUtilsObjectNameInfoEXT image_debug{

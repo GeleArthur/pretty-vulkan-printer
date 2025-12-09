@@ -14,8 +14,7 @@
 
 namespace
 {
-    shaderc::Compiler       compiler{};
-    shaderc::CompileOptions options{};
+
 } // namespace
 
 void test(VkDevice device)
@@ -111,6 +110,8 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const
 {
     // test(device);
     ZoneScoped;
+    shaderc::Compiler       compiler{};
+    shaderc::CompileOptions options{};
 
     std::vector<char> shader_code = load_file(path);
 

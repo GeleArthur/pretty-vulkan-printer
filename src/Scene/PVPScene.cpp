@@ -20,6 +20,7 @@
 #include <Renderer/Swapchain.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <assimp/material.h>
+#include <cstddef>
 #include <glm/mat4x4.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <spdlog/spdlog.h>
@@ -38,18 +39,64 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_command_queue.resize(max_frames_in_flight);
 
-    LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    SamplerBuilder()
+        .set_filter(VK_FILTER_LINEAR)
+        .set_mipmap(VK_SAMPLER_MIPMAP_MODE_LINEAR)
+        .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        .build(m_context, m_shadered_sampler);
+
+    DescriptorSetBuilder()
+        .set_layout(context.descriptor_creator->get_layout()
+                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                        .set_tag(DiscriptorTag::scene_globals)
+                        .get())
+        .bind_uniform_buffer(0, m_scene_globals_gpu)
+        .build(m_context, m_scene_binding);
+
+    DescriptorSetBuilder()
+        .set_layout(m_context.descriptor_creator->get_layout()
+                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                        .set_tag(DiscriptorTag::lights)
+                        .get())
+        .bind_uniform_buffer(0, m_point_lights_gpu)
+        .bind_uniform_buffer(1, m_directonal_lights_gpu)
+        .build(m_context, m_point_descriptor);
+
+    m_context.descriptor_creator->get_layout()
+        .add_flag(0)
+        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)
+        .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
+        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT, 140)
+        .set_tag(DiscriptorTag::bindless_textures)
+        .get();
+
+    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 100 };
+
+    add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
+    add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
+    add_direction_light(m_direction_light);
+}
+
+pvp::PvpScene::~PvpScene()
+{
+    unload_scenes();
+    m_shadered_sampler.destroy(m_context.device->get_device());
+}
+
+void pvp::PvpScene::load_scene(const std::filesystem::path& path)
+{
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/IntelSponza/NewSponza_Main_glTF_003.gltf"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_shape.glb"));
     // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
     // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
 
-    const CommandPool     cmd_pool_transfer_buffers = CommandPool(context, *context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-    const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
+    LoadedScene       loaded_scene = load_scene_cpu(path);
+    const CommandPool cmd_pool_transfer_buffers = CommandPool(m_context, *m_context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+    VkCommandBuffer   cmd = cmd_pool_transfer_buffers.begin_buffer();
 
-    m_gpu_textures.reserve(loaded_scene.textures.size());
-    std::vector<std::string> gpu_texture_names;
-    gpu_texture_names.reserve(loaded_scene.textures.size());
+    m_gpu_textures.reserve(m_gpu_textures.size() + loaded_scene.textures.size());
     DestructorQueue transfer_image_deleter{};
 
     for (const TextureData& texture : loaded_scene.textures)
@@ -63,12 +110,12 @@ pvp::PvpScene::PvpScene(Context& context)
             .set_size(image_size)
             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-            .build(context.allocator->get_allocator(), staging_buffer);
+            .build(m_context.allocator->get_allocator(), staging_buffer);
 
         transfer_image_deleter.add_to_queue([=] { staging_buffer.destroy(); });
         staging_buffer.copy_data_into_buffer(std::as_bytes(std::span(texture.pixels, image_size)));
 
-        VkFormat format;
+        VkFormat format{};
         switch (texture.type)
         {
             case aiTextureType_DIFFUSE:
@@ -105,58 +152,7 @@ pvp::PvpScene::PvpScene(Context& context)
 
         stbi_image_free(texture.pixels);
 
-        for (uint32_t i = 1; i < gpu_image.get_mipmap_levels(); ++i)
-        {
-            VkImageBlit2 region{
-                .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
-                .srcSubresource = VkImageSubresourceLayers{
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .mipLevel = i - 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1 },
-                .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(texture.width >> (i - 1)), static_cast<int32_t>(texture.height >> (i - 1)), 1 } },
-                .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = i, .baseArrayLayer = 0, .layerCount = 1 },
-                .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(texture.width >> i), static_cast<int32_t>(texture.height >> i), 1 } },
-            };
-
-            const VkBlitImageInfo2 info{
-                .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
-                .srcImage = gpu_image.get_image(),
-                .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                .dstImage = gpu_image.get_image(),
-                .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                .regionCount = 1,
-                .pRegions = &region,
-                .filter = VK_FILTER_NEAREST
-            };
-
-            VkImageSubresourceRange range{
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = i,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            };
-
-            gpu_image.transition_layout_range(cmd,
-                                              VK_IMAGE_LAYOUT_UNDEFINED,
-                                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                              VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
-                                              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                              VK_ACCESS_2_NONE,
-                                              VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                                              range);
-            vkCmdBlitImage2(cmd, &info);
-
-            gpu_image.transition_layout_range(cmd,
-                                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                              VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                              VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                                              VK_ACCESS_2_TRANSFER_READ_BIT,
-                                              range);
-        }
+        generate_mipmaps(cmd, gpu_image, texture.width, texture.height);
 
         gpu_image.transition_layout(cmd,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -166,25 +162,25 @@ pvp::PvpScene::PvpScene(Context& context)
                                     VK_ACCESS_2_SHADER_READ_BIT);
 
         m_gpu_textures.push_back(std::move(gpu_image));
-        gpu_texture_names.push_back(texture.name);
+        // gpu_texture_names.push_back(texture.name);
     }
 
     DestructorQueue transfer_buffer_deleter{};
-    m_gpu_models.resize(loaded_scene.models.size());
-    for (int i = 0; i < loaded_scene.models.size(); ++i)
+    m_gpu_models.reserve(m_gpu_models.size() + loaded_scene.models.size());
+    for (size_t i = 0; i < loaded_scene.models.size(); ++i)
     {
         ZoneScopedN("Model");
         ModelData& cpu_model = loaded_scene.models[i];
-        Model&     gpu_model = m_gpu_models[i];
+        Model&     gpu_model = m_gpu_models.emplace_back();
 
-        auto transfer_to_gpu = [&context, &transfer_buffer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlags usage, const std::string& name = "") {
+        auto transfer_to_gpu = [this, &transfer_buffer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlags usage, const std::string& name = "") {
             Buffer transfer_buffer{};
             BufferBuilder()
                 .set_size(data.size_bytes())
                 .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
                 .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
                 .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-                .build(context.allocator->get_allocator(), transfer_buffer);
+                .build(m_context.allocator->get_allocator(), transfer_buffer);
 
             transfer_buffer.copy_data_into_buffer(std::as_bytes(data));
             transfer_buffer_deleter.add_to_queue([transfer_buffer] {
@@ -195,19 +191,19 @@ pvp::PvpScene::PvpScene(Context& context)
                 .set_size(data.size_bytes())
                 .set_usage(usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
                 .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-                .build(context.allocator->get_allocator(), gpu_buffer);
+                .build(m_context.allocator->get_allocator(), gpu_buffer);
             gpu_buffer.copy_from_buffer(cmd, transfer_buffer);
 
             if (!name.empty())
             {
-                VkDebugMarkerObjectNameInfoEXT nameInfo{};
-                nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
-                nameInfo.pNext = nullptr;
-                nameInfo.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
-                nameInfo.object = (uint64_t)(gpu_buffer.get_buffer());
-                nameInfo.pObjectName = name.c_str();
+                VkDebugMarkerObjectNameInfoEXT name_info{};
+                name_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
+                name_info.pNext = nullptr;
+                name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+                name_info.object = (uint64_t)(gpu_buffer.get_buffer());
+                name_info.pObjectName = name.c_str();
 
-                VulkanInstanceExtensions::vkDebugMarkerSetObjectNameEXT(context.device->get_device(), &nameInfo);
+                VulkanInstanceExtensions::vkDebugMarkerSetObjectNameEXT(m_context.device->get_device(), &name_info);
             }
         };
 
@@ -220,7 +216,6 @@ pvp::PvpScene::PvpScene(Context& context)
 
         // meshletes loading
         transfer_to_gpu(std::span<meshopt_Meshlet>(cpu_model.meshlets), gpu_model.meshlet_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlets");
-        // transfer_to_gpu(std::span<Vertex>(cpu_model.vertices), gpu_model.meshlet_vertex, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
         transfer_to_gpu(std::span(cpu_model.meshlet_triangles), gpu_model.meshlet_triangles_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet triangle");
         transfer_to_gpu(std::span(cpu_model.meshlet_vertices), gpu_model.meshlet_vertices_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet vertex index");
         transfer_to_gpu(std::span(cpu_model.meshlet_sphere_bounds), gpu_model.meshlet_sphere_bounds_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet sphere bounds");
@@ -244,81 +239,41 @@ pvp::PvpScene::PvpScene(Context& context)
         gpu_model.material.transform = cpu_model.transform;
 
         // TODO: Better default selection
-        gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ? 0 : std::ranges::find(gpu_texture_names, cpu_model.diffuse_path) - gpu_texture_names.begin();
-        gpu_model.material.normal_texture_index = cpu_model.normal_path.empty() ? 0 : std::ranges::find(gpu_texture_names, cpu_model.normal_path) - gpu_texture_names.begin();
-        gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find(gpu_texture_names, cpu_model.metallic_path) - gpu_texture_names.begin();
+        gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.diffuse_path == image.get_name(); }) - m_gpu_textures.begin();
+        gpu_model.material.normal_texture_index = cpu_model.normal_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.normal_path == image.get_name(); }) - m_gpu_textures.begin();
+        gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.metallic_path == image.get_name(); }) - m_gpu_textures.begin();
     }
     cmd_pool_transfer_buffers.end_buffer(cmd);
     transfer_buffer_deleter.destroy_and_clear();
     transfer_image_deleter.destroy_and_clear();
     cmd_pool_transfer_buffers.destroy();
 
+    DescriptorSetBuilder()
+        .set_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::bindless_textures).get())
+        .bind_sampler(0, m_shadered_sampler)
+        .bind_image_array(1, m_gpu_textures)
+        .build(m_context, m_all_textures);
+
     // m_scene_globals_gpu = UniformBuffer{};
     // m_point_lights_gpu = UniformBuffer(16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator());
     // m_directonal_lights_gpu = UniformBuffer(16 + sizeof(DirectionLight) * max_direction_lights, context.allocator->get_allocator());
-
-    SamplerBuilder()
-        .set_filter(VK_FILTER_LINEAR)
-        .set_mipmap(VK_SAMPLER_MIPMAP_MODE_LINEAR)
-        .set_address_mode(VK_SAMPLER_ADDRESS_MODE_REPEAT)
-        .build(m_context, m_shadered_sampler);
-
-    DescriptorSetBuilder()
-        .set_layout(context.descriptor_creator->get_layout()
-                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
-                        .set_tag(DiscriptorTag::scene_globals)
-                        .get())
-        .bind_uniform_buffer(0, m_scene_globals_gpu)
-        .build(m_context, m_scene_binding);
-
-    DescriptorSetBuilder()
-        .set_layout(context.descriptor_creator->get_layout()
-                        .add_flag(0)
-                        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT, 140)
-                        .set_tag(DiscriptorTag::bindless_textures)
-                        .get())
-        .bind_sampler(0, m_shadered_sampler)
-        .bind_image_array(1, m_gpu_textures)
-        .build(context, m_all_textures);
-
-    DescriptorSetBuilder()
-        .set_layout(m_context.descriptor_creator->get_layout()
-                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                        .set_tag(DiscriptorTag::lights)
-                        .get())
-        .bind_uniform_buffer(0, m_point_lights_gpu)
-        .bind_uniform_buffer(1, m_directonal_lights_gpu)
-        .build(m_context, m_point_descriptor);
-
-    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 100 };
-
-    add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
-    add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
-    add_direction_light(m_direction_light);
 }
-
-pvp::PvpScene::~PvpScene()
+void pvp::PvpScene::unload_scenes()
 {
-    for (Model& model : m_gpu_models)
+    for (const Model& model : m_gpu_models)
     {
         model.vertex_data.destroy();
         model.index_data.destroy();
-        // model.meshlet_vertex.destroy();
         model.meshlet_buffer.destroy();
         model.meshlet_triangles_buffer.destroy();
         model.meshlet_vertices_buffer.destroy();
         model.meshlet_sphere_bounds_buffer.destroy();
     }
 
-    for (StaticImage& gpu_texture : m_gpu_textures)
+    for (const StaticImage& gpu_texture : m_gpu_textures)
     {
         gpu_texture.destroy(m_context);
     }
-
-    m_shadered_sampler.destroy(m_context.device->get_device());
 }
 
 uint32_t pvp::PvpScene::add_point_light(const PointLight& light)
@@ -479,4 +434,59 @@ void pvp::PvpScene::update_render(const FrameContext& frame_context)
     // }
 
     m_scene_globals_gpu.update(frame_context.buffer_index, m_scene_globals);
+}
+void pvp::PvpScene::generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height)
+{
+    for (uint32_t i = 1; i < gpu_image.get_mipmap_levels(); ++i)
+    {
+        VkImageBlit2 region{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+            .srcSubresource = VkImageSubresourceLayers{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = i - 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1 },
+            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(width >> i - 1), static_cast<int32_t>(height >> i - 1), 1 } },
+            .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = i, .baseArrayLayer = 0, .layerCount = 1 },
+            .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(width >> i), static_cast<int32_t>(height >> i), 1 } },
+        };
+
+        const VkBlitImageInfo2 info{
+            .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+            .srcImage = gpu_image.get_image(),
+            .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            .dstImage = gpu_image.get_image(),
+            .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .regionCount = 1,
+            .pRegions = &region,
+            .filter = VK_FILTER_NEAREST
+        };
+
+        VkImageSubresourceRange range{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = i,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        };
+
+        gpu_image.transition_layout_range(cmd,
+                                          VK_IMAGE_LAYOUT_UNDEFINED,
+                                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                          VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                          VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                          VK_ACCESS_2_NONE,
+                                          VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                          range);
+        vkCmdBlitImage2(cmd, &info);
+
+        gpu_image.transition_layout_range(cmd,
+                                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                          VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                          VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                          VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                          VK_ACCESS_2_TRANSFER_READ_BIT,
+                                          range);
+    }
 }

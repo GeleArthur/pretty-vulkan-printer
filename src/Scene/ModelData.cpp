@@ -145,7 +145,7 @@ namespace
             meshopt_optimizeMeshlet(&model_out.meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles_u8[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
         }
 
-        writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, vertices, meshlet_count);
+        // writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, vertices, meshlet_count);
 
         for (auto& meshlet : model_out.meshlets)
         {
@@ -185,7 +185,7 @@ namespace
             model_out.meshlet_sphere_bounds.push_back(glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
         }
 
-        writeOBJ(model_out.meshlet_sphere_bounds, "OutPounts.obj");
+        // writeOBJ(model_out.meshlet_sphere_bounds, "OutPounts.obj");
     }
 
     std::string cached_string(const std::filesystem::path& path)

@@ -52,6 +52,7 @@ namespace pvp
                             .set_tag(DiscriptorTag::gbuffers)
                             .get())
             .build(m_context, m_texture_binding);
+        // m_destructor_queue.add_to_queue([&] { m_texture_binding.destroy(); });
 
         PipelineLayoutBuilder()
             .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())

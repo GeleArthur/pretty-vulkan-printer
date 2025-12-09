@@ -24,6 +24,8 @@ namespace pvp
             return &m_sets[context.buffer_index];
         }
 
+        void destroy() const;
+
     private:
         friend class DescriptorSetBuilder;
         const Context* m_context;

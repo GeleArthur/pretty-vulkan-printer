@@ -48,9 +48,9 @@ namespace pvp
 
         uint32_t     m_double_buffer_frame{ 0 };
         uint32_t     m_current_swapchain_index{};
-        FrameSyncers m_frame_syncers{};
+        FrameSyncers m_frame_syncers;
 
-        CommandPool                                    m_cmd_pool_graphics_present{};
+        CommandPool                                    m_cmd_pool_graphics_present;
         std::array<FrameContext, max_frames_in_flight> m_frame_contexts{};
 
         DepthPrePass    m_depth_pre_pass;

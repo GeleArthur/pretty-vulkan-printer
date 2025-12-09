@@ -78,8 +78,7 @@ namespace pvp
             {
                 throw std::runtime_error("failed to allocate descriptor sets");
             }
-
-            for (const BufferInfo& buffer : m_uniform_buffers)
+ for (const BufferInfo& buffer : m_uniform_buffers)
             {
                 VkDescriptorBufferInfo buffer_info{};
                 buffer_info.buffer = std::get<1>(buffer)->get_buffer(frame_index).get_buffer();

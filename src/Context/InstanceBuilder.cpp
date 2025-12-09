@@ -107,6 +107,6 @@ void pvp::InstanceBuilder::build(Instance& instance)
         {
             throw std::runtime_error("Failed to create DebugUtilsMessengerEXT");
         }
-        instance.m_destructor_queue.add_to_queue([&] { VulkanInstanceExtensions::vkDestroyDebugUtilsMessengerEXT(instance.m_instance, debug_messenger, nullptr); });
+ instance.m_destructor_queue.add_to_queue([&] { VulkanInstanceExtensions::vkDestroyDebugUtilsMessengerEXT(instance.m_instance, debug_messenger, nullptr); });
     }
 }

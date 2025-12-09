@@ -1,6 +1,16 @@
 ﻿#include "DescriptorSets.h"
 
+#include "DescriptorLayoutCreator.h"
+
 #include <Context/Device.h>
+
+void pvp::DescriptorSets::destroy() const
+{
+    vkFreeDescriptorSets(m_context->device->get_device(),
+                         m_context->descriptor_creator->get_pool(),
+                         m_sets.size(),
+                         m_sets.data());
+}
 
 void pvp::DescriptorSets::reconnect_image(const ImageBinding& binding)
 {

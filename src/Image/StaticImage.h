@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <array>
 #include <globalconst.h>
+#include <string>
 #include <Buffer/Buffer.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <vulkan/vulkan.h>
@@ -18,6 +19,10 @@ namespace pvp
         [[nodiscard]] VkImageView get_view() const
         {
             return m_view;
+        }
+        const std::string& get_name()
+        {
+            return m_name;
         };
         [[nodiscard]] VkImage get_image() const
         {
@@ -48,5 +53,7 @@ namespace pvp
         VkImageLayout m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
 
         uint32_t m_mip_map_levels{ 1 };
+
+        std::string m_name;
     };
 } // namespace pvp

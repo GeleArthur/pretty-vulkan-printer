@@ -65,11 +65,16 @@ namespace pvp
         float     intensity;
     };
 
-    class PvpScene
+    class PvpScene final
     {
     public:
         explicit PvpScene(Context& context);
         ~PvpScene();
+        DISABLE_COPY(PvpScene);
+        DISABLE_MOVE(PvpScene);
+
+        void     load_scene(const std::filesystem::path& path);
+        void     unload_scenes();
         uint32_t add_point_light(const PointLight& light);
         void     change_point_light(uint32_t light_index, const PointLight& light);
         uint32_t add_direction_light(const DirectionLight& light);
@@ -109,6 +114,8 @@ namespace pvp
         }
 
     private:
+        void generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height);
+
         Context&                 m_context;
         std::vector<Model>       m_gpu_models;
         std::vector<StaticImage> m_gpu_textures;
