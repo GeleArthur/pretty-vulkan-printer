@@ -1,18 +1,17 @@
 ﻿#include "Buffer.h"
 
-#include <any>
-#include <iostream>
 #include <span>
-#include <CommandBuffer/CommandPool.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <spdlog/spdlog.h>
 #include <vulkan/vulkan.h>
 
+void pvp::Buffer::copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source, const VkBufferCopy& copy_region) const
+{
+    vkCmdCopyBuffer(command_buffer, source.m_buffer, m_buffer, 1, &copy_region);
+}
 void pvp::Buffer::copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source) const
 {
-    VkBufferCopy copy_region{};
-    copy_region.size = get_size();
-    vkCmdCopyBuffer(command_buffer, source.m_buffer, m_buffer, 1, &copy_region);
+    copy_from_buffer(command_buffer, source, VkBufferCopy{ 0, 0, get_size() });
 }
 
 void pvp::Buffer::destroy() const

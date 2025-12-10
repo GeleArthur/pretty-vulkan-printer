@@ -62,7 +62,6 @@ bool VisibleFrustumCone(vec4 sphere)
     return i0 && i1;
 }
 
-
 void main()
 {
     bool visible = false;

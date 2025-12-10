@@ -37,7 +37,7 @@ namespace pvp
         void end_debug_label(VkCommandBuffer buffer);
 
         template<typename T>
-        void add_object_name(const Device& device, const T vulkan_object, const std::string& string)
+        void add_object_name(Device* device, const T vulkan_object, const std::string& string)
         {
             VkDebugUtilsObjectNameInfoEXT info{
                 .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
@@ -53,11 +53,15 @@ namespace pvp
             {
                 info.objectType = VK_OBJECT_TYPE_SEMAPHORE;
             }
+            else if constexpr (std::is_same_v<T, VkBuffer>)
+            {
+                info.objectType = VK_OBJECT_TYPE_BUFFER;
+            }
             else
             {
                 info.objectType = VK_OBJECT_TYPE_UNKNOWN;
             }
-            VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(device.get_device(), &info);
+            VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(device->get_device(), &info);
         }
 
     }; // namespace debugger

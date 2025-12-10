@@ -12,6 +12,7 @@ namespace pvp
         explicit Buffer() = default;
         void destroy() const;
 
+        void copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source, const VkBufferCopy& copy_region) const;
         void copy_from_buffer(VkCommandBuffer command_buffer, Buffer& source) const;
 
         [[nodiscard]] const VkBuffer& get_buffer() const

@@ -36,7 +36,6 @@ namespace VulkanInstanceExtensions
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdDrawMeshTasksIndirectEXT)
     VK_DEFINE_INSTANCE_FUNCTION(vkCmdDrawMeshTasksIndirectCountEXT)
 
-    VK_DEFINE_DEVICE_FUNCTION(vkDebugMarkerSetObjectNameEXT)
     // auto static vkDebugMarkerSetObjectNameEXT(auto&&... args)
     // {
     //     using FuncType = PFN_vkDebugMarkerSetObjectNameEXT;

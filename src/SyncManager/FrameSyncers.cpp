@@ -21,14 +21,14 @@ FrameSyncers::FrameSyncers(const pvp::Context& context)
 
         acquire_semaphores.push_back(Semaphore{});
         vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &acquire_semaphores[i].handle);
-        pvp::debugger::add_object_name(*context.device, acquire_semaphores[i].handle, "acquire_semaphores: " + std::to_string(i));
+        pvp::debugger::add_object_name(context.device, acquire_semaphores[i].handle, "acquire_semaphores: " + std::to_string(i));
     }
 
     for (uint32_t i = 0; i < context.swapchain->get_image_count(); ++i)
     {
         submit_semaphores.push_back(Semaphore{});
         vkCreateSemaphore(context.device->get_device(), &semaphore_info, nullptr, &submit_semaphores[i].handle);
-        pvp::debugger::add_object_name(*context.device, submit_semaphores[i].handle, "submit_semaphores" + std::to_string(i));
+        pvp::debugger::add_object_name(context.device, submit_semaphores[i].handle, "submit_semaphores" + std::to_string(i));
     }
 }
 

@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "ModelData.h"
 
+#include <DestructorQueue.h>
 #include <deque>
 #include <filesystem>
 #include <vector>
@@ -115,6 +116,7 @@ namespace pvp
 
     private:
         void generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height);
+        void load_textures(const LoadedScene& scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
 
         Context&                 m_context;
         std::vector<Model>       m_gpu_models;
@@ -127,6 +129,10 @@ namespace pvp
         UniformBuffer            m_point_lights_gpu;
         UniformBuffer            m_directonal_lights_gpu;
         UniformBuffer            m_scene_globals_gpu;
+
+        Buffer m_gpu_vertices;
+        Buffer m_gpu_indices;
+        Buffer m_gpu_indirect_draw_calls;
 
         std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;
 

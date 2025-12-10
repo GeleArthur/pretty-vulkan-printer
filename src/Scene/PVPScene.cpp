@@ -16,15 +16,15 @@
 #include <GraphicsPipeline/Vertex.h>
 #include <Image/ImageBuilder.h>
 #include <Image/SamplerBuilder.h>
-#include <Renderer/Swapchain.h>
 #include <VMAAllocator/VmaAllocator.h>
 #include <assimp/material.h>
-#include <cstddef>
-#include <glm/mat4x4.hpp>
+#include <numeric>
+#include <Debugger/debugger.h>
 #include <glm/gtx/rotate_vector.hpp>
 #include <spdlog/spdlog.h>
 #include <tracy/Tracy.hpp>
 #include <glm/glm.hpp>
+#include <ranges>
 
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
@@ -85,94 +85,65 @@ pvp::PvpScene::~PvpScene()
 
 void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 {
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/IntelSponza/NewSponza_Main_glTF_003.gltf"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_shape.glb"));
-    // LoadedScene loaded_scene = load_scene_cpu(std::filesystem::absolute("resources/test_triangle.glb"));
-    // auto models_loaded = load_model_file(std::filesystem::absolute("resources/cube.obj"));
+    const LoadedScene     loaded_scene = load_scene_cpu(path);
+    const CommandPool     cmd_pool_transfer_buffers = CommandPool(m_context, *m_context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+    const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
 
-    LoadedScene       loaded_scene = load_scene_cpu(path);
-    const CommandPool cmd_pool_transfer_buffers = CommandPool(m_context, *m_context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-    VkCommandBuffer   cmd = cmd_pool_transfer_buffers.begin_buffer();
+    DestructorQueue transfer_deleter{};
+    load_textures(loaded_scene, transfer_deleter, cmd);
 
-    m_gpu_textures.reserve(m_gpu_textures.size() + loaded_scene.textures.size());
-    DestructorQueue transfer_image_deleter{};
+    uint32_t total_count_vertex = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
+        return static_cast<uint32_t>(start + model.vertices.size());
+    });
 
-    for (const TextureData& texture : loaded_scene.textures)
-    {
-        ZoneScopedN("Texture");
-        ZoneTextF(texture.name.c_str());
-        VkDeviceSize image_size = texture.width * texture.height * texture.channels;
+    BufferBuilder()
+        .set_size(total_count_vertex * sizeof(Vertex))
+        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+        .build(m_context.allocator->get_allocator(), m_gpu_vertices);
+    
+    debugger::add_object_name(m_context.device, m_gpu_vertices.get_buffer(), "vertex buffer");
 
-        Buffer staging_buffer{};
-        BufferBuilder()
-            .set_size(image_size)
-            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-            .build(m_context.allocator->get_allocator(), staging_buffer);
+    uint32_t total_count_indices = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
+        return static_cast<uint32_t>(start + model.indices.size());
+    });
 
-        transfer_image_deleter.add_to_queue([=] { staging_buffer.destroy(); });
-        staging_buffer.copy_data_into_buffer(std::as_bytes(std::span(texture.pixels, image_size)));
+    BufferBuilder()
+        .set_size(total_count_indices * sizeof(uint32_t))
+        .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+        .build(m_context.allocator->get_allocator(), m_gpu_indices);
+    debugger::add_object_name(m_context.device, m_gpu_indices.get_buffer(), "indices buffer");
 
-        VkFormat format{};
-        switch (texture.type)
-        {
-            case aiTextureType_DIFFUSE:
-                format = VK_FORMAT_R8G8B8A8_SRGB;
-                break;
-            default:
-                format = VK_FORMAT_R8G8B8A8_UNORM;
-        }
-
-        StaticImage gpu_image;
-        ImageBuilder()
-            .set_name(texture.name)
-            .set_format(format)
-            .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
-            .set_size({ texture.width, texture.height })
-            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-            .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
-            .set_use_mipmap(true)
-            .build(m_context, gpu_image);
-
-        gpu_image.transition_layout(cmd,
-                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                    VK_PIPELINE_STAGE_2_NONE,
-                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                    VK_ACCESS_2_NONE,
-                                    VK_ACCESS_2_TRANSFER_WRITE_BIT);
-        gpu_image.copy_from_buffer(cmd, staging_buffer);
-        gpu_image.transition_layout(cmd,
-                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                    VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                                    VK_ACCESS_2_TRANSFER_READ_BIT);
-
-        stbi_image_free(texture.pixels);
-
-        generate_mipmaps(cmd, gpu_image, texture.width, texture.height);
-
-        gpu_image.transition_layout(cmd,
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                                    VK_ACCESS_2_TRANSFER_READ_BIT,
-                                    VK_ACCESS_2_SHADER_READ_BIT);
-
-        m_gpu_textures.push_back(std::move(gpu_image));
-        // gpu_texture_names.push_back(texture.name);
-    }
-
-    DestructorQueue transfer_buffer_deleter{};
     m_gpu_models.reserve(m_gpu_models.size() + loaded_scene.models.size());
-    for (size_t i = 0; i < loaded_scene.models.size(); ++i)
+
+    // auto transfer_to_gpu = [&](auto& data, Buffer& gpu_buffer, size_t& offset) {
+    //     Buffer       transfer_buffer{};
+    //     const size_t buffer_size = std::span(data).size_bytes();
+    //
+    //     BufferBuilder()
+    //         .set_size(buffer_size)
+    //         .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+    //         .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+    //         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
+    //         .build(m_context.allocator->get_allocator(), transfer_buffer);
+    //
+    //     transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(data)));
+    //     gpu_buffer.copy_from_buffer(cmd, transfer_buffer, VkBufferCopy{ .srcOffset = 0, .dstOffset = offset, .size = buffer_size });
+    //     offset += buffer_size;
+    // };
+
+    // size_t offset_vertex{};
+    // size_t offset_indices{};
+    for (const ModelData& cpu_model : loaded_scene.models)
     {
         ZoneScopedN("Model");
-        ModelData& cpu_model = loaded_scene.models[i];
-        Model&     gpu_model = m_gpu_models.emplace_back();
+        // transfer_to_gpu(cpu_model.vertices, m_gpu_vertices, offset_vertex);
+        // transfer_to_gpu(cpu_model.indices, m_gpu_indices, offset_indices);
 
-        auto transfer_to_gpu = [this, &transfer_buffer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlags usage, const std::string& name = "") {
+        Model& gpu_model = m_gpu_models.emplace_back();
+
+        auto transfer_to_gpu = [this, &transfer_deleter, &cmd]<typename T>(const std::span<T> data, Buffer& gpu_buffer, VkBufferUsageFlags usage, const std::string& name = "") {
             Buffer transfer_buffer{};
             BufferBuilder()
                 .set_size(data.size_bytes())
@@ -182,7 +153,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
                 .build(m_context.allocator->get_allocator(), transfer_buffer);
 
             transfer_buffer.copy_data_into_buffer(std::as_bytes(data));
-            transfer_buffer_deleter.add_to_queue([transfer_buffer] {
+            transfer_deleter.add_to_queue([transfer_buffer] {
                 transfer_buffer.destroy();
             });
 
@@ -193,17 +164,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
                 .build(m_context.allocator->get_allocator(), gpu_buffer);
             gpu_buffer.copy_from_buffer(cmd, transfer_buffer);
 
-            if (!name.empty())
-            {
-                VkDebugMarkerObjectNameInfoEXT name_info{};
-                name_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
-                name_info.pNext = nullptr;
-                name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
-                name_info.object = (uint64_t)(gpu_buffer.get_buffer());
-                name_info.pObjectName = name.c_str();
-
-                VulkanInstanceExtensions::vkDebugMarkerSetObjectNameEXT(m_context.device->get_device(), &name_info);
-            }
+            debugger::add_object_name(m_context.device, gpu_buffer.get_buffer(), name);
         };
 
         transfer_to_gpu(std::span(cpu_model.vertices), gpu_model.vertex_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Mesh vertex data");
@@ -214,11 +175,10 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         gpu_model.meshlet_count = cpu_model.meshlets.size();
 
         // meshletes loading
-        transfer_to_gpu(std::span<meshopt_Meshlet>(cpu_model.meshlets), gpu_model.meshlet_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlets");
+        transfer_to_gpu(std::span(cpu_model.meshlets), gpu_model.meshlet_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlets");
         transfer_to_gpu(std::span(cpu_model.meshlet_triangles), gpu_model.meshlet_triangles_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet triangle");
         transfer_to_gpu(std::span(cpu_model.meshlet_vertices), gpu_model.meshlet_vertices_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet vertex index");
         transfer_to_gpu(std::span(cpu_model.meshlet_sphere_bounds), gpu_model.meshlet_sphere_bounds_buffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "Meshlet sphere bounds");
-
         DescriptorSetBuilder{}
             .set_layout(m_context.descriptor_creator->get_layout()
                             .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
@@ -243,8 +203,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.metallic_path == image.get_name(); }) - m_gpu_textures.begin();
     }
     cmd_pool_transfer_buffers.end_buffer(cmd);
-    transfer_buffer_deleter.destroy_and_clear();
-    transfer_image_deleter.destroy_and_clear();
+    transfer_deleter.destroy_and_clear();
     cmd_pool_transfer_buffers.destroy();
 
     DescriptorSetBuilder()
@@ -487,5 +446,75 @@ void pvp::PvpScene::generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image
                                           VK_ACCESS_2_TRANSFER_WRITE_BIT,
                                           VK_ACCESS_2_TRANSFER_READ_BIT,
                                           range);
+    }
+}
+void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
+{
+    m_gpu_textures.reserve(m_gpu_textures.size() + loaded_scene.textures.size());
+
+    for (const TextureData& texture : loaded_scene.textures)
+    {
+        ZoneScopedN("Texture");
+        ZoneTextF(texture.name.c_str());
+        VkDeviceSize image_size = texture.width * texture.height * texture.channels;
+
+        Buffer staging_buffer{};
+        BufferBuilder()
+            .set_size(image_size)
+            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+            .build(m_context.allocator->get_allocator(), staging_buffer);
+
+        transfer_deleter.add_to_queue([=] { staging_buffer.destroy(); });
+        staging_buffer.copy_data_into_buffer(std::as_bytes(std::span(texture.pixels, image_size)));
+
+        VkFormat format{};
+        switch (texture.type)
+        {
+            case aiTextureType_DIFFUSE:
+                format = VK_FORMAT_R8G8B8A8_SRGB;
+                break;
+            default:
+                format = VK_FORMAT_R8G8B8A8_UNORM;
+        }
+
+        StaticImage gpu_image;
+        ImageBuilder()
+            .set_name(texture.name)
+            .set_format(format)
+            .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+            .set_size({ texture.width, texture.height })
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+            .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
+            .set_use_mipmap(true)
+            .build(m_context, gpu_image);
+
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_NONE,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_ACCESS_2_NONE,
+                                    VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        gpu_image.copy_from_buffer(cmd, staging_buffer);
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                    VK_ACCESS_2_TRANSFER_READ_BIT);
+
+        stbi_image_free(texture.pixels);
+
+        generate_mipmaps(cmd, gpu_image, texture.width, texture.height);
+
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                    VK_ACCESS_2_TRANSFER_READ_BIT,
+                                    VK_ACCESS_2_SHADER_READ_BIT);
+
+        m_gpu_textures.push_back(std::move(gpu_image));
+        // gpu_texture_names.push_back(texture.name);
     }
 }
