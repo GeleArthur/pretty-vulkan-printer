@@ -117,10 +117,12 @@ namespace pvp
     private:
         void generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height);
         void load_textures(const LoadedScene& scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
+        void big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
 
         Context&                 m_context;
         std::vector<Model>       m_gpu_models;
         std::vector<StaticImage> m_gpu_textures;
+        DestructorQueue          m_scene_destructor_queue;
         DescriptorSets           m_scene_binding;
         DescriptorSets           m_all_textures;
         DescriptorSets           m_point_descriptor;
@@ -132,6 +134,13 @@ namespace pvp
 
         Buffer m_gpu_vertices;
         Buffer m_gpu_indices;
+        Buffer m_gpu_matrix;
+
+        Buffer m_gpu_meshlets;
+        Buffer m_gpu_meshlets_vertices;
+        Buffer m_gpu_meshlets_triangles;
+        Buffer m_gpu_meshlets_sphere_bounds;
+
         Buffer m_gpu_indirect_draw_calls;
 
         std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;

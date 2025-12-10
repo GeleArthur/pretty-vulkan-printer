@@ -6,17 +6,6 @@
 #define AS_GROUP_SIZE 32
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
-struct Payload {
-    uint MeshletIndices[AS_GROUP_SIZE];
-    bool visable[AS_GROUP_SIZE];
-};
-
-taskPayloadSharedEXT Payload payload;
-
-layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
-    vec4 SphereBounds[];
-};
-
 struct FrustumCone
 {
     vec3 Tip;
@@ -32,12 +21,26 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
     FrustumCone camera_frustom;
 } sceneInfo;
 
-layout (push_constant) uniform PushConstant {
-    mat4 model;
-    uint diffuse_texture_index;
-    uint normal_texture_index;
-    uint metalness_texture_index;
-} pc;
+
+struct Payload {
+    uint MeshletIndices[AS_GROUP_SIZE];
+    bool visable[AS_GROUP_SIZE];
+};
+
+taskPayloadSharedEXT Payload payload;
+
+//layout (std140, set = 1, binding = 0) readonly buffer VertexIn {
+//    Vertex Vertices[];
+//};
+
+layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
+    mat4 ModelMatrix[];
+};
+
+layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
+    vec4 SphereBounds[];
+};
+
 
 bool VisibleFrustumCone(vec4 sphere)
 {

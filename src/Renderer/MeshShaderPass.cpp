@@ -118,6 +118,33 @@ void pvp::MeshShaderPass::build_pipelines()
         .set_pipeline_layout(m_pipeline_layout)
         .build(*m_context.device, m_pipeline);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline, nullptr); });
+
+    PipelineLayoutBuilder()
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout()
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                                   .get())
+        .build(m_context.device->get_device(), m_pipeline_layout_indirect);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect, nullptr); });
+
+    GraphicsPipelineBuilder()
+        .add_shader("shaders/triangle_simple_indirect.task", VK_SHADER_STAGE_TASK_BIT_EXT)
+        .add_shader("shaders/triangle_simple_indirect.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
+        .add_shader("shaders/triangle_simple.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
+        .set_depth_format(m_depth_image.get_format())
+        .set_depth_access(VK_TRUE, VK_TRUE)
+        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_pipeline_layout(m_pipeline_layout_indirect)
+        .build(*m_context.device, m_pipeline_indirect);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect, nullptr); });
 }
 
 void pvp::MeshShaderPass::create_images()

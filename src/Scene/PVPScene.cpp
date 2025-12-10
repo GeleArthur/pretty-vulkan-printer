@@ -85,56 +85,18 @@ pvp::PvpScene::~PvpScene()
 
 void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 {
-    const LoadedScene     loaded_scene = load_scene_cpu(path);
+    const LoadedScene loaded_scene = load_scene_cpu(path);
+
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(m_context, *m_context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
+    DestructorQueue       transfer_deleter{};
 
-    DestructorQueue transfer_deleter{};
     load_textures(loaded_scene, transfer_deleter, cmd);
 
-    uint32_t total_count_vertex = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
-        return static_cast<uint32_t>(start + model.vertices.size());
-    });
-
-    BufferBuilder()
-        .set_size(total_count_vertex * sizeof(Vertex))
-        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .build(m_context.allocator->get_allocator(), m_gpu_vertices);
-    
-    debugger::add_object_name(m_context.device, m_gpu_vertices.get_buffer(), "vertex buffer");
-
-    uint32_t total_count_indices = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
-        return static_cast<uint32_t>(start + model.indices.size());
-    });
-
-    BufferBuilder()
-        .set_size(total_count_indices * sizeof(uint32_t))
-        .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .build(m_context.allocator->get_allocator(), m_gpu_indices);
-    debugger::add_object_name(m_context.device, m_gpu_indices.get_buffer(), "indices buffer");
+    big_buffer_generation(loaded_scene, transfer_deleter, cmd);
 
     m_gpu_models.reserve(m_gpu_models.size() + loaded_scene.models.size());
 
-    // auto transfer_to_gpu = [&](auto& data, Buffer& gpu_buffer, size_t& offset) {
-    //     Buffer       transfer_buffer{};
-    //     const size_t buffer_size = std::span(data).size_bytes();
-    //
-    //     BufferBuilder()
-    //         .set_size(buffer_size)
-    //         .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-    //         .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-    //         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-    //         .build(m_context.allocator->get_allocator(), transfer_buffer);
-    //
-    //     transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(data)));
-    //     gpu_buffer.copy_from_buffer(cmd, transfer_buffer, VkBufferCopy{ .srcOffset = 0, .dstOffset = offset, .size = buffer_size });
-    //     offset += buffer_size;
-    // };
-
-    // size_t offset_vertex{};
-    // size_t offset_indices{};
     for (const ModelData& cpu_model : loaded_scene.models)
     {
         ZoneScopedN("Model");
@@ -516,5 +478,93 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
 
         m_gpu_textures.push_back(std::move(gpu_image));
         // gpu_texture_names.push_back(texture.name);
+    }
+}
+void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
+{
+    auto create_model_buffer = [&](auto ModelData::* member_ptr, Buffer& buffer) {
+        using VectorType = std::decay_t<decltype(std::declval<ModelData>().*member_ptr)>;
+        using ElementType = typename VectorType::value_type;
+
+        uint32_t total_count = std::accumulate(
+            loaded_scene.models.cbegin(),
+            loaded_scene.models.cend(),
+            0u,
+            [member_ptr](uint32_t start, const ModelData& model) {
+                return static_cast<uint32_t>(start + (model.*member_ptr).size());
+            });
+
+        BufferBuilder()
+            .set_size(total_count * sizeof(ElementType))
+            .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+            .build(m_context.allocator->get_allocator(), buffer);
+        debugger::add_object_name(m_context.device, buffer.get_buffer(), "vertex buffer");
+        m_scene_destructor_queue.add_to_queue([&buffer] { buffer.destroy(); });
+    };
+
+    create_model_buffer(&ModelData::vertices, m_gpu_vertices);
+
+    uint32_t total_count_vertex = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
+        return static_cast<uint32_t>(start + model.vertices.size());
+    });
+
+    BufferBuilder()
+        .set_size(total_count_vertex * sizeof(Vertex))
+        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+        .build(m_context.allocator->get_allocator(), m_gpu_vertices);
+    debugger::add_object_name(m_context.device, m_gpu_vertices.get_buffer(), "vertex buffer");
+    m_scene_destructor_queue.add_to_queue([&] { m_gpu_vertices.destroy(); });
+
+    uint32_t total_count_indices = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
+        return static_cast<uint32_t>(start + model.indices.size());
+    });
+
+    BufferBuilder()
+        .set_size(total_count_indices * sizeof(uint32_t))
+        .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+        .build(m_context.allocator->get_allocator(), m_gpu_indices);
+    debugger::add_object_name(m_context.device, m_gpu_indices.get_buffer(), "indices buffer");
+    m_scene_destructor_queue.add_to_queue([&] { m_gpu_indices.destroy(); });
+
+    // TODO: maybe expensive creates lots of buffers and copy
+    auto transfer_to_gpu = [&]<typename T>(const std::vector<T>& data, Buffer& gpu_buffer, size_t& offset) {
+        Buffer       transfer_buffer{};
+        const size_t buffer_size = std::span(data).size_bytes();
+
+        BufferBuilder()
+            .set_size(buffer_size)
+            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
+            .build(m_context.allocator->get_allocator(), transfer_buffer);
+        transfer_deleter.add_to_queue([transfer_buffer] { transfer_buffer.destroy(); });
+
+        transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(data)));
+        gpu_buffer.copy_from_buffer(cmd, transfer_buffer, VkBufferCopy{ .srcOffset = 0, .dstOffset = offset, .size = buffer_size });
+        offset += buffer_size;
+    };
+
+    // TODO: Remove?
+    size_t offset_vertex{};
+    size_t offset_indices{};
+    size_t offset_matrix{};
+
+    size_t offset_meshlets{};
+    size_t offset_meshlets_vertices{};
+    size_t offset_meshlets_triangles{};
+    size_t offset_meshlets_sphere_bounds{};
+    for (const ModelData& cpu_model : loaded_scene.models)
+    {
+        transfer_to_gpu(cpu_model.vertices, m_gpu_vertices, offset_vertex);
+        transfer_to_gpu(cpu_model.indices, m_gpu_indices, offset_indices);
+        transfer_to_gpu(cpu_model.transform, m_gpu_matrix, offset_matrix);
+
+        transfer_to_gpu(cpu_model.meshlets, m_gpu_meshlets, offset_meshlets);
+        transfer_to_gpu(cpu_model.meshlet_vertices, m_gpu_meshlets_vertices, offset_meshlets_vertices);
+        transfer_to_gpu(cpu_model.meshlet_triangles, m_gpu_meshlets_triangles, offset_meshlets_triangles);
+        transfer_to_gpu(cpu_model.meshlet_sphere_bounds, m_gpu_meshlets_sphere_bounds, offset_meshlets_sphere_bounds);
     }
 }
