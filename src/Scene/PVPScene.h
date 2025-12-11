@@ -88,30 +88,53 @@ namespace pvp
         {
             return m_gpu_models;
         };
-
         const std::vector<StaticImage>& get_textures() const
         {
             return m_gpu_textures;
         };
-
         const UniformBuffer& get_scene_globals() const
         {
             return m_scene_globals_gpu;
         };
-
         const DescriptorSets& get_scene_descriptor() const
         {
             return m_scene_binding;
         }
-
         const DescriptorSets& get_textures_descriptor() const
         {
             return m_all_textures;
         }
-
         const DescriptorSets& get_light_descriptor() const
         {
             return m_point_descriptor;
+        }
+        const Buffer& get_all_vertex_buffer() const
+        {
+            return m_gpu_vertices;
+        }
+        const Buffer& get_indices_buffer() const
+        {
+            return m_gpu_indices;
+        }
+        const Buffer& get_matrix_buffer() const
+        {
+            return m_gpu_matrix;
+        }
+        const Buffer& get_meshlets_buffer() const
+        {
+            return m_gpu_meshlets;
+        }
+        const Buffer& get_meshlets_vertices_buffer() const
+        {
+            return m_gpu_meshlets_vertices;
+        }
+        const Buffer& get_meshlets_triangles_buffer() const
+        {
+            return m_gpu_meshlets_triangles;
+        }
+        const Buffer& get_meshlets_sphere_bounds_buffer() const
+        {
+            return m_gpu_meshlets_sphere_bounds;
         }
 
     private:
@@ -140,8 +163,6 @@ namespace pvp
         Buffer m_gpu_meshlets_vertices;
         Buffer m_gpu_meshlets_triangles;
         Buffer m_gpu_meshlets_sphere_bounds;
-
-        Buffer m_gpu_indirect_draw_calls;
 
         std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;
 

@@ -27,25 +27,38 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
     vec3 position;
 } sceneInfo;
 
-layout (std430, set = 1, binding = 0) readonly buffer MeshletIn {
+struct DrawCommand
+{
+    uint groupCountX;
+    uint groupCountY;
+    uint groupCountZ;
+    uint sphere_bounds_offset;
+};
+
+layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
+    DrawCommand Commands[];
+};
+
+layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
+    mat4 ModelMatrix[];
+};
+
+layout (std430, set = 1, binding = 2) readonly buffer MeshletIn {
     Meshlet Meshlets[];
 };
-layout (std140, set = 1, binding = 1) readonly buffer VertexIn {
+layout (std140, set = 1, binding = 3) readonly buffer VertexIn {
     Vertex Vertices[];
 };
-layout (std430, set = 1, binding = 2) readonly buffer VertexIndicesIn {
+layout (std430, set = 1, binding = 4) readonly buffer VertexIndicesIn {
     uint VertexIndices[];
 };
-layout (std430, set = 1, binding = 3) readonly buffer TriangleIndicesIn {
+layout (std430, set = 1, binding = 5) readonly buffer TriangleIndicesIn {
     uint TriangleIndices[];
 };
 
-layout (push_constant) uniform PushConstant {
-    mat4x4 model;
-    uint diffuse_texture_index;
-    uint normal_texture_index;
-    uint metalness_texture_index;
-} pc;
+layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
+    vec4 SphereBounds[];
+};
 
 layout (location = 0) out vec3 vertexColor[];
 
@@ -53,6 +66,7 @@ layout (location = 0) out vec3 vertexColor[];
 struct Payload {
     uint MeshletIndices[AS_GROUP_SIZE];
     bool visable[AS_GROUP_SIZE];
+    uint model_matrix_id;
 };
 
 taskPayloadSharedEXT Payload payload;
@@ -74,6 +88,7 @@ void main()
 
     //    uint index = gl_GlobalInvocationID.x;
     Meshlet m = Meshlets[meshletIndex];
+    mat4 model_matrix = ModelMatrix[payload.model_matrix_id];
 
     if (gl_LocalInvocationIndex == 0)
     {
@@ -100,7 +115,7 @@ void main()
         uint vertexIndex = m.VertexOffset + gl_LocalInvocationID.x;
         vertexIndex = VertexIndices[vertexIndex];
 
-        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * pc.model * vec4(Vertices[vertexIndex].Position, 1.0);
+        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(Vertices[vertexIndex].Position, 1.0);
 
         gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
 

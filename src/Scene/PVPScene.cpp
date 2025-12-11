@@ -496,7 +496,7 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
 
         BufferBuilder()
             .set_size(total_count * sizeof(ElementType))
-            .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .build(m_context.allocator->get_allocator(), buffer);
         debugger::add_object_name(m_context.device, buffer.get_buffer(), "vertex buffer");
@@ -504,33 +504,31 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
     };
 
     create_model_buffer(&ModelData::vertices, m_gpu_vertices);
-
-    uint32_t total_count_vertex = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
-        return static_cast<uint32_t>(start + model.vertices.size());
-    });
+    create_model_buffer(&ModelData::indices, m_gpu_indices);
 
     BufferBuilder()
-        .set_size(total_count_vertex * sizeof(Vertex))
-        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+        .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
+        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .build(m_context.allocator->get_allocator(), m_gpu_vertices);
-    debugger::add_object_name(m_context.device, m_gpu_vertices.get_buffer(), "vertex buffer");
-    m_scene_destructor_queue.add_to_queue([&] { m_gpu_vertices.destroy(); });
+        .build(m_context.allocator->get_allocator(), m_gpu_matrix);
+    m_scene_destructor_queue.add_to_queue([this] { m_gpu_matrix.destroy(); });
 
-    uint32_t total_count_indices = std::accumulate(loaded_scene.models.cbegin(), loaded_scene.models.cend(), 0u, [](const uint32_t start, const ModelData& model) {
-        return static_cast<uint32_t>(start + model.indices.size());
-    });
-
+    Buffer matrix_transfur_buffer{};
     BufferBuilder()
-        .set_size(total_count_indices * sizeof(uint32_t))
-        .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-        .build(m_context.allocator->get_allocator(), m_gpu_indices);
-    debugger::add_object_name(m_context.device, m_gpu_indices.get_buffer(), "indices buffer");
-    m_scene_destructor_queue.add_to_queue([&] { m_gpu_indices.destroy(); });
+        .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
+        .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+        .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
+        .build(m_context.allocator->get_allocator(), matrix_transfur_buffer);
+    transfer_deleter.add_to_queue([matrix_transfur_buffer] { matrix_transfur_buffer.destroy(); });
+
+    create_model_buffer(&ModelData::meshlets, m_gpu_meshlets);
+    create_model_buffer(&ModelData::meshlet_vertices, m_gpu_meshlets_vertices);
+    create_model_buffer(&ModelData::meshlet_triangles, m_gpu_meshlets_triangles);
+    create_model_buffer(&ModelData::meshlet_sphere_bounds, m_gpu_meshlets_sphere_bounds);
 
     // TODO: maybe expensive creates lots of buffers and copy
-    auto transfer_to_gpu = [&]<typename T>(const std::vector<T>& data, Buffer& gpu_buffer, size_t& offset) {
+    auto transfer_vector_to_gpu = [&]<typename T>(const std::vector<T>& data, Buffer& gpu_buffer, size_t& offset) {
         Buffer       transfer_buffer{};
         const size_t buffer_size = std::span(data).size_bytes();
 
@@ -558,13 +556,19 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
     size_t offset_meshlets_sphere_bounds{};
     for (const ModelData& cpu_model : loaded_scene.models)
     {
-        transfer_to_gpu(cpu_model.vertices, m_gpu_vertices, offset_vertex);
-        transfer_to_gpu(cpu_model.indices, m_gpu_indices, offset_indices);
-        transfer_to_gpu(cpu_model.transform, m_gpu_matrix, offset_matrix);
+        transfer_vector_to_gpu(cpu_model.vertices, m_gpu_vertices, offset_vertex);
+        transfer_vector_to_gpu(cpu_model.indices, m_gpu_indices, offset_indices);
 
-        transfer_to_gpu(cpu_model.meshlets, m_gpu_meshlets, offset_meshlets);
-        transfer_to_gpu(cpu_model.meshlet_vertices, m_gpu_meshlets_vertices, offset_meshlets_vertices);
-        transfer_to_gpu(cpu_model.meshlet_triangles, m_gpu_meshlets_triangles, offset_meshlets_triangles);
-        transfer_to_gpu(cpu_model.meshlet_sphere_bounds, m_gpu_meshlets_sphere_bounds, offset_meshlets_sphere_bounds);
+        transfer_vector_to_gpu(cpu_model.meshlets, m_gpu_meshlets, offset_meshlets);
+        transfer_vector_to_gpu(cpu_model.meshlet_vertices, m_gpu_meshlets_vertices, offset_meshlets_vertices);
+        transfer_vector_to_gpu(cpu_model.meshlet_triangles, m_gpu_meshlets_triangles, offset_meshlets_triangles);
+        transfer_vector_to_gpu(cpu_model.meshlet_sphere_bounds, m_gpu_meshlets_sphere_bounds, offset_meshlets_sphere_bounds);
+
+        glm::mat4* matrix_data = static_cast<glm::mat4*>(matrix_transfur_buffer.get_allocation_info().pMappedData);
+        matrix_data[offset_matrix++] = cpu_model.transform;
     }
+
+    m_gpu_matrix.copy_from_buffer(cmd, matrix_transfur_buffer);
+
+    // transfer_vector_to_gpu(cpu_model.transform, m_gpu_matrix, offset_matrix);
 }

@@ -109,11 +109,13 @@ namespace pvp
 
         VkPhysicalDeviceVulkan11Features features11 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
-            .pNext = &features12
+            .pNext = &features12,
+            .shaderDrawParameters = VK_TRUE,
         };
 
         VkPhysicalDeviceFeatures device_features{
             .robustBufferAccess = VK_TRUE,
+            .multiDrawIndirect = VK_TRUE,
             .samplerAnisotropy = VK_TRUE,
             .vertexPipelineStoresAndAtomics = VK_TRUE,
             .fragmentStoresAndAtomics = VK_TRUE,

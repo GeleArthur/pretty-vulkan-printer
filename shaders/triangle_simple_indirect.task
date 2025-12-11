@@ -25,6 +25,7 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
 struct Payload {
     uint MeshletIndices[AS_GROUP_SIZE];
     bool visable[AS_GROUP_SIZE];
+    uint model_matrix_id;
 };
 
 taskPayloadSharedEXT Payload payload;
@@ -33,11 +34,23 @@ taskPayloadSharedEXT Payload payload;
 //    Vertex Vertices[];
 //};
 
+struct DrawCommand
+{
+    uint groupCountX;
+    uint groupCountY;
+    uint groupCountZ;
+    uint sphere_bounds_offset;
+};
+
+layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
+    DrawCommand Commands[];
+};
+
 layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
     mat4 ModelMatrix[];
 };
 
-layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
+layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
     vec4 SphereBounds[];
 };
 
@@ -69,25 +82,30 @@ void main()
 {
     bool visible = false;
 
+    mat4 model_matrix = ModelMatrix[gl_DrawID];
+    payload.model_matrix_id = gl_DrawID;
+
     vec3 scale = vec3(
-    length(pc.model[0].xyz), // X axis scale
-    length(pc.model[1].xyz), // Y axis scale
-    length(pc.model[2].xyz)   // Z axis scale
+    length(model_matrix[0].xyz),
+    length(model_matrix[1].xyz),
+    length(model_matrix[2].xyz)
     );
     float maxScale = max(max(scale.x, scale.y), scale.z);
 
-    vec4 spherebounds = vec4(
-    vec3(pc.model * vec4(SphereBounds[gl_GlobalInvocationID.x].xyz, 1.0)),
-    SphereBounds[gl_GlobalInvocationID.x].w * maxScale
+    uint offset = Commands[gl_DrawID].sphere_bounds_offset + gl_GlobalInvocationID.x;
+
+    vec4 sphere_bounds = vec4(
+    vec3(model_matrix * vec4(SphereBounds[offset].xyz, 1.0)),
+    SphereBounds[offset].w * maxScale
     );
 
-    visible = VisibleFrustumCone(spherebounds);
+    visible = VisibleFrustumCone(sphere_bounds);
 
     uvec4 ballot = subgroupBallot(visible);
 
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
+        payload.MeshletIndices[index] = Commands[gl_DrawID].sphere_bounds_offset + gl_GlobalInvocationID.x;
         payload.visable[index] = visible;
     }
 
