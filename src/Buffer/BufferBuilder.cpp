@@ -37,6 +37,7 @@ namespace pvp
         VmaAllocationCreateInfo allocation_create_info{};
         allocation_create_info.usage = m_usage;
         allocation_create_info.flags = m_flags;
+        allocation_create_info.pUserData = (void*)"data buffer";
 
         if (vmaCreateBuffer(allocator, &create_info, &allocation_create_info, &buffer.m_buffer, &buffer.m_allocation, &buffer.m_allocation_info) != VK_SUCCESS)
         {

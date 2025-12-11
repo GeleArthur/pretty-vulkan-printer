@@ -2,7 +2,6 @@
 
 #include <Debugger/debugger.h>
 #include <GLFW/glfw3.h>
-#include <Renderer/Renderer.h>
 #include <Scene/PVPScene.h>
 #include <Window/WindowSurfaceBuilder.h>
 #include <spdlog/spdlog.h>

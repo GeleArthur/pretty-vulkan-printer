@@ -201,6 +201,7 @@ void pvp::MeshShaderPass::build_draw_calls()
         .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)
         .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
         .build(m_context.allocator->get_allocator(), m_gpu_indirect_draw_calls);
+    m_destructor_queue.add_to_queue([&] { m_gpu_indirect_draw_calls.destroy(); });
 
     DrawCommandIndirect* buffer_array = static_cast<DrawCommandIndirect*>(m_gpu_indirect_draw_calls.get_allocation_info().pMappedData);
     uint32_t             meshlet_offset{};

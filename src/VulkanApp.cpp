@@ -2,8 +2,12 @@
 
 #include <GlfwToRender.h>
 #include <ImguiRenderer.h>
+#include <Context/Device.h>
 #include <Context/InstanceBuilder.h>
 #include <Context/LogicPhysicalQueueBuilder.h>
+#include <DescriptorSets/DescriptorLayoutCreator.h>
+#include <Renderer/Renderer.h>
+#include <Renderer/Swapchain.h>
 #include <Scene/PVPScene.h>
 #include <tracy/Tracy.hpp>
 #include <vulkan/vulkan.hpp>
@@ -52,9 +56,9 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     context.swapchain = &swapchain;
 
     PvpScene scene = PvpScene(context);
-    // scene.load_scene(std::filesystem::absolute("resources/IntelSponza/NewSponza_Main_glTF_003.gltf"));
-    // scene.load_scene(std::filesystem::absolute("resources/IntelSponza/NewSponza_Curtains_glTF.gltf"));
-    scene.load_scene(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
+    scene.load_scene(std::filesystem::absolute("resources/IntelSponza/NewSponza_Main_glTF_003.gltf"));
+    scene.load_scene(std::filesystem::absolute("resources/IntelSponza/NewSponza_Curtains_glTF.gltf"));
+    // scene.load_scene(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
 
     ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);
     Renderer      renderer = Renderer(context, scene, imgui_renderer);

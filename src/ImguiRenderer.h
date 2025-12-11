@@ -1,8 +1,8 @@
 ﻿#pragma once
+#include <GLFW/glfw3.h>
+
 #include <globalconst.h>
 #include <vector>
-#include <Window/WindowSurface.h>
-#include <vulkan/vulkan.h>
 
 namespace pvp
 {

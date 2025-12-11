@@ -1,8 +1,7 @@
 ﻿#pragma once
+#include <DestructorQueue.h>
 #include <GlfwToRender.h>
 #include <VulkanApp.h>
-#include <Renderer/Renderer.h>
-#include <Window/WindowSurface.h>
 
 namespace pvp
 {

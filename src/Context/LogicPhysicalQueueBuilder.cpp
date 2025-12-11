@@ -3,12 +3,11 @@
 #include <stdexcept>
 #include <vulkan/vulkan.h>
 
+#include "Device.h"
+#include "QueueFamilies.h"
 #include <set>
 #include <vector>
 #include <Context/Instance.h>
-#include <Window/WindowSurface.h>
-#include "QueueFamilies.h"
-#include "Device.h"
 
 #include <VulkanExternalFunctions.h>
 #include <cstring>

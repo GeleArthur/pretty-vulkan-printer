@@ -1,5 +1,6 @@
 #pragma once
-#include "WindowSurface.h"
+
+#include <GLFW/glfw3.h>
 
 #include <string>
 #include <Context/Instance.h>

@@ -11,6 +11,12 @@ const VmaAllocator& pvp::PvpVmaAllocator::get_allocator() const
 }
 pvp::PvpVmaAllocator::~PvpVmaAllocator()
 {
+    // char* statsString = nullptr;
+    // vmaBuildStatsString(m_allocator, &statsString, VK_FALSE); // VK_TRUE for detailed info
+    // printf("VMA Stats:\n%s\n", statsString);
+    // printf("\n");
+    // vmaFreeStatsString(m_allocator, statsString);
+
     vmaDestroyAllocator(m_allocator);
 }
 void pvp::create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& instance, const pvp::Device& device, const pvp::PhysicalDevice& physical_device)

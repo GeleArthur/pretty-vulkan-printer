@@ -145,7 +145,6 @@ namespace pvp
         Context&                 m_context;
         std::vector<Model>       m_gpu_models;
         std::vector<StaticImage> m_gpu_textures;
-        DestructorQueue          m_scene_destructor_queue;
         DescriptorSets           m_scene_binding;
         DescriptorSets           m_all_textures;
         DescriptorSets           m_point_descriptor;
@@ -171,5 +170,6 @@ namespace pvp
 
         constexpr static uint32_t max_point_lights{ 10u };
         constexpr static uint32_t max_direction_lights{ 10u };
+        DestructorQueue           m_scene_destructor_queue;
     };
 } // namespace pvp

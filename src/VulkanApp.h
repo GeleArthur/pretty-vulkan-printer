@@ -1,6 +1,7 @@
 ﻿#pragma once
+
 #include <Context/Context.h>
-#include <Renderer/Renderer.h>
+#include <GLFW/glfw3.h>
 
 namespace pvp
 {

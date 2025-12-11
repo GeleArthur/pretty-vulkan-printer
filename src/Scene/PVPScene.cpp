@@ -499,8 +499,8 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
             .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .build(m_context.allocator->get_allocator(), buffer);
+        m_scene_destructor_queue.add_to_queue([buffer] { buffer.destroy(); });
         debugger::add_object_name(m_context.device, buffer.get_buffer(), "vertex buffer");
-        m_scene_destructor_queue.add_to_queue([&buffer] { buffer.destroy(); });
     };
 
     create_model_buffer(&ModelData::vertices, m_gpu_vertices);
@@ -511,7 +511,7 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
         .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
         .build(m_context.allocator->get_allocator(), m_gpu_matrix);
-    m_scene_destructor_queue.add_to_queue([this] { m_gpu_matrix.destroy(); });
+    m_scene_destructor_queue.add_to_queue([&] { m_gpu_matrix.destroy(); });
 
     Buffer matrix_transfur_buffer{};
     BufferBuilder()

@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "Window/WindowSurface.h"
-
 #include <DestructorQueue.h>
 #include <condition_variable>
 #include <globalconst.h>

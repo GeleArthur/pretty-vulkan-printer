@@ -1,9 +1,7 @@
 ﻿#include "Swapchain.h"
 
 #include "GLFW/glfw3.h"
-#include "Image/ImageBuilder.h"
-#include "../Context/PhysicalDevice.h"
-#include "Window/WindowSurface.h"
+#include "Context/PhysicalDevice.h"
 
 #include <GlfwToRender.h>
 #include <Image/Image.h>
@@ -11,8 +9,6 @@
 #include <Context/Device.h>
 #include <algorithm>
 #include <array>
-#include <iostream>
-#include <set>
 #include <stdexcept>
 #include <vector>
 #include <tracy/Tracy.hpp>

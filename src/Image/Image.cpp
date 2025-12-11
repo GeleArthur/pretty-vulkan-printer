@@ -116,8 +116,8 @@ namespace pvp
     {
         for (int i = 0; i < max_frames_in_flight; ++i)
         {
-            vmaDestroyImage(context.allocator->get_allocator(), m_image[i], m_allocation[i]);
             vkDestroyImageView(context.device->get_device(), m_view[i], nullptr);
+            vmaDestroyImage(context.allocator->get_allocator(), m_image[i], m_allocation[i]);
         }
     }
 

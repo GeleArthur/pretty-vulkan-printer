@@ -88,8 +88,6 @@ add_executable(${PROJECT_NAME}
         src/UniformBufferStruct.h
         src/UniformBuffers/UniformBuffer.cpp
         src/UniformBuffers/UniformBuffer.h
-        src/Window/WindowSurface.cpp
-        src/Window/WindowSurface.h
         src/Window/WindowSurfaceBuilder.cpp
         src/Window/WindowSurfaceBuilder.h
         src/DescriptorSets/DescriptorLayoutBuilder.cpp
