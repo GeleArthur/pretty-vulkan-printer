@@ -18,7 +18,7 @@ pvp::DescriptorLayoutCreator::DescriptorLayoutCreator(const Context& context)
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 200 },
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 200 },
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 200 },
-        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 }
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2000 }
     };
 
     VkDescriptorPoolCreateInfo pool_info{};
@@ -26,7 +26,7 @@ pvp::DescriptorLayoutCreator::DescriptorLayoutCreator(const Context& context)
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     pool_info.poolSizeCount = static_cast<uint32_t>(sizes.size());
     pool_info.pPoolSizes = sizes.data();
-    pool_info.maxSets = 1000;
+    pool_info.maxSets = 2000;
 
     if (vkCreateDescriptorPool(context.device->get_device(), &pool_info, nullptr, &m_pool) != VK_SUCCESS)
     {

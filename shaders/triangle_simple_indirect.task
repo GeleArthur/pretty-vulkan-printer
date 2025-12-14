@@ -100,7 +100,7 @@ void main()
     );
 
     visible = VisibleFrustumCone(sphere_bounds);
-    if (gl_GlobalInvocationID.x >= 1) {
+    if (gl_GlobalInvocationID.x > Commands[gl_DrawID].sphere_bounds_offset) {
         visible = false;
     }
 

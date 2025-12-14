@@ -522,9 +522,45 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
     load_data_into_big_buffer(&ModelData::meshlet_triangles, m_gpu_meshlets_triangles);
     load_data_into_big_buffer(&ModelData::meshlet_sphere_bounds, m_gpu_meshlets_sphere_bounds);
 
-    load_data_into_big_buffer(&ModelData::meshlets, m_gpu_meshlets);
+    // load_data_into_big_buffer(&ModelData::meshlets, m_gpu_meshlets);
 
+    {
+        uint32_t const total_count = std::accumulate(
+            loaded_scene.models.cbegin(),
+            loaded_scene.models.cend(),
+            0u,
+            [](uint32_t start, const ModelData& model) {
+                return static_cast<uint32_t>(start + (model.meshlets).size());
+            });
 
+        BufferBuilder()
+            .set_size(total_count * sizeof(meshopt_Meshlet))
+            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+            .build(m_context.allocator->get_allocator(), m_gpu_meshlets);
+        m_scene_destructor_queue.add_to_queue([&] { m_gpu_meshlets.destroy(); });
+
+        std::vector<meshopt_Meshlet> all_data;
+        all_data.reserve(total_count);
+
+        uint32_t triangle_global_count{};
+        uint32_t vertex_global_count{};
+        for (int i = 0; i < loaded_scene.models.size(); ++i)
+        {
+            for (int j = 0; j < loaded_scene.models[i].meshlets.size(); ++j)
+            {
+                all_data.emplace_back(vertex_global_count + loaded_scene.models[i].meshlets[j].vertex_offset,
+                                      triangle_global_count + loaded_scene.models[i].meshlets[j].triangle_offset,
+                                      loaded_scene.models[i].meshlets[j].vertex_count,
+                                      loaded_scene.models[i].meshlets[j].triangle_count);
+
+                vertex_global_count += loaded_scene.models[i].meshlets[j].vertex_count;
+                triangle_global_count += loaded_scene.models[i].meshlets[j].triangle_count;
+            }
+        }
+
+        m_gpu_meshlets.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_data), transfer_deleter);
+    }
 
     BufferBuilder()
         .set_size(loaded_scene.models.size() * sizeof(glm::mat4))

@@ -113,16 +113,12 @@ void main()
 
     if (gl_LocalInvocationID.x < m.VertexCount) {
         uint vertexIndex = m.VertexOffset + gl_LocalInvocationID.x;
-        vertexIndex = VertexIndices[vertexIndex];
+        vertexIndex = VertexIndices[vertexIndex] + m.VertexOffset;
 
         vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(Vertices[vertexIndex].Position, 1.0);
 
         gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
 
-        //        vec3 color = vec3(
-        //        float(gl_WorkGroupID.x & 1),
-        //        float(gl_WorkGroupID.x & 3) / 4,
-        //        float(gl_WorkGroupID.x & 7) / 8);
         uint mhash = hash(gl_WorkGroupID.x);
         vertexColor[gl_LocalInvocationID.x] = vec3(float(mhash & 255), float((mhash >> 8) & 255), float((mhash >> 16) & 255)) / 255.0;
 
