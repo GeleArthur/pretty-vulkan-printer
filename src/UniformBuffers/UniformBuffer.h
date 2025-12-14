@@ -36,6 +36,6 @@ namespace pvp
     void UniformBuffer::update(int frame_index, const T& data)
     {
         // TODO: Remove frame_index user should not worry about it
-        m_buffers[frame_index].copy_data_into_buffer(std::as_bytes(std::span(&data, 1)));
+        m_buffers[frame_index].copy_data_into_buffer(std::span(&data, 1));
     }
 } // namespace pvp

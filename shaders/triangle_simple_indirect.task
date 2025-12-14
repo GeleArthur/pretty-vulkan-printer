@@ -100,6 +100,9 @@ void main()
     );
 
     visible = VisibleFrustumCone(sphere_bounds);
+    if (gl_GlobalInvocationID.x >= 1) {
+        visible = false;
+    }
 
     uvec4 ballot = subgroupBallot(visible);
 

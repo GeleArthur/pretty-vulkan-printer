@@ -97,7 +97,7 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
     VkFormat format = m_context.swapchain->get_swapchain_surface_format().format;
 
     ImGui_ImplVulkan_InitInfo info{
-        .ApiVersion = VK_API_VERSION_1_3,
+        .ApiVersion = VK_API_VERSION_1_4,
         .Instance = m_context.instance->get_instance(),
         .PhysicalDevice = m_context.physical_device->get_physical_device(),
         .Device = m_context.device->get_device(),

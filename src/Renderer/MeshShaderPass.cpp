@@ -3,6 +3,7 @@
 #include <VulkanExternalFunctions.h>
 #include <GraphicsPipeline/PipelineLayoutBuilder.h>
 #include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
@@ -24,6 +25,7 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
     : m_context(context)
     , m_scene(scene)
 {
+    ZoneScoped;
     create_images();
     build_draw_calls();
     build_pipelines();
@@ -43,6 +45,7 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
     ZoneScoped;
+    TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "MeshShaderPass");
 
     VkImageSubresourceRange range{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -108,6 +111,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 // TODO: replace
 std::array<uint64_t, 2> pvp::MeshShaderPass::get_invocations_count() const
 {
+    ZoneScoped;
     std::array<uint64_t, 2> data{};
     vkGetQueryPoolResults(m_context.device->get_device(), m_query_pool, 0, 1, sizeof(uint64_t) * data.size(), data.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
     return data;
@@ -183,6 +187,7 @@ void pvp::MeshShaderPass::build_pipelines()
 
 void pvp::MeshShaderPass::create_images()
 {
+    ZoneScoped;
     ImageBuilder()
         .set_format(VK_FORMAT_D32_SFLOAT)
         .set_aspect_flags(VK_IMAGE_ASPECT_DEPTH_BIT)
@@ -194,6 +199,7 @@ void pvp::MeshShaderPass::create_images()
 }
 void pvp::MeshShaderPass::build_draw_calls()
 {
+    ZoneScoped;
     const std::vector<Model>& models = m_scene.get_models();
     BufferBuilder{}
         .set_size(sizeof(DrawCommandIndirect) * models.size())
@@ -208,7 +214,12 @@ void pvp::MeshShaderPass::build_draw_calls()
     for (int i = 0; i < models.size(); ++i)
     {
         uint32_t thread_group_count_x = models[i].meshlet_count / 32 + 1;
-        buffer_array[i] = DrawCommandIndirect{ thread_group_count_x, 1, 1, meshlet_offset };
+        buffer_array[i] = DrawCommandIndirect{
+            thread_group_count_x,
+            1,
+            1,
+            meshlet_offset,
+        };
         meshlet_offset += models[i].meshlet_count;
     }
 }

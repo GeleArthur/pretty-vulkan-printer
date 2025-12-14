@@ -18,8 +18,3 @@ void pvp::Buffer::destroy() const
 {
     vmaDestroyBuffer(m_allocator, m_buffer, m_allocation);
 }
-
-void pvp::Buffer::copy_data_into_buffer(std::span<const std::byte> input_data) const
-{
-    memcpy(m_allocation_info.pMappedData, input_data.data(), input_data.size());
-}

@@ -152,7 +152,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
-
 target_link_libraries(${PROJECT_NAME} PRIVATE pretty-vulkan-printer-libraries)
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
@@ -166,3 +165,19 @@ find_package(VLD CONFIG)
 target_include_directories(${PROJECT_NAME} PRIVATE ${VLD_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${VLD_LIBRARY})
 
+message(STATUS "DOWNLOADING BIG INTEL SPONZA SCENE")
+
+if(NOT EXISTS $ENV{TMP}/intelsponza.zip)
+    file(DOWNLOAD "https://cdrdv2.intel.com/v1/dl/getContent/830833" "$ENV{TMP}/intelsponza.zip" SHOW_PROGRESS)
+endif()
+if(NOT EXISTS $ENV{TMP}/intelsponza_curtains.zip)
+    file(DOWNLOAD "https://cdrdv2.intel.com/v1/dl/getContent/726650" "$ENV{TMP}/intelsponza_curtains.zip" SHOW_PROGRESS)
+endif()
+
+message(STATUS "EXTRACTING SPONZA SCENE")
+if(EXISTS $ENV{TMP}/intelsponza.zip AND NOT EXISTS ${CMAKE_BINARY_DIR}/intelsponza/main_sponza)
+    file(ARCHIVE_EXTRACT INPUT $ENV{TMP}/intelsponza.zip DESTINATION ${CMAKE_BINARY_DIR}/intelsponza VERBOSE)
+endif()
+if(EXISTS $ENV{TMP}/intelsponza_curtains.zip AND NOT EXISTS ${CMAKE_BINARY_DIR}/intelsponza/pkg_a_curtains)
+    file(ARCHIVE_EXTRACT INPUT $ENV{TMP}/intelsponza_curtains.zip DESTINATION ${CMAKE_BINARY_DIR}/intelsponza VERBOSE)
+endif()

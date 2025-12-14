@@ -93,6 +93,7 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
 void pvp::Renderer::prepare_frame()
 {
     ZoneScoped;
+    // std::printf("-----PREPARE FRAME-----\n");
 
     ZoneNamedN(recreate_swapchain, "recreate_swapchain", true);
     if (m_context.gtfw_to_render->needs_resizing)
@@ -105,6 +106,7 @@ void pvp::Renderer::prepare_frame()
     }
 
     ZoneNamedN(waiting, "waiting", true);
+    // std::printf("Waiting fences: %i\n", m_double_buffer_frame);
     vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
     vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
 
@@ -117,6 +119,7 @@ void pvp::Renderer::prepare_frame()
     int      count{};
     while (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
+        // std::printf("singnaling acquire_semaphores: %i\n", m_double_buffer_frame);
         result = vkAcquireNextImageKHR(
             m_context.device->get_device(),
             m_context.swapchain->get_swapchain(),
@@ -124,6 +127,7 @@ void pvp::Renderer::prepare_frame()
             m_frame_syncers.acquire_semaphores.at(m_double_buffer_frame).handle,
             VK_NULL_HANDLE,
             &m_current_swapchain_index);
+        // std::printf("got swapchain: %i\n", m_current_swapchain_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -157,6 +161,8 @@ void pvp::Renderer::prepare_frame()
     scissor.offset = VkOffset2D{ 0, 0 };
     scissor.extent = m_context.swapchain->get_swapchain_extent();
     vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
+
+    // std::printf("-----PREPARE FRAME DONE-----\n");
 }
 
 void pvp::Renderer::draw()
@@ -182,6 +188,7 @@ void pvp::Renderer::draw()
 void pvp::Renderer::end_frame()
 {
     ZoneNamedN(end_command_buffer, "end command buffer", true);
+    // std::printf("-----END FRAME-----\n");
     vkEndCommandBuffer(m_frame_contexts.at(m_double_buffer_frame).command_buffer);
 
     ZoneNamedN(submit_queue, "submit queue", true);
@@ -196,10 +203,6 @@ void pvp::Renderer::end_frame()
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
             .commandBuffer = m_frame_contexts.at(m_double_buffer_frame).command_buffer,
         },
-        // VkCommandBufferSubmitInfo{
-        // .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        // .commandBuffer = m_imgui_renderer.get_cmd(m_double_buffer_frame),
-        // }
     };
 
     VkSemaphoreSubmitInfo semaphore_singled{
@@ -218,9 +221,17 @@ void pvp::Renderer::end_frame()
 
         .signalSemaphoreInfoCount = 1,
         .pSignalSemaphoreInfos = &semaphore_singled,
-
     };
 
+    // std::printf(
+    //     "SUMBIT QUEUE2\nframecontext:%i\n"
+    //     "Signal: submit_semaphores %i\n"
+    //     "Waiting: acquire_semaphores %i\n"
+    //     "Fence Single: %i\n",
+    //     m_double_buffer_frame,
+    //     m_current_swapchain_index,
+    //     m_double_buffer_frame,
+    //     m_double_buffer_frame);
     vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue,
                    1,
                    &submit_info,
@@ -237,6 +248,7 @@ void pvp::Renderer::end_frame()
     present_info.pSwapchains = &swap_chains;
     present_info.pImageIndices = &m_current_swapchain_index;
 
+    // std::printf("vkQueuePresentKHR\nPresening swapchain: %i\nWaiting for submit_semaphores:%i\n", m_current_swapchain_index, m_current_swapchain_index);
     VkResult result = vkQueuePresentKHR(m_cmd_pool_graphics_present.get_queue().queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_context.gtfw_to_render->needs_resizing)
@@ -253,6 +265,6 @@ void pvp::Renderer::end_frame()
     }
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
-
     m_context.invocation_count = m_mesh_shader_pass.get_invocations_count();
+    // std::printf("-----END FRAME DONE-----\n");
 }
