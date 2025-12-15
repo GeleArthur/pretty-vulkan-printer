@@ -39,7 +39,8 @@ struct DrawCommand
     uint groupCountX;
     uint groupCountY;
     uint groupCountZ;
-    uint sphere_bounds_offset;
+    uint meshlet_offset;
+    uint meshlet_count;
 };
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
@@ -81,6 +82,10 @@ bool VisibleFrustumCone(vec4 sphere)
 void main()
 {
     bool visible = false;
+    if (gl_GlobalInvocationID.x > Commands[gl_DrawID].meshlet_count) {
+        visible = false;
+        return;
+    }
 
     mat4 model_matrix = ModelMatrix[gl_DrawID];
     payload.model_matrix_id = gl_DrawID;
@@ -92,7 +97,7 @@ void main()
     );
     float maxScale = max(max(scale.x, scale.y), scale.z);
 
-    uint offset = Commands[gl_DrawID].sphere_bounds_offset + gl_GlobalInvocationID.x;
+    uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
 
     vec4 sphere_bounds = vec4(
     vec3(model_matrix * vec4(SphereBounds[offset].xyz, 1.0)),
@@ -100,15 +105,13 @@ void main()
     );
 
     visible = VisibleFrustumCone(sphere_bounds);
-    if (gl_GlobalInvocationID.x > Commands[gl_DrawID].sphere_bounds_offset) {
-        visible = false;
-    }
+
 
     uvec4 ballot = subgroupBallot(visible);
 
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = Commands[gl_DrawID].sphere_bounds_offset + gl_GlobalInvocationID.x;
+        payload.MeshletIndices[index] = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
         payload.visable[index] = visible;
     }
 

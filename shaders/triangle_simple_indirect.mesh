@@ -32,7 +32,8 @@ struct DrawCommand
     uint groupCountX;
     uint groupCountY;
     uint groupCountZ;
-    uint sphere_bounds_offset;
+    uint meshlet_offset;
+    uint meshlet_count;
 };
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {

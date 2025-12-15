@@ -549,8 +549,8 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
         {
             for (int j = 0; j < loaded_scene.models[i].meshlets.size(); ++j)
             {
-                all_data.emplace_back(vertex_global_count + loaded_scene.models[i].meshlets[j].vertex_offset,
-                                      triangle_global_count + loaded_scene.models[i].meshlets[j].triangle_offset,
+                all_data.emplace_back(vertex_global_count,
+                                      triangle_global_count,
                                       loaded_scene.models[i].meshlets[j].vertex_count,
                                       loaded_scene.models[i].meshlets[j].triangle_count);
 

@@ -19,6 +19,7 @@ struct DrawCommandIndirect
     uint32_t group_count_y;
     uint32_t group_count_z;
     uint32_t mesh_let_offset;
+    uint32_t mesh_let_count;
 };
 
 pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scene)
@@ -219,6 +220,7 @@ void pvp::MeshShaderPass::build_draw_calls()
             1,
             1,
             meshlet_offset,
+            models[i].meshlet_count
         };
         meshlet_offset += models[i].meshlet_count;
     }
