@@ -106,12 +106,12 @@ namespace
         constexpr size_t max_triangles = 126;
         constexpr float  cone_weight = 0.0f;
 
-        std::vector<uint8_t> meshlet_triangles_u8;
+        // std::vector<uint8_t> meshlet_triangles_u8;
 
         size_t max_mesh_lets = meshopt_buildMeshletsBound(model_out.indices.size(), max_vertices, max_triangles);
         model_out.meshlets.resize(max_mesh_lets);
         model_out.meshlet_vertices.resize(max_mesh_lets * max_vertices);
-        meshlet_triangles_u8.resize(max_mesh_lets * max_triangles * 3);
+        model_out.meshlet_triangles.resize(max_mesh_lets * max_triangles * 3);
 
         std::vector<float> vertices;
         vertices.reserve(model_out.vertices.size() * 3);
@@ -125,7 +125,7 @@ namespace
         size_t const meshlet_count = meshopt_buildMeshlets(
             model_out.meshlets.data(),
             model_out.meshlet_vertices.data(),
-            meshlet_triangles_u8.data(),
+            model_out.meshlet_triangles.data(),
             model_out.indices.data(),
             model_out.indices.size(),
             vertices.data(),
@@ -137,47 +137,48 @@ namespace
 
         auto& last = model_out.meshlets[meshlet_count - 1];
         model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
-        meshlet_triangles_u8.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3)); // TODO: Understand this? Align 4 bytes
+        model_out.meshlet_triangles.resize(last.triangle_offset + last.triangle_count * 3);
         model_out.meshlets.resize(meshlet_count);
 
         for (const meshopt_Meshlet& meshlet : model_out.meshlets)
         {
-            meshopt_optimizeMeshlet(&model_out.meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles_u8[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
+            meshopt_optimizeMeshlet(&model_out.meshlet_vertices[meshlet.vertex_offset], &model_out.meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
         }
 
         // writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, vertices, meshlet_count);
 
-        for (auto& meshlet : model_out.meshlets)
-        {
-            // Save triangle offset for current meshlet
-            uint32_t triangle_offset = static_cast<uint32_t>(model_out.meshlet_triangles.size());
+        // for (auto& meshlet : model_out.meshlets)
+        // {
+        // Save triangle offset for current meshlet
+        // uint32_t triangle_offset = static_cast<uint32_t>(model_out.meshlet_triangles.size());
 
-            // Repack to uint32_t
-            for (uint32_t i = 0; i < meshlet.triangle_count; ++i)
-            {
-                uint32_t i0 = 3 * i + 0 + meshlet.triangle_offset;
-                uint32_t i1 = 3 * i + 1 + meshlet.triangle_offset;
-                uint32_t i2 = 3 * i + 2 + meshlet.triangle_offset;
+        // Repack to uint32_t
+        // for (uint32_t i = 0; i < meshlet.triangle_count; ++i)
+        // {
+        // uint32_t i0 = 3 * i + 0 + meshlet.triangle_offset;
+        // uint32_t i1 = 3 * i + 1 + meshlet.triangle_offset;
+        // uint32_t i2 = 3 * i + 2 + meshlet.triangle_offset;
+        //
+        // uint8_t  vertex_id0 = meshlet_triangles_u8[i0];
+        // uint8_t  vertex_id1 = meshlet_triangles_u8[i1];
+        // uint8_t  vertex_id2 = meshlet_triangles_u8[i2];
+        // uint32_t packed = ((static_cast<uint32_t>(vertex_id0) & 0xFF) << 0) |
+        //     ((static_cast<uint32_t>(vertex_id1) & 0xFF) << 8) |
+        //     ((static_cast<uint32_t>(vertex_id2) & 0xFF) << 16);
+        // model_out.meshlet_triangles.push_back(packed);
+        // model_out.meshlet_triangles
+        // }
 
-                uint8_t  vertex_id0 = meshlet_triangles_u8[i0];
-                uint8_t  vertex_id1 = meshlet_triangles_u8[i1];
-                uint8_t  vertex_id2 = meshlet_triangles_u8[i2];
-                uint32_t packed = ((static_cast<uint32_t>(vertex_id0) & 0xFF) << 0) |
-                    ((static_cast<uint32_t>(vertex_id1) & 0xFF) << 8) |
-                    ((static_cast<uint32_t>(vertex_id2) & 0xFF) << 16);
-                model_out.meshlet_triangles.push_back(packed);
-            }
-
-            // Update triangle offset for current meshlet
-            meshlet.triangle_offset = triangle_offset;
-        }
+        // Update triangle offset for current meshlet
+        // meshlet.triangle_offset = triangle_offset;
+        // }
 
         model_out.meshlet_sphere_bounds.reserve(model_out.meshlets.size());
         for (const auto& meshlet : model_out.meshlets)
         {
             meshopt_Bounds bounds = meshopt_computeMeshletBounds(
                 &model_out.meshlet_vertices[meshlet.vertex_offset],
-                &meshlet_triangles_u8[meshlet.triangle_offset],
+                &model_out.meshlet_triangles[meshlet.triangle_offset],
                 meshlet.triangle_count,
                 vertices.data(),
                 vertices.size(),

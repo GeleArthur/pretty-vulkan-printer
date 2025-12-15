@@ -1,6 +1,8 @@
 #version 460
 #pragma shader_stage(mesh)
 #extension GL_EXT_mesh_shader: enable
+#extension GL_EXT_shader_8bit_storage: enable
+
 
 layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
@@ -37,7 +39,7 @@ layout (std430, set = 1, binding = 2) readonly buffer VertexIndicesIn {
     uint VertexIndices[];
 };
 layout (std430, set = 1, binding = 3) readonly buffer TriangleIndicesIn {
-    uint TriangleIndices[];
+    uint8_t TriangleIndices[];
 };
 
 layout (push_constant) uniform PushConstant {
@@ -81,19 +83,11 @@ void main()
     }
 
     if (gl_LocalInvocationID.x < m.TriangleCount) {
-        //
-        // meshopt stores the triangle offset in bytes since it stores the
-        // triangle indices as 3 consecutive bytes.
-        //
-        // Since we repacked those 3 bytes to a 32-bit uint, our offset is now
-        // aligned to 4 and we can easily grab it as a uint without any
-        // additional offset math.
-        //
-        uint packed = TriangleIndices[m.TriangleOffset + gl_LocalInvocationID.x];
-        uint vIdx0 = (packed >> 0) & 0xFF;
-        uint vIdx1 = (packed >> 8) & 0xFF;
-        uint vIdx2 = (packed >> 16) & 0xFF;
-        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(vIdx0, vIdx1, vIdx2);
+        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(
+        TriangleIndices[m.TriangleOffset + (gl_LocalInvocationID.x * 3)],
+        TriangleIndices[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 1],
+        TriangleIndices[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 2]
+        );
     }
 
     if (gl_LocalInvocationID.x < m.VertexCount) {

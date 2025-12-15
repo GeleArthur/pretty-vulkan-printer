@@ -35,7 +35,7 @@ namespace pvp
         // MESHLETS
         std::vector<meshopt_Meshlet> meshlets;
         std::vector<uint32_t>        meshlet_vertices;
-        std::vector<uint32_t>        meshlet_triangles;
+        std::vector<uint8_t>         meshlet_triangles;
         std::vector<glm::vec4>       meshlet_sphere_bounds;
     };
 

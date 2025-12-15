@@ -112,10 +112,6 @@ namespace pvp
         {
             return m_gpu_vertices;
         }
-        const Buffer& get_indices_buffer() const
-        {
-            return m_gpu_indices;
-        }
         const Buffer& get_matrix_buffer() const
         {
             return m_gpu_matrix;
@@ -155,7 +151,7 @@ namespace pvp
         UniformBuffer            m_scene_globals_gpu;
 
         Buffer m_gpu_vertices;
-        Buffer m_gpu_indices;
+        // Buffer m_gpu_indices;
         Buffer m_gpu_matrix;
 
         Buffer m_gpu_meshlets;

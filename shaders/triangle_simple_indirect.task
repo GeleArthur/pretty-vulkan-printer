@@ -82,7 +82,7 @@ bool VisibleFrustumCone(vec4 sphere)
 void main()
 {
     bool visible = false;
-    if (gl_GlobalInvocationID.x > Commands[gl_DrawID].meshlet_count) {
+    if (gl_GlobalInvocationID.x >= Commands[gl_DrawID].meshlet_count) {
         visible = false;
         return;
     }
