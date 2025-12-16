@@ -36,7 +36,6 @@ namespace pvp
         VkPipeline       m_pipeline_indirect{};
 
         Buffer         m_gpu_indirect_draw_calls;
-        bool           m_use_indirect{ false };
         DescriptorSets m_indirect_descriptor;
 
         Image           m_depth_image{};

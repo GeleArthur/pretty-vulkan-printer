@@ -6,8 +6,9 @@
 
 namespace
 {
-    std::vector<pvp::DebugVertex> lines;
-    bool                          spheres_enabled;
+    std::vector<pvp::DebugVertex> lines{};
+    bool                          spheres_enabled{};
+    bool                          indirect_enabled{ true };
 } // namespace
 
 void pvp::gizmos::draw_line(const glm::vec3& p1, const glm::vec3& p2, const glm::vec4& color)
@@ -36,6 +37,10 @@ void pvp::gizmos::toggle_spheres()
 {
     spheres_enabled = !spheres_enabled;
 }
+void pvp::gizmos::toggle_indirect()
+{
+    indirect_enabled = !indirect_enabled;
+}
 
 const std::vector<pvp::DebugVertex>& pvp::gizmos::get_lines()
 {
@@ -48,4 +53,8 @@ void pvp::gizmos::clear()
 bool pvp::gizmos::is_spheres_enabled()
 {
     return spheres_enabled;
+}
+bool pvp::gizmos::indirect()
+{
+    return indirect_enabled;
 }

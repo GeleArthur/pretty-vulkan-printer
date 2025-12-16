@@ -99,7 +99,6 @@ namespace
         file.close();
     }
 
-    // TODO: cache on disk
     void generate_meshlet(pvp::ModelData& model_out)
     {
         constexpr size_t max_vertices = 64;

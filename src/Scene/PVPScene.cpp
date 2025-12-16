@@ -335,7 +335,13 @@ void pvp::PvpScene::update()
         {
             gizmos::toggle_spheres();
         }
+        bool enabel = gizmos::indirect();
+        if (ImGui::Checkbox("Draw Indirect", &enabel))
+        {
+            gizmos::toggle_indirect();
+        }
     }
+
     ImGui::End();
 }
 
@@ -524,6 +530,7 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
 
     // load_data_into_big_buffer(&ModelData::meshlets, m_gpu_meshlets);
 
+    // Generate vertex indices
     {
         uint32_t const total_count = std::accumulate(
             loaded_scene.models.cbegin(),
@@ -549,19 +556,13 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
             for (int j = 0; j < loaded_scene.models[i].meshlet_vertices.size(); ++j)
             {
                 all_data.push_back(meshlet_vertex_global_count + loaded_scene.models[i].meshlet_vertices[j]);
-                // all_data.emplace_back(vertex_global_count,
-                //                       triangle_global_count,
-                //                       loaded_scene.models[i].meshlets[j].vertex_count,
-                //                       loaded_scene.models[i].meshlets[j].triangle_count);
-                //
-                // vertex_global_count += loaded_scene.models[i].meshlets[j].vertex_count;
-                // triangle_global_count += loaded_scene.models[i].meshlets[j].triangle_count;
             }
-            meshlet_vertex_global_count += loaded_scene.models[i].meshlet_vertices.size();
+            meshlet_vertex_global_count += loaded_scene.models[i].vertices.size();
         }
 
         m_gpu_meshlets_vertices.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_data), transfer_deleter);
     }
+    // Generate meshlets offsets
     {
         uint32_t const total_count = std::accumulate(
             loaded_scene.models.cbegin(),
@@ -593,7 +594,7 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
                                       loaded_scene.models[i].meshlets[j].triangle_count);
 
                 vertex_global_count += loaded_scene.models[i].meshlets[j].vertex_count;
-                triangle_global_count += loaded_scene.models[i].meshlets[j].triangle_count;
+                triangle_global_count += loaded_scene.models[i].meshlets[j].triangle_count * 3;
             }
         }
 

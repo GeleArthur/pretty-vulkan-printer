@@ -9,10 +9,12 @@ namespace pvp
     {
         void draw_line(const glm::vec3& p1, const glm::vec3& p2, const glm::vec4& color);
         void draw_cone(const glm::vec3& tip, float height, const glm::vec3& direction, float angle);
-        void toggle_spheres();
+        void toggle_spheres(); // TODO: BAD THESE ARE SETTINGS SHOULD NOT BE HERE.
+        void toggle_indirect();
 
         const std::vector<DebugVertex>& get_lines();
         void                            clear();
         bool                            is_spheres_enabled();
+        bool                            indirect();
     } // namespace gizmos
 } // namespace pvp

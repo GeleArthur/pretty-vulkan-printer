@@ -10,6 +10,7 @@
 #include "DescriptorSets/DescriptorLayoutBuilder.h"
 #include "Scene/PVPScene.h"
 
+#include <Debugger/Gizmos.h>
 #include <Image/ImageBuilder.h>
 #include <Image/TransitionLayout.h>
 
@@ -79,7 +80,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    if (!m_use_indirect)
+    if (!gizmos::indirect())
     {
         vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
