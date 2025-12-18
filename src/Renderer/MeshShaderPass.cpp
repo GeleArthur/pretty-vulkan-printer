@@ -14,22 +14,12 @@
 #include <Image/ImageBuilder.h>
 #include <Image/TransitionLayout.h>
 
-struct DrawCommandIndirect
-{
-    uint32_t group_count_x;
-    uint32_t group_count_y;
-    uint32_t group_count_z;
-    uint32_t mesh_let_offset;
-    uint32_t mesh_let_count;
-};
-
 pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scene)
     : m_context(context)
     , m_scene(scene)
 {
     ZoneScoped;
     create_images();
-    build_draw_calls();
     build_pipelines();
 
     VkQueryPoolCreateInfo pool{
@@ -80,7 +70,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    if (!gizmos::indirect())
+    if (!m_scene.get_indirect_enabled())
     {
         vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
@@ -101,9 +91,9 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     {
         vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_indirect);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 1, 1, m_indirect_descriptor.get_descriptor_set(cmd), 0, nullptr);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 1, 1, m_scene.get_indirect_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
 
-        VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_gpu_indirect_draw_calls.get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
+        VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
     }
 
     vkCmdEndRendering(cmd.command_buffer);
@@ -165,26 +155,6 @@ void pvp::MeshShaderPass::build_pipelines()
         .set_pipeline_layout(m_pipeline_layout_indirect)
         .build(*m_context.device, m_pipeline_indirect);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect, nullptr); });
-
-    DescriptorSetBuilder{}
-        .set_layout(m_context.descriptor_creator->get_layout()
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                        .get())
-        .bind_buffer_ssbo(0, m_gpu_indirect_draw_calls)
-        .bind_buffer_ssbo(1, m_scene.get_matrix_buffer())
-        .bind_buffer_ssbo(2, m_scene.get_meshlets_buffer())
-        .bind_buffer_ssbo(3, m_scene.get_all_vertex_buffer())
-        .bind_buffer_ssbo(4, m_scene.get_meshlets_vertices_buffer())
-        .bind_buffer_ssbo(5, m_scene.get_meshlets_triangles_buffer())
-        .bind_buffer_ssbo(6, m_scene.get_meshlets_sphere_bounds_buffer())
-        .build(m_context, m_indirect_descriptor);
 }
 
 void pvp::MeshShaderPass::create_images()
@@ -198,31 +168,4 @@ void pvp::MeshShaderPass::create_images()
         .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context, m_depth_image);
     m_destructor_queue.add_to_queue([&] { m_depth_image.destroy(m_context); });
-}
-void pvp::MeshShaderPass::build_draw_calls()
-{
-    ZoneScoped;
-    const std::vector<Model>& models = m_scene.get_models();
-    BufferBuilder{}
-        .set_size(sizeof(DrawCommandIndirect) * models.size())
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
-        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)
-        .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-        .build(m_context.allocator->get_allocator(), m_gpu_indirect_draw_calls);
-    m_destructor_queue.add_to_queue([&] { m_gpu_indirect_draw_calls.destroy(); });
-
-    DrawCommandIndirect* buffer_array = static_cast<DrawCommandIndirect*>(m_gpu_indirect_draw_calls.get_allocation_info().pMappedData);
-    uint32_t             meshlet_offset{};
-    for (int i = 0; i < models.size(); ++i)
-    {
-        uint32_t thread_group_count_x = models[i].meshlet_count / 32 + 1;
-        buffer_array[i] = DrawCommandIndirect{
-            thread_group_count_x,
-            1,
-            1,
-            meshlet_offset,
-            models[i].meshlet_count
-        };
-        meshlet_offset += models[i].meshlet_count;
-    }
 }

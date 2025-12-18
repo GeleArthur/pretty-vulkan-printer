@@ -11,7 +11,7 @@ namespace pvp
 {
     class ToneMappingPass;
 
-    class MeshShaderPass
+    class MeshShaderPass final
     {
     public:
         explicit MeshShaderPass(const Context& context, const PvpScene& scene);
@@ -25,7 +25,6 @@ namespace pvp
     private:
         void            build_pipelines();
         void            create_images();
-        void            build_draw_calls();
         const Context&  m_context;
         const PvpScene& m_scene;
 
@@ -34,9 +33,6 @@ namespace pvp
 
         VkPipelineLayout m_pipeline_layout_indirect{};
         VkPipeline       m_pipeline_indirect{};
-
-        Buffer          m_gpu_indirect_draw_calls;
-        DescriptorSets  m_indirect_descriptor;
 
         Image           m_depth_image{};
         VkQueryPool     m_query_pool{};

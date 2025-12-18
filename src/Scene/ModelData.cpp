@@ -356,7 +356,7 @@ namespace
         load_texture(scene.cube_map);
     }
 
-    pvp::LoadedScene load_scene_from_disk(const std::filesystem::path& path)
+    std::optional<pvp::LoadedScene> load_scene_from_disk(const std::filesystem::path& path)
     {
         pvp::LoadedScene out_scene{};
         const aiScene*   scene = aiImportFile(path.generic_string().c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
@@ -364,7 +364,7 @@ namespace
         if (scene == nullptr)
         {
             spdlog::error("Failed to load model: {}", aiGetErrorString());
-            return out_scene;
+            return {};
         }
 
         std::unordered_map<std::string, aiTextureType> all_textures;
@@ -487,12 +487,12 @@ namespace
 
 } // namespace
 
-pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
+std::optional<pvp::LoadedScene> pvp::load_scene_cpu(const std::filesystem::path& path)
 {
     ZoneScoped;
     if (!std::filesystem::exists(path))
     {
-        throw;
+        return {};
     }
     LoadedScene scene;
     if (has_cache(path))
@@ -501,8 +501,16 @@ pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
     }
     else
     {
-        scene = load_scene_from_disk(path);
-        save_cache(path, scene);
+        std::optional<pvp::LoadedScene> maybe_scene = load_scene_from_disk(path);
+        if (maybe_scene.has_value())
+        {
+            scene = maybe_scene.value();
+            save_cache(path, scene);
+        }
+        else
+        {
+            return {};
+        }
     }
 
     return scene;

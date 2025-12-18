@@ -56,5 +56,5 @@ namespace pvp
         TextureData              cube_map;
     };
 
-    LoadedScene load_scene_cpu(const std::filesystem::path& path);
+    std::optional<LoadedScene> load_scene_cpu(const std::filesystem::path& path);
 } // namespace pvp

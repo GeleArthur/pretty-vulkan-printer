@@ -76,6 +76,15 @@ namespace pvp
         float     intensity;
     };
 
+    struct DrawCommandIndirect
+    {
+        uint32_t group_count_x;
+        uint32_t group_count_y;
+        uint32_t group_count_z;
+        uint32_t mesh_let_offset;
+        uint32_t mesh_let_count;
+    };
+
     class PvpScene final
     {
     public:
@@ -142,11 +151,29 @@ namespace pvp
         {
             return m_gpu_meshlets_sphere_bounds;
         }
+        const Buffer& get_indirect_draw_calls() const
+        {
+            return m_gpu_indirect_draw_calls;
+        }
+        const DescriptorSets& get_indirect_descriptor_set() const
+        {
+            return m_indirect_descriptor;
+        }
+        bool get_sphere_enabled() const
+        {
+            return m_spheres_enabled;
+        }
+        bool get_indirect_enabled() const
+        {
+            return m_indirect_enabled;
+        }
 
     private:
         void generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height);
         void load_textures(const LoadedScene& scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
         void big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
+        void build_draw_calls();
+        void scan_folder();
 
         Context&                 m_context;
         std::vector<Model>       m_gpu_models;
@@ -169,10 +196,18 @@ namespace pvp
         Buffer m_gpu_meshlets_triangles;
         Buffer m_gpu_meshlets_sphere_bounds;
 
+        Buffer         m_gpu_indirect_draw_calls;
+        DescriptorSets m_indirect_descriptor;
+
         std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;
 
         Camera         m_camera;
         DirectionLight m_direction_light{};
+
+        bool m_spheres_enabled{};
+        bool m_indirect_enabled{ true };
+
+        std::vector<std::string> m_scene_files;
 
         constexpr static uint32_t max_point_lights{ 10u };
         constexpr static uint32_t max_direction_lights{ 10u };

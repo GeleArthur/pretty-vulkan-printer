@@ -25,6 +25,7 @@
 #include <tracy/Tracy.hpp>
 #include <glm/glm.hpp>
 #include <ranges>
+#include <assimp/cimport.h>
 
 pvp::PvpScene::PvpScene(Context& context)
     : m_context{ context }
@@ -75,6 +76,8 @@ pvp::PvpScene::PvpScene(Context& context)
     add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
     add_direction_light(m_direction_light);
+
+    scan_folder();
 }
 
 pvp::PvpScene::~PvpScene()
@@ -86,7 +89,12 @@ pvp::PvpScene::~PvpScene()
 void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 {
     ZoneScoped;
-    const LoadedScene loaded_scene = load_scene_cpu(path);
+    const std::optional<LoadedScene> scene_optional = load_scene_cpu(path);
+    if (!scene_optional.has_value())
+        return;
+
+    unload_scenes();
+    const LoadedScene& loaded_scene = scene_optional.value();
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(m_context, *m_context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
@@ -188,26 +196,55 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         .bind_image_array(1, m_gpu_textures)
         .build(m_context, m_all_textures);
 
+    build_draw_calls();
+
+    DescriptorSetBuilder{}
+        .set_layout(m_context.descriptor_creator->get_layout()
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .get())
+        .bind_buffer_ssbo(0, get_indirect_draw_calls())
+        .bind_buffer_ssbo(1, get_matrix_buffer())
+        .bind_buffer_ssbo(2, get_meshlets_buffer())
+        .bind_buffer_ssbo(3, get_all_vertex_buffer())
+        .bind_buffer_ssbo(4, get_meshlets_vertices_buffer())
+        .bind_buffer_ssbo(5, get_meshlets_triangles_buffer())
+        .bind_buffer_ssbo(6, get_meshlets_sphere_bounds_buffer())
+        .build(m_context, m_indirect_descriptor);
+
     // m_scene_globals_gpu = UniformBuffer{};
     // m_point_lights_gpu = UniformBuffer(16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator());
     // m_directonal_lights_gpu = UniformBuffer(16 + sizeof(DirectionLight) * max_direction_lights, context.allocator->get_allocator());
 }
 void pvp::PvpScene::unload_scenes()
 {
+    vkDeviceWaitIdle(m_context.device->get_device());
+    m_scene_destructor_queue.destroy_and_clear();
+
     for (const Model& model : m_gpu_models)
     {
         model.vertex_data.destroy();
         model.index_data.destroy();
         model.meshlet_buffer.destroy();
-        model.meshlet_triangles_buffer.destroy();
         model.meshlet_vertices_buffer.destroy();
+        model.meshlet_triangles_buffer.destroy();
         model.meshlet_sphere_bounds_buffer.destroy();
+
+        model.meshlet_descriptor_set.destroy();
     }
+    m_gpu_models.clear();
 
     for (const StaticImage& gpu_texture : m_gpu_textures)
     {
         gpu_texture.destroy(m_context);
     }
+    m_gpu_textures.clear();
 }
 
 uint32_t pvp::PvpScene::add_point_light(const PointLight& light)
@@ -265,6 +302,24 @@ void pvp::PvpScene::change_direction_light(uint32_t light_index, const Direction
     }
 }
 
+void pvp::PvpScene::scan_folder()
+{
+    auto scan = [&](const std::string& path) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(path))
+        {
+            if (entry.is_regular_file())
+            {
+                auto ext = entry.path().extension().string();
+                if (ext == ".glb" || ext == ".obj" || ext == ".gltf" || ext == ".fbx")
+                {
+                    m_scene_files.push_back(entry.path().string());
+                }
+            }
+        }
+    };
+    scan("resources");
+    scan("../intelsponza");
+}
 void pvp::PvpScene::update()
 {
     ZoneScoped;
@@ -310,12 +365,48 @@ void pvp::PvpScene::update()
         ImGui::Text("ms: %f", delta_time * 1000.0f);
         ImGui::Text("Camera pos: x:%f, y:%f, z:%f", m_camera.get_position().x, m_camera.get_position().y, m_camera.get_position().z);
 
+        ImGui::Separator();
+
+        static int selectedSceneIndex = 0;
+
+        if (ImGui::Button("Rescan"))
+        {
+            scan_folder();
+            selectedSceneIndex = 0;
+        }
+        ImGui::Text("Select Scene:");
+        if (ImGui::BeginCombo("##scenes", m_scene_files.empty() ? "No scenes" : m_scene_files[selectedSceneIndex].c_str()))
+        {
+            for (int i = 0; i < m_scene_files.size(); i++)
+            {
+                bool isSelected = (selectedSceneIndex == i);
+                if (ImGui::Selectable(m_scene_files[i].c_str(), isSelected))
+                {
+                    selectedSceneIndex = i;
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (ImGui::Button("Load Scene", ImVec2(120, 0)))
+        {
+            if (!m_scene_files.empty())
+            {
+                load_scene(std::filesystem::path(m_scene_files[selectedSceneIndex]));
+            }
+        }
+
+        ImGui::Separator();
+
         if (ImGui::Button("Add light"))
         {
             add_point_light(PointLight(glm::vec4(m_camera.get_position(), 1.0), glm::vec4(1.0, 1.0, 1.0, 1.0), 1.0f));
         }
 
-        ImGui::Separator();
         // TODO: Pure cringe. Have a copy of the lights on the cpu please.
         void* light_base = (m_point_lights_gpu.get_buffer(0).get_allocation_info().pMappedData);
 
@@ -336,7 +427,6 @@ void pvp::PvpScene::update()
             {
                 change_point_light(i, light_pointing);
             }
-            ImGui::Separator();
             ImGui::PopID();
         }
 
@@ -344,16 +434,8 @@ void pvp::PvpScene::update()
         ImGui::Text("TASK_SHADER_INVOCATIONS: %i", m_context.invocation_count[1]);
 
         ImGui::Checkbox("Update frustom", &m_camera.update_frustum);
-        bool enabeld = gizmos::is_spheres_enabled();
-        if (ImGui::Checkbox("Enable sphers", &enabeld))
-        {
-            gizmos::toggle_spheres();
-        }
-        bool enabel = gizmos::indirect();
-        if (ImGui::Checkbox("Draw Indirect", &enabel))
-        {
-            gizmos::toggle_indirect();
-        }
+        ImGui::Checkbox("Enable spheres", &m_spheres_enabled);
+        ImGui::Checkbox("Draw Indirect", &m_indirect_enabled);
     }
 
     ImGui::End();
@@ -694,4 +776,32 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
     // m_gpu_matrix.copy_from_buffer(cmd, matrix_transfur_buffer);
 
     // transfer_vector_to_gpu(cpu_model.transform, m_gpu_matrix, offset_matrix);
+}
+
+void pvp::PvpScene::build_draw_calls()
+{
+    ZoneScoped;
+    const std::vector<Model>& models = get_models();
+    BufferBuilder{}
+        .set_size(sizeof(DrawCommandIndirect) * models.size())
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)
+        .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        .build(m_context.allocator->get_allocator(), m_gpu_indirect_draw_calls);
+    m_scene_destructor_queue.add_to_queue([&] { m_gpu_indirect_draw_calls.destroy(); });
+
+    DrawCommandIndirect* buffer_array = static_cast<DrawCommandIndirect*>(m_gpu_indirect_draw_calls.get_allocation_info().pMappedData);
+    uint32_t             meshlet_offset{};
+    for (int i = 0; i < models.size(); ++i)
+    {
+        uint32_t thread_group_count_x = models[i].meshlet_count / 32 + 1;
+        buffer_array[i] = DrawCommandIndirect{
+            thread_group_count_x,
+            1,
+            1,
+            meshlet_offset,
+            models[i].meshlet_count
+        };
+        meshlet_offset += models[i].meshlet_count;
+    }
 }

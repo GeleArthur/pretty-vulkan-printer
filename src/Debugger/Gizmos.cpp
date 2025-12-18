@@ -7,8 +7,6 @@
 namespace
 {
     std::vector<pvp::DebugVertex> lines{};
-    bool                          spheres_enabled{};
-    bool                          indirect_enabled{ true };
 } // namespace
 
 void pvp::gizmos::draw_line(const glm::vec3& p1, const glm::vec3& p2, const glm::vec4& color)
@@ -33,15 +31,6 @@ void pvp::gizmos::draw_cone(const glm::vec3& tip, float height, const glm::vec3&
         lines.push_back(DebugVertex{ tip + (dir1 * angle * static_cast<float>(std::cos(rot_angle + ((1 / 36.0f) * std::numbers::pi * 2.0f))) + dir2 * angle * static_cast<float>(std::sin(rot_angle + ((1 / 36.0f) * std::numbers::pi * 2.0f))) + direction) * height, { 1, 1, 1, 1 } });
     }
 }
-void pvp::gizmos::toggle_spheres()
-{
-    spheres_enabled = !spheres_enabled;
-}
-void pvp::gizmos::toggle_indirect()
-{
-    indirect_enabled = !indirect_enabled;
-}
-
 const std::vector<pvp::DebugVertex>& pvp::gizmos::get_lines()
 {
     return lines;
@@ -49,12 +38,4 @@ const std::vector<pvp::DebugVertex>& pvp::gizmos::get_lines()
 void pvp::gizmos::clear()
 {
     lines.clear();
-}
-bool pvp::gizmos::is_spheres_enabled()
-{
-    return spheres_enabled;
-}
-bool pvp::gizmos::indirect()
-{
-    return indirect_enabled;
 }

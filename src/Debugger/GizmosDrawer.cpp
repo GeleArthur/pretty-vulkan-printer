@@ -36,7 +36,7 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    if (gizmos::is_spheres_enabled())
+    if (m_scene.get_sphere_enabled())
     {
         vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_spheres);
         vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_spheres, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);

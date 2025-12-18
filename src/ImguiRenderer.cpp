@@ -73,6 +73,15 @@ static void key_call_back(GLFWwindow* window, int key, int scancode, int action,
     }
 }
 
+static void scroll_call_back(GLFWwindow* window, double xoffset, double yoffset)
+{
+    pvp::GlfwToRender* glfw = static_cast<pvp::GlfwToRender*>(glfwGetWindowUserPointer(window));
+    {
+        std::lock_guard lock(glfw->lock);
+        ImGui::GetIO().AddMouseWheelEvent(xoffset, yoffset);
+    }
+}
+
 pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRender* glfw_to_render)
     : m_window{ window }
     , m_glfw_to_render{ glfw_to_render }
@@ -144,6 +153,7 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
     glfwSetMouseButtonCallback(m_window, &mouse_button_callback);
     glfwSetCharCallback(m_window, &char_call_back);
     glfwSetKeyCallback(m_window, &key_call_back);
+    glfwSetScrollCallback(m_window, &scroll_call_back);
 }
 
 void pvp::ImguiRenderer::destroy_vulkan_context()
