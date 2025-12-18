@@ -2,6 +2,8 @@
 #pragma shader_stage(task)
 #extension GL_EXT_mesh_shader: enable
 #extension GL_KHR_shader_subgroup_ballot: enable
+#extension GL_EXT_buffer_reference: require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64: require
 
 #define AS_GROUP_SIZE 32
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
@@ -34,6 +36,26 @@ taskPayloadSharedEXT Payload payload;
 //    Vertex Vertices[];
 //};
 
+
+layout (std430, buffer_reference, buffer_reference_align = 16) readonly buffer SphereBoundsPtr {
+    vec4 SphereBounds[];
+};
+
+
+//struct AllTheBuffers {
+//    uint64_t data0;
+//    uint64_t data1;
+//    uint64_t data2;
+//    uint64_t data3;
+//    SphereBoundsPtr sphere_buffer;
+//
+//    //    VkDeviceAddress vertex_data;
+//    //    VkDeviceAddress meshlet_data;
+//    //    VkDeviceAddress meshlet_vertices_data;
+//    //    VkDeviceAddress meshlet_triangle_data;
+//    //    VkDeviceAddress meshlet_sphere_bounds_data;
+//};
+
 struct DrawCommand
 {
     uint groupCountX;
@@ -41,6 +63,7 @@ struct DrawCommand
     uint groupCountZ;
     uint meshlet_offset;
     uint meshlet_count;
+    //    AllTheBuffers buffers;
 };
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
@@ -54,6 +77,10 @@ layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
 layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
     vec4 SphereBounds[];
 };
+
+//layout (std430, set = 1, binding = 7) readonly buffer SphereBoundsPointerIn {
+//    SphereBoundsPtr SphereBoundsPtrData[];
+//};
 
 
 bool VisibleFrustumCone(vec4 sphere)
@@ -98,6 +125,7 @@ void main()
     float maxScale = max(max(scale.x, scale.y), scale.z);
 
     uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
+
 
     vec4 sphere_bounds = vec4(
     vec3(model_matrix * vec4(SphereBounds[offset].xyz, 1.0)),

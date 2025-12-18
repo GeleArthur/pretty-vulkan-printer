@@ -59,7 +59,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     image_layout_transition(cmd.command_buffer,
                             m_context.swapchain->get_images()[swapchain_image_index],
-                            VK_PIPELINE_STAGE_2_NONE,
+                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                             VK_ACCESS_2_NONE,
                             VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,

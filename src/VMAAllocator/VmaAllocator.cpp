@@ -26,6 +26,7 @@ void pvp::create_allocator(PvpVmaAllocator& allocator, const pvp::Instance& inst
     allocator_info.instance = instance.get_instance();
     allocator_info.physicalDevice = physical_device.get_physical_device();
     allocator_info.device = device.get_device();
+    allocator_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     vmaCreateAllocator(&allocator_info, &allocator.m_allocator);
 }

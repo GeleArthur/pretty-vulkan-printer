@@ -163,7 +163,20 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.diffuse_path == image.get_name(); }) - m_gpu_textures.begin();
         gpu_model.material.normal_texture_index = cpu_model.normal_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.normal_path == image.get_name(); }) - m_gpu_textures.begin();
         gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.metallic_path == image.get_name(); }) - m_gpu_textures.begin();
+
+        auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
+            VkBufferDeviceAddressInfo address_info{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR };
+            address_info.buffer = buffer;
+            return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
+        };
+
+        gpu_model.ptr_to_buffers.vertex_data = get_address(gpu_model.vertex_data.get_buffer());
+        gpu_model.ptr_to_buffers.meshlet_data = get_address(gpu_model.meshlet_buffer.get_buffer());
+        gpu_model.ptr_to_buffers.meshlet_vertices_data = get_address(gpu_model.meshlet_vertices_buffer.get_buffer());
+        gpu_model.ptr_to_buffers.meshlet_triangle_data = get_address(gpu_model.meshlet_triangles_buffer.get_buffer());
+        gpu_model.ptr_to_buffers.meshlet_sphere_bounds_data = get_address(gpu_model.meshlet_sphere_bounds_buffer.get_buffer());
     }
+
     cmd_pool_transfer_buffers.end_buffer(cmd);
     transfer_deleter.destroy_and_clear();
     cmd_pool_transfer_buffers.destroy();

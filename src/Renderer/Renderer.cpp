@@ -44,9 +44,9 @@ static void transfur_swapchain(pvp::Context& context, FrameContext& cmd, uint32_
 
     pvp::image_layout_transition(cmd.command_buffer,
                                  context.swapchain->get_images()[swapchain_index],
-                                 VK_PIPELINE_STAGE_2_NONE,
+                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                  VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
-                                 VK_ACCESS_2_NONE,
+                                 VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                  VK_ACCESS_2_NONE,
                                  VK_IMAGE_LAYOUT_UNDEFINED,
                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -107,8 +107,8 @@ void pvp::Renderer::prepare_frame()
 
     ZoneNamedN(waiting, "waiting", true);
     // std::printf("Waiting fences: %i\n", m_double_buffer_frame);
-    vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle);
+    VK_CALL(vkWaitForFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle, VK_TRUE, UINT64_MAX));
+    VK_CALL(vkResetFences(m_context.device->get_device(), 1, &m_frame_syncers.in_flight_fences[m_double_buffer_frame].handle));
 
     ZoneNamedN(update_renderer, "update renderer", true);
     m_scene.update_render(m_frame_contexts[m_double_buffer_frame]);
@@ -189,7 +189,7 @@ void pvp::Renderer::end_frame()
 {
     ZoneNamedN(end_command_buffer, "end command buffer", true);
     // std::printf("-----END FRAME-----\n");
-    vkEndCommandBuffer(m_frame_contexts.at(m_double_buffer_frame).command_buffer);
+    VK_CALL(vkEndCommandBuffer(m_frame_contexts.at(m_double_buffer_frame).command_buffer));
 
     ZoneNamedN(submit_queue, "submit queue", true);
     VkSemaphoreSubmitInfo acquire_semaphores{
@@ -232,10 +232,10 @@ void pvp::Renderer::end_frame()
     //     m_current_swapchain_index,
     //     m_double_buffer_frame,
     //     m_double_buffer_frame);
-    vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue,
-                   1,
-                   &submit_info,
-                   m_frame_syncers.in_flight_fences.at(m_double_buffer_frame).handle);
+    VK_CALL(vkQueueSubmit2(m_cmd_pool_graphics_present.get_queue().queue,
+                           1,
+                           &submit_info,
+                           m_frame_syncers.in_flight_fences.at(m_double_buffer_frame).handle));
 
     ZoneNamedN(present, "Queue present", true);
     VkPresentInfoKHR present_info{};

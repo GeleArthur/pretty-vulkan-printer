@@ -1,5 +1,6 @@
 #include "CommandPool.h"
 
+#include <globalconst.h>
 #include <span>
 #include <stdexcept>
 #include <Context/Device.h>
@@ -37,19 +38,19 @@ namespace pvp
         alloc_info.commandBufferCount = 1;
 
         VkCommandBuffer command_buffer;
-        vkAllocateCommandBuffers(m_device, &alloc_info, &command_buffer);
+        VK_CALL(vkAllocateCommandBuffers(m_device, &alloc_info, &command_buffer));
 
         VkCommandBufferBeginInfo begin_info{};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(command_buffer, &begin_info);
+        VK_CALL(vkBeginCommandBuffer(command_buffer, &begin_info));
 
         return command_buffer;
     }
     void CommandPool::end_buffer(VkCommandBuffer buffer, VkFence fence) const
     {
         ZoneScoped;
-        vkEndCommandBuffer(buffer);
+        VK_CALL(vkEndCommandBuffer(buffer));
 
         VkCommandBufferSubmitInfo command_buffer_submit{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -61,10 +62,10 @@ namespace pvp
         submit_info.pCommandBufferInfos = &command_buffer_submit;
         submit_info.commandBufferInfoCount = 1;
 
-        vkQueueSubmit2(m_queue.queue, 1, &submit_info, fence);
+        VK_CALL(vkQueueSubmit2(m_queue.queue, 1, &submit_info, fence));
         if (fence == VK_NULL_HANDLE)
         {
-            vkQueueWaitIdle(m_queue.queue);
+            VK_CALL(vkQueueWaitIdle(m_queue.queue));
             vkFreeCommandBuffers(m_device, m_command_pool, 1, &buffer);
         }
     }
@@ -79,7 +80,7 @@ namespace pvp
         alloc_info.commandBufferCount = count;
 
         std::vector<VkCommandBuffer> buffers(count);
-        vkAllocateCommandBuffers(m_device, &alloc_info, buffers.data());
+        VK_CALL(vkAllocateCommandBuffers(m_device, &alloc_info, buffers.data()));
 
         return buffers;
     }

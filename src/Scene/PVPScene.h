@@ -26,6 +26,14 @@ namespace pvp
         uint32_t    normal_texture_index;
         uint32_t    metalness_texture_index;
     };
+    struct MeshletsBuffers
+    {
+        VkDeviceAddress vertex_data;
+        VkDeviceAddress meshlet_data;
+        VkDeviceAddress meshlet_vertices_data;
+        VkDeviceAddress meshlet_triangle_data;
+        VkDeviceAddress meshlet_sphere_bounds_data;
+    };
 
     struct Model
     {
@@ -37,11 +45,13 @@ namespace pvp
         // Meshlet data
         uint32_t       meshlet_count;
         DescriptorSets meshlet_descriptor_set;
-        // Buffer         meshlet_vertex;
+
         Buffer meshlet_buffer;
         Buffer meshlet_vertices_buffer;
         Buffer meshlet_triangles_buffer;
         Buffer meshlet_sphere_bounds_buffer;
+
+        MeshletsBuffers ptr_to_buffers;
     };
 
     struct SceneGlobals
