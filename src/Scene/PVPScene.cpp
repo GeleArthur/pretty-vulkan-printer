@@ -85,6 +85,7 @@ pvp::PvpScene::~PvpScene()
 
 void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 {
+    ZoneScoped;
     const LoadedScene loaded_scene = load_scene_cpu(path);
 
     const CommandPool     cmd_pool_transfer_buffers = CommandPool(m_context, *m_context.queue_families->get_queue_family(VK_QUEUE_TRANSFER_BIT, false), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -432,6 +433,7 @@ void pvp::PvpScene::generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image
 }
 void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
 {
+    ZoneScoped;
     m_gpu_textures.reserve(m_gpu_textures.size() + loaded_scene.textures.size());
 
     for (const TextureData& texture : loaded_scene.textures)
@@ -502,6 +504,7 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
 }
 void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
 {
+    ZoneScoped;
     auto load_data_into_big_buffer = [&](auto ModelData::* member_ptr, Buffer& buffer) {
         using VectorType = std::decay_t<decltype(std::declval<ModelData>().*member_ptr)>::value_type;
 

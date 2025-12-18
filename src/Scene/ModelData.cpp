@@ -15,6 +15,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <spdlog/spdlog.h>
+#include <tracy/Tracy.hpp>
 
 namespace
 {
@@ -488,6 +489,7 @@ namespace
 
 pvp::LoadedScene pvp::load_scene_cpu(const std::filesystem::path& path)
 {
+    ZoneScoped;
     if (!std::filesystem::exists(path))
     {
         throw;

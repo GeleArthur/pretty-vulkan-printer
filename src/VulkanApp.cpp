@@ -15,6 +15,7 @@
 void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
 {
     ZoneScoped;
+    ZoneNamed(loading, "Loading");
     // TODO: Deiced to remove all the destructors and add destroy to all classes. I am feeling destroy
     Instance instance{};
     InstanceBuilder()
@@ -65,6 +66,7 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);
     Renderer      renderer = Renderer(context, scene, imgui_renderer);
 
+    ZoneNamed(running, "running");
     while (gtfw_to_render.running)
     {
         FrameMark;
