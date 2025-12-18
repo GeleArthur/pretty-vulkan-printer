@@ -121,7 +121,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 
             BufferBuilder()
                 .set_size(data.size_bytes())
-                .set_usage(usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+                .set_usage(usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT)
                 .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
                 .build(m_context.allocator->get_allocator(), gpu_buffer);
             gpu_buffer.copy_from_buffer(cmd, transfer_buffer);

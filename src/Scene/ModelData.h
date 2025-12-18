@@ -23,6 +23,16 @@ namespace pvp
         stbi_uc* pixels;
     };
 
+    struct ConeBounds
+    {
+        glm::vec4 sphere;
+        glm::vec4 cone;
+        // char      cone_axis_x;
+        // char      cone_axis_y;
+        // char      cone_axis_z;
+        // char      cone_cutoff;
+    };
+
     struct ModelData
     {
         std::vector<Vertex>   vertices;
@@ -36,7 +46,7 @@ namespace pvp
         std::vector<meshopt_Meshlet> meshlets;
         std::vector<uint32_t>        meshlet_vertices;
         std::vector<uint8_t>         meshlet_triangles;
-        std::vector<glm::vec4>       meshlet_sphere_bounds;
+        std::vector<ConeBounds>      meshlet_sphere_bounds;
     };
 
     struct LoadedScene

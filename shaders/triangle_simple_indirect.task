@@ -4,6 +4,8 @@
 #extension GL_KHR_shader_subgroup_ballot: enable
 #extension GL_EXT_buffer_reference: require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64: require
+#extension GL_EXT_shader_8bit_storage: require
+#extension GL_EXT_shader_explicit_arithmetic_types: require
 
 #define AS_GROUP_SIZE 32
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
@@ -74,8 +76,13 @@ layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
     mat4 ModelMatrix[];
 };
 
+struct ConeBounds {
+    vec4 sphereBounds;
+    vec4 coneAxis;
+};
+
 layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
-    vec4 SphereBounds[];
+    ConeBounds coneBounds[];
 };
 
 //layout (std430, set = 1, binding = 7) readonly buffer SphereBoundsPointerIn {
@@ -111,7 +118,7 @@ void main()
     bool visible = false;
     if (gl_GlobalInvocationID.x >= Commands[gl_DrawID].meshlet_count) {
         visible = false;
-        return;
+        return; // TODO wrong
     }
 
     mat4 model_matrix = ModelMatrix[gl_DrawID];
@@ -125,14 +132,18 @@ void main()
     float maxScale = max(max(scale.x, scale.y), scale.z);
 
     uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
-
+    ConeBounds cone = coneBounds[offset];
 
     vec4 sphere_bounds = vec4(
-    vec3(model_matrix * vec4(SphereBounds[offset].xyz, 1.0)),
-    SphereBounds[offset].w * maxScale
+    vec3(model_matrix * vec4(cone.sphereBounds.xyz, 1.0)),
+    cone.sphereBounds.w * maxScale
     );
 
     visible = VisibleFrustumCone(sphere_bounds);
+
+    if (dot(normalize(cone.sphereBounds.xyz - sceneInfo.position), cone.coneAxis.xyz) >= cone.coneAxis.w) {
+        visible = false;
+    }
 
 
     uvec4 ballot = subgroupBallot(visible);

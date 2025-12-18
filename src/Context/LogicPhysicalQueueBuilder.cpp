@@ -91,6 +91,7 @@ namespace pvp
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
             .pNext = &features13,
             .storageBuffer8BitAccess = VK_TRUE,
+            .shaderInt8 = VK_TRUE,
             .descriptorIndexing = VK_TRUE,
             .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
             .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,

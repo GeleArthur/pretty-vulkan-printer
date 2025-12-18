@@ -13,8 +13,13 @@ struct Payload {
 
 taskPayloadSharedEXT Payload payload;
 
+struct ConeBounds {
+    vec4 sphere;
+    vec4 coneAxis;
+};
+
 layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
-    vec4 SphereBounds[];
+    ConeBounds SphereBounds[];
 };
 
 struct FrustumCone
@@ -75,8 +80,8 @@ void main()
     float maxScale = max(max(scale.x, scale.y), scale.z);
 
     vec4 spherebounds = vec4(
-    vec3(pc.model * vec4(SphereBounds[gl_GlobalInvocationID.x].xyz, 1.0)),
-    SphereBounds[gl_GlobalInvocationID.x].w * maxScale
+    vec3(pc.model * vec4(SphereBounds[gl_GlobalInvocationID.x].sphere.xyz, 1.0)),
+    SphereBounds[gl_GlobalInvocationID.x].sphere.w * maxScale
     );
 
     visible = VisibleFrustumCone(spherebounds);

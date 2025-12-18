@@ -182,7 +182,12 @@ namespace
                 vertices.data(),
                 vertices.size(),
                 sizeof(float) * 3);
-            model_out.meshlet_sphere_bounds.push_back(glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
+            model_out.meshlet_sphere_bounds.emplace_back(
+                glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius),
+                glm::vec4(bounds.cone_axis[0],
+                          bounds.cone_axis[1],
+                          bounds.cone_axis[2],
+                          bounds.cone_cutoff));
         }
 
         // writeOBJ(model_out.meshlet_sphere_bounds, "OutPounts.obj");
