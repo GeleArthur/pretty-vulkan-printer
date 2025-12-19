@@ -6,28 +6,11 @@ layout (triangles) out;
 layout (max_vertices = 128, max_primitives = 128) out;
 layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
-struct FrustumCone
-{
-    vec3 Tip;
-    float Height;
-    vec3 Direction;
-    float Angle;
-};
-
-
-layout (set = 0, binding = 0) uniform SceneGlobals {
-    mat4x4 camera_view;
-    mat4x4 camera_projection;
-    vec3 position;
-    FrustumCone camera_frustom;
-} sceneInfo;
-
-//layout (std430, set = 1, binding = 0) readonly buffer SpheresBuffer {
-//    vec4 spheres[];
-//};
+#include "world_binds.glsl"
+#include "shared_structs.glsl"
 
 layout (std430, set = 1, binding = 4) readonly buffer SphereBoundsIn {
-    vec4 spheres[];
+    ConeBounds coneBoundsData[];
 };
 
 layout (push_constant) uniform PushConstant {
@@ -40,31 +23,6 @@ layout (push_constant) uniform PushConstant {
 layout (location = 0) out vec4 color[];
 
 const float PI = 3.14159265359;
-
-bool VisibleFrustumCone(vec4 sphere)
-{
-    // Cone and sphere are within intersectable range
-    vec3 v0 = sphere.xyz - sceneInfo.camera_frustom.Tip;
-    float d0 = dot(v0, sceneInfo.camera_frustom.Direction);
-    bool i0 = (d0 <= (sceneInfo.camera_frustom.Height + sphere.w));
-
-    //    float diff = dot(normalize(v0), normalize(sceneInfo.camera_frustom.Direction));
-    //    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle);
-
-    // TODO: Find source for this code.
-    float cs = cos(sceneInfo.camera_frustom.Angle);
-    float sn = sin(sceneInfo.camera_frustom.Angle);
-    float a = dot(v0, sceneInfo.camera_frustom.Direction);
-    float b = a * sn / cs;
-    float c = sqrt(dot(v0, v0) - (a * a));
-    float d = c - b;
-    float e = d * cs;
-    bool i1 = (e < sphere.w);
-    //    return inside;
-
-    return i0 && i1;
-}
-
 
 void main()
 {
@@ -83,8 +41,8 @@ void main()
 
 
     vec4 sphere = vec4(
-    vec3(pc.model * vec4(spheres[gl_WorkGroupID.x].xyz, 1.0f)),
-    spheres[gl_WorkGroupID.x].w * maxScale
+    vec3(pc.model * vec4(coneBoundsData[gl_WorkGroupID.x].sphereBounds.xyz, 1.0f)),
+    coneBoundsData[gl_WorkGroupID.x].sphereBounds.w * maxScale
     );
 
     vec3 forward = normalize(sceneInfo.position - sphere.xyz);

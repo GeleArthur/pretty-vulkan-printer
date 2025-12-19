@@ -25,6 +25,7 @@
 #include <tracy/Tracy.hpp>
 #include <glm/glm.hpp>
 #include <ranges>
+#include <GraphicsPipeline/ShaderLoader.h>
 #include <assimp/cimport.h>
 
 pvp::PvpScene::PvpScene(Context& context)
@@ -78,6 +79,7 @@ pvp::PvpScene::PvpScene(Context& context)
     add_direction_light(m_direction_light);
 
     scan_folder();
+    ShaderLoader::init();
 }
 
 pvp::PvpScene::~PvpScene()

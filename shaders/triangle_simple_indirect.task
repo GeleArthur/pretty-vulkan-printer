@@ -7,66 +7,13 @@
 #extension GL_EXT_shader_8bit_storage: require
 #extension GL_EXT_shader_explicit_arithmetic_types: require
 
-#define AS_GROUP_SIZE 32
+#include "shared_structs.glsl"
+#include "world_binds.glsl"
+
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
-
-struct FrustumCone
-{
-    vec3 Tip;
-    float Height;
-    vec3 Direction;
-    float Angle;
-};
-
-layout (set = 0, binding = 0) uniform SceneGlobals {
-    mat4x4 camera_view;
-    mat4x4 camera_projection;
-    vec3 position;
-    FrustumCone camera_frustom;
-} sceneInfo;
-
-
-struct Payload {
-    uint MeshletIndices[AS_GROUP_SIZE];
-    bool visable[AS_GROUP_SIZE];
-    uint model_matrix_id;
-};
 
 taskPayloadSharedEXT Payload payload;
 
-//layout (std140, set = 1, binding = 0) readonly buffer VertexIn {
-//    Vertex Vertices[];
-//};
-
-
-layout (std430, buffer_reference, buffer_reference_align = 16) readonly buffer SphereBoundsPtr {
-    vec4 SphereBounds[];
-};
-
-
-//struct AllTheBuffers {
-//    uint64_t data0;
-//    uint64_t data1;
-//    uint64_t data2;
-//    uint64_t data3;
-//    SphereBoundsPtr sphere_buffer;
-//
-//    //    VkDeviceAddress vertex_data;
-//    //    VkDeviceAddress meshlet_data;
-//    //    VkDeviceAddress meshlet_vertices_data;
-//    //    VkDeviceAddress meshlet_triangle_data;
-//    //    VkDeviceAddress meshlet_sphere_bounds_data;
-//};
-
-struct DrawCommand
-{
-    uint groupCountX;
-    uint groupCountY;
-    uint groupCountZ;
-    uint meshlet_offset;
-    uint meshlet_count;
-    //    AllTheBuffers buffers;
-};
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
     DrawCommand Commands[];
@@ -76,42 +23,9 @@ layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
     mat4 ModelMatrix[];
 };
 
-struct ConeBounds {
-    vec4 sphereBounds;
-    vec4 coneAxis;
-};
-
 layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
-    ConeBounds coneBounds[];
+    ConeBounds coneBoundsData[];
 };
-
-//layout (std430, set = 1, binding = 7) readonly buffer SphereBoundsPointerIn {
-//    SphereBoundsPtr SphereBoundsPtrData[];
-//};
-
-
-bool VisibleFrustumCone(vec4 sphere)
-{
-    // Cone and sphere are within intersectable range
-    vec3 v0 = sphere.xyz - sceneInfo.camera_frustom.Tip;
-    float d0 = dot(v0, sceneInfo.camera_frustom.Direction);
-    bool i0 = (d0 <= (sceneInfo.camera_frustom.Height + sphere.w));
-
-    //    float diff = dot(normalize(v0), normalize(sceneInfo.camera_frustom.Direction));
-    //    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle);
-
-    // TODO: Find source for this code.
-    float cs = cos(sceneInfo.camera_frustom.Angle);
-    float sn = sin(sceneInfo.camera_frustom.Angle);
-    float a = dot(v0, sceneInfo.camera_frustom.Direction);
-    float b = a * sn / cs;
-    float c = sqrt(dot(v0, v0) - (a * a));
-    float d = c - b;
-    float e = d * cs;
-    bool i1 = (e < sphere.w);
-
-    return i0 && i1;
-}
 
 void main()
 {
@@ -132,7 +46,7 @@ void main()
     float maxScale = max(max(scale.x, scale.y), scale.z);
 
     uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
-    ConeBounds cone = coneBounds[offset];
+    ConeBounds cone = coneBoundsData[offset];
 
     vec4 sphere_bounds = vec4(
     vec3(model_matrix * vec4(cone.sphereBounds.xyz, 1.0)),

@@ -97,13 +97,88 @@ namespace
 //     //     diagnosticsBlob.writeRef());
 // }
 
+class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
+{
+public:
+    shaderc_include_result* GetInclude(
+        const char*          requested_source,
+        shaderc_include_type type,
+        const char*          requesting_source,
+        size_t               include_depth) override
+    {
+        const std::string resolved_path = resolve_path(requested_source).string();
+
+        std::string content;
+        if (!LoadFileContent(resolved_path, content))
+        {
+            throw;
+        }
+
+        return MakeIncludeResult(resolved_path, content);
+    }
+
+    void ReleaseInclude(shaderc_include_result* data) override
+    {
+        if (data)
+        {
+            delete static_cast<std::pair<std::string, std::string>*>(data->user_data); // free stored strings
+            delete data;                                                               // free the result structure
+        }
+    }
+
+private:
+    std::filesystem::path resolve_path(const std::filesystem::path& file_requested)
+    {
+        return "shaders" / file_requested;
+    }
+
+    bool LoadFileContent(const std::string& path, std::string& content)
+    {
+        std::ifstream file(path);
+        if (!file.is_open())
+        {
+            return false;
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        content = buffer.str();
+        return true;
+    }
+
+    shaderc_include_result* MakeIncludeResult(const std::string& resolved_path, const std::string& content)
+    {
+        std::pair<std::string, std::string>* string_holder = new std::pair<std::string, std::string>();
+        string_holder->first = resolved_path;
+        string_holder->second = content;
+
+        shaderc_include_result* result = new shaderc_include_result();
+        result->user_data = string_holder;
+
+        result->source_name = string_holder->first.c_str();
+        result->source_name_length = string_holder->first.size();
+
+        result->content = string_holder->second.c_str();
+        result->content_length = string_holder->second.size();
+
+        return result;
+    }
+};
+
+void ShaderLoader::init()
+{
+    options.SetGenerateDebugInfo();
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
+    options.SetTargetSpirv(shaderc_spirv_version_1_6);
+
+    options.SetIncluder(std::make_unique<ShaderIncluder>());
+}
 std::vector<char> ShaderLoader::load_file(const std::filesystem::path& path)
 {
     std::ifstream     file(path, std::ios::in | std::ios::binary);
     const auto        size = std::filesystem::file_size(path);
     std::vector<char> buffer(size);
     file.read(buffer.data(), size);
-    file.close();
     return buffer;
 }
 
@@ -113,15 +188,7 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const
     ZoneScoped;
 
     std::vector<char> shader_code = load_file(path);
-
-    std::string name = path.filename().string();
-
-    options.SetGenerateDebugInfo();
-    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
-    options.SetTargetSpirv(shaderc_spirv_version_1_6);
-
-    // std::filesystem::path shader_base_path = path.parent_path();
-    // options.SetIncluder(std::make_unique<NEShaderIncluder>());
+    std::string       name = path.filename().string();
 
     shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
@@ -130,9 +197,7 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const
         throw;
     }
 
-    std::vector<uint32_t> spirv_code(result.cbegin(), result.cend());
-    // assambly_code.resize((compliedCode.cend() - compliedCode.cbegin()));
-    // std::ranges::copy(compliedCode, assambly_code.data());
+    std::vector spirv_code(result.cbegin(), result.cend());
 
     VkShaderModuleCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

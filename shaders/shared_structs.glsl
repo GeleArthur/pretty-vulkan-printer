@@ -1,3 +1,7 @@
+#ifndef SHARED
+#define SHARED
+
+
 //bool VisibleFrustumCone(vec4 sphere)
 //{
 //    // Cone and sphere are within intersectable range
@@ -22,6 +26,57 @@
 //    //    return i0 && inside; //&& i1;
 //}
 
-struct sickman {
-    int isck;
+struct Vertex {
+    vec3 Position;
+    vec2 TexCoord;
+    vec3 Normal;
+    vec3 Tangent;
 };
+
+struct Meshlet {
+    uint VertexOffset;
+    uint TriangleOffset;
+    uint VertexCount;
+    uint TriangleCount;
+};
+
+struct DrawCommand
+{
+    uint groupCountX;
+    uint groupCountY;
+    uint groupCountZ;
+    uint meshlet_offset;
+    uint meshlet_count;
+};
+
+#define AS_GROUP_SIZE 32
+struct Payload {
+    uint MeshletIndices[AS_GROUP_SIZE];
+    bool visable[AS_GROUP_SIZE];
+    uint model_matrix_id;
+};
+
+struct FrustumCone
+{
+    vec3 Tip;
+    float Height;
+    vec3 Direction;
+    float Angle;
+};
+
+struct ConeBounds {
+    vec4 sphereBounds;
+    vec4 coneAxis;
+};
+
+uint hash(uint a)
+{
+    a = (a + 0x7ed55d16) + (a << 12);
+    a = (a ^ 0xc761c23c) ^ (a >> 19);
+    a = (a + 0x165667b1) + (a << 5);
+    a = (a + 0xd3a2646c) ^ (a << 9);
+    a = (a + 0xfd7046c5) + (a << 3);
+    a = (a ^ 0xb55a4f09) ^ (a >> 16);
+    return a;
+}
+#endif
