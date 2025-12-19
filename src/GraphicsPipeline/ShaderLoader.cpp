@@ -193,7 +193,7 @@ VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const
     shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
-        spdlog::error("Shader compilation failed: {}", result.GetErrorMessage());
+        spdlog::error("Shader compilation failed: {} {}", path.string(), result.GetErrorMessage());
         throw;
     }
 

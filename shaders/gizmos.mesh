@@ -32,20 +32,9 @@ void main()
         SetMeshOutputsEXT(segments, segments);
     }
 
-    vec3 scale = vec3(
-    length(pc.model[0].xyz), // X axis scale
-    length(pc.model[1].xyz), // Y axis scale
-    length(pc.model[2].xyz)   // Z axis scale
-    );
-    float maxScale = max(max(scale.x, scale.y), scale.z);
+    ConeBounds cone = TransformCone(coneBoundsData[gl_WorkGroupID.x], pc.model);
 
-
-    vec4 sphere = vec4(
-    vec3(pc.model * vec4(coneBoundsData[gl_WorkGroupID.x].sphereBounds.xyz, 1.0f)),
-    coneBoundsData[gl_WorkGroupID.x].sphereBounds.w * maxScale
-    );
-
-    vec3 forward = normalize(sceneInfo.position - sphere.xyz);
+    vec3 forward = normalize(sceneInfo.position - cone.sphereBounds.xyz);
     vec3 right = normalize(cross(vec3(0, 1, 0), forward));
     vec3 up = cross(forward, right);
 
@@ -54,25 +43,25 @@ void main()
     if (idx <= segments) {
         if (idx == 0) {
             // Center vertex
-            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(sphere.xyz, 1.0);
+            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(cone.sphereBounds.xyz, 1.0);
         }
         else
         {
             // Circle perimeter vertices
             float angle = 2.0 * PI * float(idx - 1) / float(segments);
 
-            float x = sphere.w * cos(angle);
-            float y = sphere.w * sin(angle);
+            float x = cone.sphereBounds.w * cos(angle);
+            float y = cone.sphereBounds.w * sin(angle);
 
             // Transform to world space using billboard basis
-            vec3 worldPos = sphere.xyz + right * x + up * y;
+            vec3 worldPos = cone.sphereBounds.xyz + right * x + up * y;
 
             vec4 clipPos = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(worldPos, 1.0);
 
             gl_MeshVerticesEXT[idx].gl_Position = clipPos;
         }
 
-        color[idx] = VisibleFrustumCone(sphere) ? vec4(0.0, 1.0, 0.0, 0.1) : vec4(1.0, 0.0, 0.0, 0.1);
+        color[idx] = IsVisible(cone) ? vec4(0.0, 1.0, 0.0, 0.1) : vec4(1.0, 0.0, 0.0, 0.1);
         //        color[idx] = vec4(1.0, 0.0, 0.0, 0.0);
     }
 

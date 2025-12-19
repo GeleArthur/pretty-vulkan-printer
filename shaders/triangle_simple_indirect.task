@@ -29,37 +29,20 @@ layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
 
 void main()
 {
-    bool visible = false;
-    if (gl_GlobalInvocationID.x >= Commands[gl_DrawID].meshlet_count) {
-        visible = false;
-        return; // TODO wrong
-    }
+    //    bool visible = false;
+    //    if (gl_GlobalInvocationID.x >= Commands[gl_DrawID].meshlet_count) {
+    //        visible = false;
+    //        return; // TODO wrong
+    //    }
 
     mat4 model_matrix = ModelMatrix[gl_DrawID];
     payload.model_matrix_id = gl_DrawID;
 
-    vec3 scale = vec3(
-    length(model_matrix[0].xyz),
-    length(model_matrix[1].xyz),
-    length(model_matrix[2].xyz)
-    );
-    float maxScale = max(max(scale.x, scale.y), scale.z);
 
     uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
-    ConeBounds cone = coneBoundsData[offset];
+    ConeBounds cone = TransformCone(coneBoundsData[offset], model_matrix);
 
-    vec4 sphere_bounds = vec4(
-    vec3(model_matrix * vec4(cone.sphereBounds.xyz, 1.0)),
-    cone.sphereBounds.w * maxScale
-    );
-
-    visible = VisibleFrustumCone(sphere_bounds);
-
-    if (dot(normalize(cone.sphereBounds.xyz - sceneInfo.position), cone.coneAxis.xyz) >= cone.coneAxis.w) {
-        visible = false;
-    }
-
-
+    bool visible = IsVisible(cone);
     uvec4 ballot = subgroupBallot(visible);
 
     if (visible) {

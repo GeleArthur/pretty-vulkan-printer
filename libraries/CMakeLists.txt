@@ -96,6 +96,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(meshoptimizer)
 
+# dds_image
+FetchContent_Declare(
+        dds_image
+        GIT_REPOSITORY https://github.com/spnda/dds_image.git
+        GIT_TAG 84a7bd47293a87214d454992deb8fdf3cba91c48
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(dds_image)
 
 # spirv-reflect
 #add_library(spirv-reflect STATIC
@@ -169,4 +177,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         shaderc
         TracyClient
         meshoptimizer
+        dds_image
 )

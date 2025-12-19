@@ -69,6 +69,13 @@ struct ConeBounds {
     vec4 coneAxis;
 };
 
+struct SceneGlobals {
+    mat4x4 camera_view;
+    mat4x4 camera_projection;
+    vec3 position;
+    FrustumCone camera_frustom;
+};
+
 uint hash(uint a)
 {
     a = (a + 0x7ed55d16) + (a << 12);
@@ -79,4 +86,6 @@ uint hash(uint a)
     a = (a ^ 0xb55a4f09) ^ (a >> 16);
     return a;
 }
+
+
 #endif

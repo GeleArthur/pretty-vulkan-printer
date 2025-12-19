@@ -4,17 +4,12 @@
 #extension GL_EXT_shader_8bit_storage: enable
 
 #include "shared_structs.glsl"
+#include "world_binds.glsl"
 
 layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 layout (triangles) out;
 layout (max_vertices = 64, max_primitives = 126) out;
-
-layout (set = 0, binding = 0) uniform SceneGlobals {
-    mat4x4 camera_view;
-    mat4x4 camera_projection;
-    vec3 position;
-} sceneInfo;
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
     DrawCommand Commands[];
