@@ -68,7 +68,7 @@ pvp::PvpScene::PvpScene(Context& context)
         .add_flag(0)
         .add_binding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)
         .add_flag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
-        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT, 140)
+        .add_binding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_MESH_BIT_EXT, 300)
         .set_tag(DiscriptorTag::bindless_textures)
         .get();
 
@@ -524,37 +524,27 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
     {
         ZoneScopedN("Texture");
         ZoneTextF(texture.name.c_str());
-        VkDeviceSize image_size = texture.width * texture.height * texture.channels;
+        // VkDeviceSize image_size = texture.width * texture.height * texture.channels;
 
         Buffer staging_buffer{};
         BufferBuilder()
-            .set_size(image_size)
+            .set_size(texture.pixels.size())
             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
             .build(m_context.allocator->get_allocator(), staging_buffer);
 
         transfer_deleter.add_to_queue([=] { staging_buffer.destroy(); });
-        staging_buffer.copy_data_into_buffer(std::span<unsigned char const>(texture.pixels, image_size));
-
-        VkFormat format{};
-        switch (texture.type)
-        {
-            case aiTextureType_DIFFUSE:
-                format = VK_FORMAT_R8G8B8A8_SRGB;
-                break;
-            default:
-                format = VK_FORMAT_R8G8B8A8_UNORM;
-        }
+        staging_buffer.copy_data_into_buffer(std::span(texture.pixels));
 
         StaticImage gpu_image;
         ImageBuilder()
             .set_name(texture.name)
-            .set_format(format)
+            .set_format(texture.format)
             .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
-            .set_size({ texture.width, texture.height })
+            .set_size({ .width = texture.width, .height = texture.height })
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
-            .set_use_mipmap(true)
+            .set_use_mipmap(texture.generate_mip_maps)
             .build(m_context, gpu_image);
 
         gpu_image.transition_layout(cmd,
@@ -570,8 +560,6 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
                                     VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                     VK_ACCESS_2_TRANSFER_WRITE_BIT,
                                     VK_ACCESS_2_TRANSFER_READ_BIT);
-
-        stbi_image_free(texture.pixels);
 
         generate_mipmaps(cmd, gpu_image, texture.width, texture.height);
 

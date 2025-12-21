@@ -16,6 +16,7 @@
 #include <glm/vec3.hpp>
 #include <spdlog/spdlog.h>
 #include <tracy/Tracy.hpp>
+#include <dds.hpp>
 
 namespace
 {
@@ -294,11 +295,9 @@ namespace
             write_string(out_stream, texture.name);
             write_pod(out_stream, texture.width);
             write_pod(out_stream, texture.height);
-            write_pod(out_stream, texture.channels);
-            write_pod(out_stream, texture.type);
-
-            uint64_t data_size = texture.width * texture.height * texture.channels;
-            out_stream.write(reinterpret_cast<const char*>(texture.pixels), data_size);
+            write_pod(out_stream, texture.format);
+            write_pod(out_stream, texture.generate_mip_maps);
+            write_vector(out_stream, texture.pixels);
         };
 
         write_pod(out_stream, static_cast<uint32_t>(scene.textures.size()));
@@ -337,12 +336,9 @@ namespace
             read_string(in_stream, texture.name);
             read_pod(in_stream, texture.width);
             read_pod(in_stream, texture.height);
-            read_pod(in_stream, texture.channels);
-            read_pod(in_stream, texture.type);
-
-            const uint64_t data_size = texture.width * texture.height * texture.channels;
-            texture.pixels = static_cast<stbi_uc*>(std::malloc(data_size));
-            in_stream.read(reinterpret_cast<char*>(texture.pixels), data_size);
+            read_pod(in_stream, texture.format);
+            read_pod(in_stream, texture.generate_mip_maps);
+            read_vector(in_stream, texture.pixels);
         };
 
         uint32_t texture_count;
@@ -435,6 +431,7 @@ namespace
         };
         process_node(scene->mRootNode, aiMatrix4x4());
 
+        // Cubemap loading later
         {
             int          width{};
             int          height{};
@@ -442,34 +439,91 @@ namespace
             float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
         }
 
-        for (const std::pair<const std::string, aiTextureType>& texture : all_textures)
+        for (const auto& [texture_name, texture_type] : all_textures)
         {
-            int      tex_width{}, tex_height{}, channels{};
-            stbi_uc* pixels;
-            if (texture.first[0] == '*')
-            {
-                int index = std::stoi(texture.first.substr(1));
-                pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc const*>(scene->mTextures[index]->pcData), scene->mTextures[index]->mWidth, &tex_width, &tex_height, &channels, STBI_rgb_alpha);
-            }
-            else
-            {
-                pixels = stbi_load((path.parent_path() / texture.first).string().c_str(), &tex_width, &tex_height, &channels, STBI_rgb_alpha);
-            }
-            channels = 4;
+            pvp::TextureData loaded_texture{};
 
-            if (!pixels)
+            if (const aiTexture* data = scene->GetEmbeddedTexture(texture_name.c_str()); data != nullptr)
             {
-                spdlog::error("{}", stbi_failure_reason());
-                throw std::runtime_error("failed to load texture image!");
+                int const index = std::stoi(texture_name.substr(1));
+                int       tex_width{};
+                int       tex_height{};
+                int       channels{};
+
+                uint8_t* pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc const*>(scene->mTextures[index]->pcData),
+                                                        static_cast<int>(scene->mTextures[index]->mWidth),
+                                                        &tex_width,
+                                                        &tex_height,
+                                                        &channels,
+                                                        STBI_rgb_alpha);
+
+                if (!pixels)
+                {
+                    spdlog::error("{}", stbi_failure_reason());
+                    throw std::runtime_error("failed to load texture image!");
+                }
+
+                const auto pixel_span = std::span(pixels, tex_height * tex_width * 4);
+
+                loaded_texture.width = tex_width;
+                loaded_texture.height = tex_height;
+                loaded_texture.pixels = std::vector(pixel_span.begin(), pixel_span.end());
+                loaded_texture.generate_mip_maps = true;
+                switch (texture_type)
+                {
+                    case aiTextureType_DIFFUSE:
+                        loaded_texture.format = VK_FORMAT_R8G8B8A8_SRGB;
+                        break;
+                    default:
+                        loaded_texture.format = VK_FORMAT_R8G8B8A8_UNORM;
+                }
+            }
+            else // Not embeded loading from disk
+            {
+                if (std::filesystem::path(texture_name).extension() == ".dds")
+                {
+                    dds::Image image;
+                    if (dds::readFile((path.parent_path() / texture_name).string(), &image) != dds::Success)
+                    {
+                        spdlog::error("Can't load dds texture {}", texture_name);
+                    }
+
+                    loaded_texture.format = dds::getVulkanFormat(image.format, true);
+                    loaded_texture.pixels = std::vector(image.mipmaps[0].cbegin(), image.mipmaps[0].cend());
+                    loaded_texture.width = image.width;
+                    loaded_texture.height = image.height;
+                    loaded_texture.generate_mip_maps = false;
+                }
+                else
+                {
+                    int      tex_width{};
+                    int      tex_height{};
+                    int      channels{};
+                    uint8_t* pixels = stbi_load((path.parent_path() / texture_name).string().c_str(), &tex_width, &tex_height, &channels, STBI_rgb_alpha);
+
+                    if (!pixels)
+                    {
+                        spdlog::error("{}", stbi_failure_reason());
+                        throw std::runtime_error("failed to load texture image!");
+                    }
+
+                    const auto pixel_span = std::span(pixels, tex_height * tex_width * 4);
+                    loaded_texture.width = tex_width;
+                    loaded_texture.height = tex_height;
+                    loaded_texture.pixels = std::vector(pixel_span.begin(), pixel_span.end());
+                    loaded_texture.generate_mip_maps = true;
+                    switch (texture_type)
+                    {
+                        case aiTextureType_DIFFUSE:
+                            loaded_texture.format = VK_FORMAT_R8G8B8A8_SRGB;
+                            break;
+                        default:
+                            loaded_texture.format = VK_FORMAT_R8G8B8A8_UNORM;
+                    }
+                }
             }
 
-            out_scene.textures.emplace_back(
-                texture.first,
-                tex_width,
-                tex_height,
-                channels,
-                texture.second,
-                pixels);
+            out_scene.textures.push_back(loaded_texture);
         }
 
         aiReleaseImport(scene);

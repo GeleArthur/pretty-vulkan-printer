@@ -98,12 +98,12 @@ FetchContent_MakeAvailable(meshoptimizer)
 
 # dds_image
 FetchContent_Declare(
-        dds_image
+        dds_image_loader
         GIT_REPOSITORY https://github.com/spnda/dds_image.git
         GIT_TAG 84a7bd47293a87214d454992deb8fdf3cba91c48
         GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(dds_image)
+FetchContent_MakeAvailable(dds_image_loader)
 
 # spirv-reflect
 #add_library(spirv-reflect STATIC

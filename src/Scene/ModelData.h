@@ -5,6 +5,7 @@
 #include <stb_image.h>
 #include <assimp/material.h>
 #include <glm/mat4x4.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace pvp
 {
@@ -14,13 +15,13 @@ namespace pvp
 
     struct TextureData
     {
-        std::string   name;
-        uint32_t      width;
-        uint32_t      height;
-        uint32_t      channels;
-        aiTextureType type;
+        std::string name{};
+        uint32_t    width{};
+        uint32_t    height{};
+        VkFormat    format{};
 
-        stbi_uc* pixels;
+        std::vector<uint8_t> pixels;
+        bool                 generate_mip_maps{};
     };
 
     struct ConeBounds

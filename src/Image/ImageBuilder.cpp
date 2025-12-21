@@ -107,7 +107,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
 {
     VkExtent3D image_size = VkExtent3D(m_size.width, m_size.height, 1);
 
-    image.m_mip_map_levels = static_cast<uint32_t>(floor(std::log2(std::max(m_size.width, m_size.height))) + 1);
+    image.m_mip_map_levels = m_use_minimaps ? static_cast<uint32_t>(floor(std::log2(std::max(m_size.width, m_size.height))) + 1) : 1;
 
     VkImageCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -119,7 +119,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
     create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    create_info.mipLevels = m_use_minimaps ? image.m_mip_map_levels : 1;
+    create_info.mipLevels = image.m_mip_map_levels;
     create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     create_info.queueFamilyIndexCount = 0;
     create_info.pQueueFamilyIndices = nullptr;
@@ -143,7 +143,7 @@ void pvp::ImageBuilder::build(const Context& context, pvp::StaticImage& image) c
     view_info.subresourceRange.aspectMask = m_aspect_flags;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = m_use_minimaps ? image.m_mip_map_levels : 1;
+    view_info.subresourceRange.levelCount = image.m_mip_map_levels;
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 

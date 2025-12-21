@@ -14,10 +14,10 @@ pvp::DescriptorLayoutCreator::DescriptorLayoutCreator(const Context& context)
     ZoneScoped;
     const std::array sizes = {
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 200 },
-        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 200 },
-        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 200 },
-        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 200 },
-        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 200 },
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2000 },
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2000 },
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 2000 },
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 2000 },
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2000 }
     };
 
@@ -26,7 +26,7 @@ pvp::DescriptorLayoutCreator::DescriptorLayoutCreator(const Context& context)
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     pool_info.poolSizeCount = static_cast<uint32_t>(sizes.size());
     pool_info.pPoolSizes = sizes.data();
-    pool_info.maxSets = 2000;
+    pool_info.maxSets = 5000;
 
     if (vkCreateDescriptorPool(context.device->get_device(), &pool_info, nullptr, &m_pool) != VK_SUCCESS)
     {
