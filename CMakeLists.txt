@@ -9,6 +9,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 add_executable(${PROJECT_NAME}
@@ -184,6 +185,6 @@ endif()
 if(EXISTS $ENV{TMP}/intelsponza_curtains.zip AND NOT EXISTS ${CMAKE_BINARY_DIR}/intelsponza/pkg_a_curtains)
     file(ARCHIVE_EXTRACT INPUT $ENV{TMP}/intelsponza_curtains.zip DESTINATION ${CMAKE_BINARY_DIR}/intelsponza VERBOSE)
 endif()
-if(EXISTS $ENV{TMP}/bistro.zip AND NOT EXISTS ${CMAKE_BINARY_DIR}/intelsponza/bistro)
+if(EXISTS $ENV{TMP}/bistro.zip AND NOT EXISTS ${CMAKE_BINARY_DIR}/intelsponza/Bistro_v5_2)
     file(ARCHIVE_EXTRACT INPUT $ENV{TMP}/bistro.zip DESTINATION ${CMAKE_BINARY_DIR}/intelsponza VERBOSE)
 endif()

@@ -1,4 +1,4 @@
-﻿#include "App.h"
+#include "App.h"
 
 #include <Debugger/debugger.h>
 #include <GLFW/glfw3.h>

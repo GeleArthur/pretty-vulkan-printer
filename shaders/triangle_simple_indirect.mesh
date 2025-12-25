@@ -2,6 +2,10 @@
 #pragma shader_stage(mesh)
 #extension GL_EXT_mesh_shader: enable
 #extension GL_EXT_shader_8bit_storage: enable
+#extension GL_EXT_shader_explicit_arithmetic_types: require
+#extension GL_EXT_buffer_reference: require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64: require
+
 
 #include "shared_structs.glsl"
 #include "world_binds.glsl"
@@ -32,6 +36,15 @@ layout (std430, set = 1, binding = 5) readonly buffer TriangleIndicesIn {
 layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
     ConeBounds SphereBounds[];
 };
+
+layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetReference {
+    Meshlet meshLetData[];
+};
+
+layout (std430, set = 1, binding = 7) readonly buffer PointersIn {
+    MeshletsBuffers pointers[];
+};
+
 
 layout (location = 0) out vec3 vertexColor[];
 

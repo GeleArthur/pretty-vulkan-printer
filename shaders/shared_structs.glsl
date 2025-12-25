@@ -1,6 +1,7 @@
 #ifndef SHARED
 #define SHARED
 
+#extension GL_EXT_shader_explicit_arithmetic_types_int64: require
 
 //bool VisibleFrustumCone(vec4 sphere)
 //{
@@ -74,6 +75,16 @@ struct SceneGlobals {
     mat4x4 camera_projection;
     vec3 position;
     FrustumCone camera_frustom;
+};
+
+struct MeshletsBuffers
+{
+    uint64_t vertex_data;
+    uint64_t meshlet_data;
+    uint64_t meshlet_vertices_data;
+    uint64_t meshlet_triangle_data;
+    uint64_t meshlet_sphere_bounds_data;
+    mat4 model_matrix;
 };
 
 uint hash(uint a)

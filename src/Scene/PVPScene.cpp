@@ -1,4 +1,5 @@
 ﻿#include "PVPScene.h"
+#include "DescriptorSets/CommonDescriptorLayouts.h"
 #include "ModelData.h"
 
 #include <DestructorQueue.h>
@@ -24,7 +25,6 @@
 #include <spdlog/spdlog.h>
 #include <tracy/Tracy.hpp>
 #include <glm/glm.hpp>
-#include <ranges>
 #include <GraphicsPipeline/ShaderLoader.h>
 #include <assimp/cimport.h>
 
@@ -176,8 +176,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.metallic_path == image.get_name(); }) - m_gpu_textures.begin();
 
         auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
-            VkBufferDeviceAddressInfo address_info{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR };
-            address_info.buffer = buffer;
+            VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = buffer };
             return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
         };
 
@@ -210,6 +209,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
                         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
                         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
                         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .set_tag(DiscriptorTag::big_buffers)
                         .get())
         .bind_buffer_ssbo(0, get_indirect_draw_calls())
         .bind_buffer_ssbo(1, get_matrix_buffer())
@@ -219,6 +219,16 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         .bind_buffer_ssbo(5, get_meshlets_triangles_buffer())
         .bind_buffer_ssbo(6, get_meshlets_sphere_bounds_buffer())
         .build(m_context, m_indirect_descriptor);
+
+    DescriptorSetBuilder{}
+        .set_layout(m_context.descriptor_creator->get_layout()
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
+                        .set_tag(DiscriptorTag::pointers)
+                        .get())
+        .bind_buffer_ssbo(0, get_indirect_draw_calls())
+        .bind_buffer_ssbo(1, get_pointers())
+        .build(m_context, m_indirect_descriptor_ptr);
 
     // m_scene_globals_gpu = UniformBuffer{};
     // m_point_lights_gpu = UniformBuffer(16 + sizeof(PointLight) * max_point_lights, context.allocator->get_allocator());
@@ -432,12 +442,14 @@ void pvp::PvpScene::update()
             ImGui::PopID();
         }
 
-        ImGui::Text("MESH_SHADER_INVOCATIONS: %i", m_context.invocation_count[0]);
-        ImGui::Text("TASK_SHADER_INVOCATIONS: %i", m_context.invocation_count[1]);
+        ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", m_context.invocation_count[0]);
+        ImGui::Text("TASK_SHADER_INVOCATIONS: %llu", m_context.invocation_count[1]);
 
         ImGui::Checkbox("Update frustom", &m_camera.update_frustum);
         ImGui::Checkbox("Enable spheres", &m_spheres_enabled);
-        ImGui::Checkbox("Draw Indirect", &m_indirect_enabled);
+
+        constexpr std::array<const char*, 3> render_modes{ "CPU", "GPU Indirect", "GPU Indirect ptr" };
+        ImGui::Combo("RenderMode", reinterpret_cast<int*>(&m_render_mode), render_modes.data(), render_modes.size());
     }
 
     ImGui::End();
@@ -471,7 +483,7 @@ void pvp::PvpScene::generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image
                 .mipLevel = i - 1,
                 .baseArrayLayer = 0,
                 .layerCount = 1 },
-            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(width >> i - 1), static_cast<int32_t>(height >> i - 1), 1 } },
+            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>((width >> i) - 1), static_cast<int32_t>((height >> i) - 1), 1 } },
             .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = i, .baseArrayLayer = 0, .layerCount = 1 },
             .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(width >> i), static_cast<int32_t>(height >> i), 1 } },
         };
@@ -705,67 +717,6 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
         }
         m_gpu_matrix.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_matricies), transfer_deleter);
     }
-
-    // // TODO: maybe expensive creates lots of buffers and copy
-    // auto transfer_vector_to_gpu = [&]<typename T>(const std::vector<T>& data, Buffer& gpu_buffer, size_t& offset) {
-    //     Buffer       transfer_buffer{};
-    //     const size_t buffer_size = std::span(data).size_bytes();
-    //
-    //     // BufferBuilder()
-    //     //     .set_size(buffer_size)
-    //     //     .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-    //     //     .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-    //     //     .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-    //     //     .build(m_context.allocator->get_allocator(), transfer_buffer);
-    //     transfer_deleter.add_to_queue([transfer_buffer] { transfer_buffer.destroy(); });
-    //
-    //     transfer_buffer.copy_data_into_buffer(std::as_bytes(std::span(data)));
-    //     gpu_buffer.copy_from_buffer(cmd, transfer_buffer, VkBufferCopy{ .srcOffset = 0, .dstOffset = offset, .size = buffer_size });
-    //     offset += buffer_size;
-    // };
-
-    // // TODO: Remove?
-    // size_t offset_vertex{};
-    // size_t offset_indices{};
-    // size_t offset_matrix{};
-    //
-    // size_t offset_meshlets{};
-    // size_t offset_meshlets_vertices{};
-    // size_t offset_meshlets_triangles{};
-    // size_t offset_meshlets_sphere_bounds{};
-    // for (const ModelData& cpu_model : loaded_scene.models)
-    // {
-    //     transfer_vector_to_gpu(cpu_model.vertices, m_gpu_vertices, offset_vertex);
-    //     transfer_vector_to_gpu(cpu_model.indices, m_gpu_indices, offset_indices);
-    //
-    //     transfer_vector_to_gpu(cpu_model.meshlets, m_gpu_meshlets, offset_meshlets);
-    //     transfer_vector_to_gpu(cpu_model.meshlet_vertices, m_gpu_meshlets_vertices, offset_meshlets_vertices);
-    //     transfer_vector_to_gpu(cpu_model.meshlet_triangles, m_gpu_meshlets_triangles, offset_meshlets_triangles);
-    //     transfer_vector_to_gpu(cpu_model.meshlet_sphere_bounds, m_gpu_meshlets_sphere_bounds, offset_meshlets_sphere_bounds);
-    //
-    //     glm::mat4* matrix_data = static_cast<glm::mat4*>(matrix_transfur_buffer.get_allocation_info().pMappedData);
-    //     matrix_data[offset_matrix++] = cpu_model.transform;
-    // }
-
-    // BufferBuilder()
-    //     .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
-    //     .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-    //     .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-    //     .build(m_context.allocator->get_allocator(), m_gpu_matrix);
-    // m_scene_destructor_queue.add_to_queue([&] { m_gpu_matrix.destroy(); });
-    //
-    // Buffer matrix_transfur_buffer{};
-    // BufferBuilder()
-    //     .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
-    //     .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-    //     .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-    //     .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-    //     .build(m_context.allocator->get_allocator(), matrix_transfur_buffer);
-    // transfer_deleter.add_to_queue([matrix_transfur_buffer] { matrix_transfur_buffer.destroy(); });
-    //
-    // m_gpu_matrix.copy_from_buffer(cmd, matrix_transfur_buffer);
-
-    // transfer_vector_to_gpu(cpu_model.transform, m_gpu_matrix, offset_matrix);
 }
 
 void pvp::PvpScene::build_draw_calls()
@@ -794,4 +745,31 @@ void pvp::PvpScene::build_draw_calls()
         };
         meshlet_offset += models[i].meshlet_count;
     }
+
+    BufferBuilder{}
+        .set_size(sizeof(MeshletsBuffers) * models.size())
+        .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
+        .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+        .build(m_context.allocator->get_allocator(), m_pointers);
+
+    auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
+        VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = buffer };
+        return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
+    };
+
+    for (int i = 0; i < models.size(); ++i)
+    {
+        static_cast<MeshletsBuffers*>(m_pointers.get_allocation_info().pMappedData)[i] =
+            MeshletsBuffers{
+                .vertex_data = get_address(models[i].vertex_data.get_buffer()),
+                .meshlet_data = get_address(models[i].meshlet_buffer.get_buffer()),
+                .meshlet_vertices_data = get_address(models[i].meshlet_vertices_buffer.get_buffer()),
+                .meshlet_triangle_data = get_address(models[i].meshlet_triangles_buffer.get_buffer()),
+                .meshlet_sphere_bounds_data = get_address(models[i].meshlet_sphere_bounds_buffer.get_buffer()),
+                .model_matrix = models[i].material.transform,
+            };
+    }
+
+    m_scene_destructor_queue.add_to_queue([&] { m_pointers.destroy(); });
 }

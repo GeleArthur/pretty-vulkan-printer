@@ -1,8 +1,6 @@
 ﻿#pragma once
 #include <GLFW/glfw3.h>
-
 #include <globalconst.h>
-#include <vector>
 
 namespace pvp
 {

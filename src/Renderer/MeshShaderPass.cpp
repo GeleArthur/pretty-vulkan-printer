@@ -5,6 +5,7 @@
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyVulkan.hpp>
 
+#include "DescriptorSets/CommonDescriptorLayouts.h"
 #include "RenderInfoBuilder.h"
 #include "Swapchain.h"
 #include "DescriptorSets/DescriptorLayoutBuilder.h"
@@ -70,30 +71,38 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    if (!m_scene.get_indirect_enabled())
+    switch (m_scene.get_render_mode())
     {
-        vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+        case RenderMode::cpu: {
+            vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
-        for (const Model& model : m_scene.get_models())
-        {
-            ZoneScopedN("Draw");
-            vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
-            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
-            uint32_t thread_group_count_x = model.meshlet_count / 32 + 1;
-            VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, thread_group_count_x, 1, 1);
-            // VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT()
-            // vkCmdDrawMeshTasksIndirectEXT()
-            // VkDrawMeshTasksIndirectCommandEXT{};
+            for (const Model& model : m_scene.get_models())
+            {
+                ZoneScopedN("Draw");
+                vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform), &model.material);
+                vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, model.meshlet_descriptor_set.get_descriptor_set(cmd), 0, nullptr);
+                uint32_t thread_group_count_x = model.meshlet_count / 32 + 1;
+                VulkanInstanceExtensions::vkCmdDrawMeshTasksEXT(cmd.command_buffer, thread_group_count_x, 1, 1);
+            }
         }
-    }
-    else // Use indirect
-    {
-        vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_indirect);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 1, 1, m_scene.get_indirect_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
+        break;
+        case RenderMode::gpu_indirect: {
+            vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_indirect);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 1, 1, m_scene.get_indirect_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
 
-        VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
+            VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
+        }
+        break;
+        case RenderMode::gpu_indirect_pointers: {
+            vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_indirect_ptr);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect_ptr, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect_ptr, 1, 1, m_scene.get_indirect_ptr_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
+
+            VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
+        }
+        break;
     }
 
     vkCmdEndRendering(cmd.command_buffer);
@@ -132,16 +141,7 @@ void pvp::MeshShaderPass::build_pipelines()
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
-        .add_descriptor_layout(m_context.descriptor_creator->get_layout()
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
-                                   .get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::big_buffers).get())
         .build(m_context.device->get_device(), m_pipeline_layout_indirect);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect, nullptr); });
 
@@ -155,6 +155,23 @@ void pvp::MeshShaderPass::build_pipelines()
         .set_pipeline_layout(m_pipeline_layout_indirect)
         .build(*m_context.device, m_pipeline_indirect);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect, nullptr); });
+
+    PipelineLayoutBuilder()
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::big_buffers).get())
+        .build(m_context.device->get_device(), m_pipeline_layout_indirect_ptr);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect_ptr, nullptr); });
+
+    GraphicsPipelineBuilder()
+        .add_shader("shaders/triangle_simple_indirect_ptr.task", VK_SHADER_STAGE_TASK_BIT_EXT)
+        .add_shader("shaders/triangle_simple_indirect_ptr.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
+        .add_shader("shaders/triangle_simple.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
+        .set_depth_format(m_depth_image.get_format())
+        .set_depth_access(VK_TRUE, VK_TRUE)
+        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_pipeline_layout(m_pipeline_layout_indirect_ptr)
+        .build(*m_context.device, m_pipeline_indirect_ptr);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect_ptr, nullptr); });
 }
 
 void pvp::MeshShaderPass::create_images()

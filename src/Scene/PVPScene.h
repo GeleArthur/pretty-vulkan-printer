@@ -3,6 +3,7 @@
 #include "ModelData.h"
 
 #include <DestructorQueue.h>
+#include <cstdint>
 #include <deque>
 #include <filesystem>
 #include <vector>
@@ -33,6 +34,7 @@ namespace pvp
         VkDeviceAddress meshlet_vertices_data;
         VkDeviceAddress meshlet_triangle_data;
         VkDeviceAddress meshlet_sphere_bounds_data;
+        glm::mat4       model_matrix;
     };
 
     struct Model
@@ -83,6 +85,13 @@ namespace pvp
         uint32_t group_count_z;
         uint32_t mesh_let_offset;
         uint32_t mesh_let_count;
+    };
+
+    enum class RenderMode : int
+    {
+        cpu = 0,
+        gpu_indirect,
+        gpu_indirect_pointers
     };
 
     class PvpScene final
@@ -163,9 +172,17 @@ namespace pvp
         {
             return m_spheres_enabled;
         }
-        bool get_indirect_enabled() const
+        RenderMode get_render_mode() const
         {
-            return m_indirect_enabled;
+            return m_render_mode;
+        }
+        const Buffer& get_pointers() const
+        {
+            return m_pointers;
+        }
+        const DescriptorSets& get_indirect_ptr_descriptor_set() const
+        {
+            return m_indirect_descriptor;
         }
 
     private:
@@ -188,7 +205,6 @@ namespace pvp
         UniformBuffer            m_scene_globals_gpu;
 
         Buffer m_gpu_vertices;
-        // Buffer m_gpu_indices;
         Buffer m_gpu_matrix;
 
         Buffer m_gpu_meshlets;
@@ -199,13 +215,16 @@ namespace pvp
         Buffer         m_gpu_indirect_draw_calls;
         DescriptorSets m_indirect_descriptor;
 
+        Buffer         m_pointers;
+        DescriptorSets m_indirect_descriptor_ptr;
+
         std::vector<std::vector<std::function<void(int, PvpScene&)>>> m_command_queue;
 
         Camera         m_camera;
         DirectionLight m_direction_light{};
 
-        bool m_spheres_enabled{};
-        bool m_indirect_enabled{ true };
+        bool       m_spheres_enabled{};
+        RenderMode m_render_mode{ RenderMode::gpu_indirect };
 
         std::vector<std::string> m_scene_files;
 

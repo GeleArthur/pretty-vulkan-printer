@@ -1,11 +1,18 @@
 #pragma once
+#include <vulkan/vulkan.h>
 
-enum class DiscriptorTag
+namespace pvp
 {
-    nothing = 0,
-    scene_globals,
-    bindless_textures,
-    lights,
-    gbuffers,
-    meshlets,
-};
+    enum class DiscriptorTag
+    {
+        nothing = 0,
+        scene_globals,
+        bindless_textures,
+        lights,
+        gbuffers,
+        meshlets,
+        big_buffers,
+        pointers,
+    };
+
+}

@@ -34,6 +34,9 @@ namespace pvp
         VkPipelineLayout m_pipeline_layout_indirect{};
         VkPipeline       m_pipeline_indirect{};
 
+        VkPipelineLayout m_pipeline_layout_indirect_ptr{};
+        VkPipeline       m_pipeline_indirect_ptr{};
+
         Image           m_depth_image{};
         VkQueryPool     m_query_pool{};
         DestructorQueue m_destructor_queue{};

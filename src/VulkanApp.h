@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <Context/Context.h>
 #include <GLFW/glfw3.h>

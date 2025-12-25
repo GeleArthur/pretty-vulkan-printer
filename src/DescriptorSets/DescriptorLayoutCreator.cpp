@@ -42,6 +42,7 @@ pvp::DescriptorLayoutCreator::~DescriptorLayoutCreator()
     }
     vkDestroyDescriptorPool(m_context.device->get_device(), m_pool, nullptr);
 }
+
 pvp::DescriptorLayoutBuilder pvp::DescriptorLayoutCreator::get_layout()
 {
     return DescriptorLayoutBuilder{ *this };

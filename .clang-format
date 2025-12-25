@@ -1,4 +1,4 @@
-﻿---
+---
 Language: Cpp
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
@@ -48,7 +48,7 @@ BreakConstructorInitializers: BeforeComma
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
 ColumnLimit: 0
-CommentPragmas: '^ IWYU pragma:'
+CommentPragmas: "^ IWYU pragma:"
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
@@ -68,9 +68,9 @@ IncludeCategories:
     Priority: 2
   - Regex: '^(<|"(gtest|gmock|isl|json)/)'
     Priority: 3
-  - Regex: '.*'
+  - Regex: ".*"
     Priority: 1
-IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainRegex: "(Test)?$"
 IndentCaseLabels: true
 IndentPPDirectives: None
 IndentWidth: 4
@@ -78,8 +78,8 @@ IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: false
-MacroBlockBegin: ''
-MacroBlockEnd: ''
+MacroBlockBegin: ""
+MacroBlockEnd: ""
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 ObjCBinPackProtocolList: Auto

@@ -18,12 +18,12 @@ layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
     DrawCommand Commands[];
 };
 
-layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
-    mat4 ModelMatrix[];
+layout (std430, buffer_reference, buffer_reference_align = 32) buffer ConeDataReference {
+    ConeBounds coneData[];
 };
 
-layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
-    ConeBounds coneBoundsData[];
+layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
+    MeshletsBuffers pointers[];
 };
 
 void main()
@@ -32,11 +32,12 @@ void main()
         return;
     }
 
-    mat4 model_matrix = ModelMatrix[gl_DrawID];
-    payload.model_matrix_id = gl_DrawID;
+    ConeDataReference ref = ConeDataReference(pointers[gl_DrawID].meshlet_sphere_bounds_data);
 
-    uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
-    ConeBounds cone = TransformCone(coneBoundsData[offset], model_matrix);
+    //    mat4 model_matrix = ModelMatrix[gl_DrawID];
+    //    payload.model_matrix_id = gl_DrawID;
+
+    ConeBounds cone = TransformCone(ref.coneData[gl_GlobalInvocationID.x], pointers[gl_DrawID].model_matrix);
 
     bool visible = IsVisible(cone);
 
@@ -44,7 +45,7 @@ void main()
 
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
+        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
         payload.visable[index] = visible;
     }
 

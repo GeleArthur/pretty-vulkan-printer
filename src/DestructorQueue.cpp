@@ -1,4 +1,4 @@
-﻿#include "DestructorQueue.h"
+#include "DestructorQueue.h"
 
 void DestructorQueue::add_to_queue(std::function<void()>&& function)
 {
