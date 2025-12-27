@@ -32,24 +32,46 @@ void main()
         return;
     }
 
-    ConeDataReference ref = ConeDataReference(pointers[gl_DrawID].meshlet_sphere_bounds_data);
+    if (pointers[0].meshlet_sphere_bounds_data == 0) {
+        return;
+    }
+
+    ConeDataReference ref = ConeDataReference(pointers[0].meshlet_sphere_bounds_data);
+    ConeBounds cone = ref.coneData[0];
+
+    int count = 0;
+
+    if (pointers[0].meshlet_sphere_bounds_data == 1) {
+        if (cone.sphereBounds.x > 0) {
+            count += 1;
+        }
+    }
+
+
 
     //    mat4 model_matrix = ModelMatrix[gl_DrawID];
     //    payload.model_matrix_id = gl_DrawID;
 
-    ConeBounds cone = TransformCone(ref.coneData[gl_GlobalInvocationID.x], pointers[gl_DrawID].model_matrix);
+    //    ConeBounds cone = TransformCone(ref.coneData[gl_GlobalInvocationID.x], pointers[gl_DrawID].model_matrix);
+    //
+    //    bool visible = IsVisible(cone);
+    //
+    //    uvec4 ballot = subgroupBallot(visible);
+    //
+    //    if (visible) {
+    //        uint index = subgroupBallotExclusiveBitCount(ballot);
+    //        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
+    //        payload.visable[index] = visible;
+    //    }
+    //
+    //    uint visible_count = subgroupBallotBitCount(ballot);
 
-    bool visible = IsVisible(cone);
-
-    uvec4 ballot = subgroupBallot(visible);
-
-    if (visible) {
-        uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
-        payload.visable[index] = visible;
+    //int count = 0;
+    if (cone.sphereBounds.x > 0) {
+        count += 1;
+        payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
+        payload.visable[gl_LocalInvocationID.x] = false;
     }
 
-    uint visible_count = subgroupBallotBitCount(ballot);
-
-    EmitMeshTasksEXT(visible_count, 1, 1);
+    EmitMeshTasksEXT(count, 1, 1);
 }

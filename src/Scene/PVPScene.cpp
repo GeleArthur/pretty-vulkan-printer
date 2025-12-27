@@ -180,10 +180,10 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
             return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
         };
 
-        gpu_model.ptr_to_buffers.vertex_data = get_address(gpu_model.vertex_data.get_buffer());
-        gpu_model.ptr_to_buffers.meshlet_data = get_address(gpu_model.meshlet_buffer.get_buffer());
-        gpu_model.ptr_to_buffers.meshlet_vertices_data = get_address(gpu_model.meshlet_vertices_buffer.get_buffer());
-        gpu_model.ptr_to_buffers.meshlet_triangle_data = get_address(gpu_model.meshlet_triangles_buffer.get_buffer());
+        // gpu_model.ptr_to_buffers.vertex_data = get_address(gpu_model.vertex_data.get_buffer());
+        // gpu_model.ptr_to_buffers.meshlet_data = get_address(gpu_model.meshlet_buffer.get_buffer());
+        // gpu_model.ptr_to_buffers.meshlet_vertices_data = get_address(gpu_model.meshlet_vertices_buffer.get_buffer());
+        // gpu_model.ptr_to_buffers.meshlet_triangle_data = get_address(gpu_model.meshlet_triangles_buffer.get_buffer());
         gpu_model.ptr_to_buffers.meshlet_sphere_bounds_data = get_address(gpu_model.meshlet_sphere_bounds_buffer.get_buffer());
     }
 
@@ -226,8 +226,8 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
                         .add_binding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)
                         .set_tag(DiscriptorTag::pointers)
                         .get())
-        .bind_buffer_ssbo(0, get_indirect_draw_calls())
-        .bind_buffer_ssbo(1, get_pointers())
+        .bind_buffer_ssbo(0, m_gpu_indirect_draw_calls)
+        .bind_buffer_ssbo(1, m_pointers)
         .build(m_context, m_indirect_descriptor_ptr);
 
     // m_scene_globals_gpu = UniformBuffer{};
@@ -755,21 +755,25 @@ void pvp::PvpScene::build_draw_calls()
 
     auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
         VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = buffer };
-        return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
+        VkDeviceAddress           address = vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
+
+        spdlog::info("{}", address);
+        return address;
     };
 
     for (int i = 0; i < models.size(); ++i)
     {
         static_cast<MeshletsBuffers*>(m_pointers.get_allocation_info().pMappedData)[i] =
             MeshletsBuffers{
-                .vertex_data = get_address(models[i].vertex_data.get_buffer()),
-                .meshlet_data = get_address(models[i].meshlet_buffer.get_buffer()),
-                .meshlet_vertices_data = get_address(models[i].meshlet_vertices_buffer.get_buffer()),
-                .meshlet_triangle_data = get_address(models[i].meshlet_triangles_buffer.get_buffer()),
+                // .vertex_data = get_address(models[i].vertex_data.get_buffer()),
+                // .meshlet_data = get_address(models[i].meshlet_buffer.get_buffer()),
+                // .meshlet_vertices_data = get_address(models[i].meshlet_vertices_buffer.get_buffer()),
+                // .meshlet_triangle_data = get_address(models[i].meshlet_triangles_buffer.get_buffer()),
                 .meshlet_sphere_bounds_data = get_address(models[i].meshlet_sphere_bounds_buffer.get_buffer()),
-                .model_matrix = models[i].material.transform,
             };
     }
+
+    vmaFlushAllocation(m_context.allocator->get_allocator(), m_pointers.get_allocation(), 0, sizeof(MeshletsBuffers) * models.size());
 
     m_scene_destructor_queue.add_to_queue([&] { m_pointers.destroy(); });
 }

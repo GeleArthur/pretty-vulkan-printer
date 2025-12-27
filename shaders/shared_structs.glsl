@@ -79,12 +79,11 @@ struct SceneGlobals {
 
 struct MeshletsBuffers
 {
-    uint64_t vertex_data;
-    uint64_t meshlet_data;
-    uint64_t meshlet_vertices_data;
-    uint64_t meshlet_triangle_data;
+    //    uint64_t vertex_data;
+    //    uint64_t meshlet_data;
+    //    uint64_t meshlet_vertices_data;
+    //    uint64_t meshlet_triangle_data;
     uint64_t meshlet_sphere_bounds_data;
-    mat4 model_matrix;
 };
 
 uint hash(uint a)

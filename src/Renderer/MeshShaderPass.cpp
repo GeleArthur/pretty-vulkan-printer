@@ -158,7 +158,7 @@ void pvp::MeshShaderPass::build_pipelines()
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
-        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::big_buffers).get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::pointers).get())
         .build(m_context.device->get_device(), m_pipeline_layout_indirect_ptr);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect_ptr, nullptr); });
 

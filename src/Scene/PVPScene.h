@@ -27,14 +27,13 @@ namespace pvp
         uint32_t    normal_texture_index;
         uint32_t    metalness_texture_index;
     };
-    struct MeshletsBuffers
+    struct alignas(8) MeshletsBuffers
     {
-        VkDeviceAddress vertex_data;
-        VkDeviceAddress meshlet_data;
-        VkDeviceAddress meshlet_vertices_data;
-        VkDeviceAddress meshlet_triangle_data;
+        // VkDeviceAddress vertex_data;
+        // VkDeviceAddress meshlet_data;
+        // VkDeviceAddress meshlet_vertices_data;
+        // VkDeviceAddress meshlet_triangle_data;
         VkDeviceAddress meshlet_sphere_bounds_data;
-        glm::mat4       model_matrix;
     };
 
     struct Model
@@ -182,7 +181,7 @@ namespace pvp
         }
         const DescriptorSets& get_indirect_ptr_descriptor_set() const
         {
-            return m_indirect_descriptor;
+            return m_indirect_descriptor_ptr;
         }
 
     private:

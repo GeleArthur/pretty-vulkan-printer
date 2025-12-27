@@ -24,7 +24,7 @@ namespace pvp
         bool                 generate_mip_maps{};
     };
 
-    struct ConeBounds
+    struct alignas(16) ConeBounds
     {
         glm::vec4 sphere;
         glm::vec4 cone;

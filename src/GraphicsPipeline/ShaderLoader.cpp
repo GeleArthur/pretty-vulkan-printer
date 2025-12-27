@@ -5,6 +5,7 @@
 #include <array>
 // #include <slang/slang.h>
 // #include <slang/slang-com-ptr.h>
+#include <PodHelpers.h>
 #include <tracy/Tracy.hpp>
 
 #include <fstream>
@@ -182,25 +183,61 @@ std::vector<char> ShaderLoader::load_file(const std::filesystem::path& path)
     return buffer;
 }
 
+std::string get_shader_string(const std::filesystem::path& path)
+{
+    return std::format("{}, {:%Y%m%d%H%M}, {}.spirv", path.filename().string(), std::filesystem::last_write_time(path), std::filesystem::file_size(path));
+}
+
 VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const std::filesystem::path& path)
 {
-    // test(device);
     ZoneScoped;
-
-    std::vector<char> shader_code = load_file(path);
-    std::string       name = path.filename().string();
-
-    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, name.c_str(), options);
-    if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+    if (!std::filesystem::is_directory("cache"))
     {
-        spdlog::error("Shader compilation failed: {} {}", path.string(), result.GetErrorMessage());
-        throw;
+        std::filesystem::create_directory("cache");
     }
 
-    std::vector spirv_code(result.cbegin(), result.cend());
+    const std::string           shader_cached_name = get_shader_string(path);
+    const std::filesystem::path filepath = std::filesystem::path("cache") / shader_cached_name;
 
     VkShaderModuleCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    std::vector<uint32_t> spirv_code;
+    if (std::filesystem::exists(filepath))
+    {
+        const uintmax_t file_size = std::filesystem::file_size(filepath);
+        {
+            std::ifstream in_stream(filepath, std::ios::binary);
+            spirv_code.resize(file_size / sizeof(uint32_t));
+            in_stream.read(reinterpret_cast<char*>(spirv_code.data()), file_size);
+        }
+
+        spirv_code.assign(spirv_code.cbegin(), spirv_code.cend());
+    }
+    else
+    {
+        for (const std::filesystem::directory_entry& file : std::filesystem::recursive_directory_iterator(filepath.parent_path()))
+        {
+            if (file.path().filename().string().contains(path.filename().string()))
+            {
+                std::filesystem::remove(file.path());
+            }
+        }
+
+        std::vector<char> shader_code = load_file(path);
+
+        const shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(shader_code.data(), shader_code.size(), shaderc_glsl_infer_from_source, path.string().c_str(), options);
+        if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+        {
+            spdlog::error("Shader compilation failed: {} {}", path.string(), result.GetErrorMessage());
+            throw;
+        }
+
+        spirv_code.assign(result.cbegin(), result.cend());
+
+        std::ofstream out_stream(filepath, std::ios::binary);
+        out_stream.write(reinterpret_cast<const char*>(spirv_code.data()), spirv_code.size() * sizeof(uint32_t));
+    }
+
     create_info.codeSize = spirv_code.size() * sizeof(uint32_t);
     create_info.pCode = spirv_code.data();
 

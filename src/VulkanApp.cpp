@@ -60,8 +60,8 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     // scene.load_scene(std::filesystem::absolute("../intelsponza/main_sponza/NewSponza_Main_glTF_003.gltf"));
     // scene.load_scene(std::filesystem::absolute("../intelsponza/pkg_a_curtains/NewSponza_Curtains_glTF.gltf"));
     // scene.load_scene(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
-    // scene.load_scene(std::filesystem::absolute("resources/test_triangle.glb"));
-    scene.load_scene(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    scene.load_scene(std::filesystem::absolute("resources/test_triangle.glb"));
+    // scene.load_scene(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
 
     ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);
     Renderer      renderer = Renderer(context, scene, imgui_renderer);
