@@ -23,57 +23,50 @@ layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
     MeshletsBuffers pointers[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetReference {
-    Meshlet meshLetData[];
-};
-
-layout (std430, buffer_reference, buffer_reference_align = 1) buffer TriangleIndicesReference {
-    uint8_t triangleIndicesData[];
-};
-
+layout (push_constant) uniform PushConstant {
+    MatrixReference model_matrix_pointer;
+} push_constants;
 
 layout (location = 0) out vec3 vertexColor[];
+layout (location = 1) out uint workGroup[];
 
 taskPayloadSharedEXT Payload payload;
 
 void main()
 {
-    //    MeshletsBuffers model_pointer = pointers[payload.model_matrix_id];
+    MeshletsBuffers model_pointer = pointers[payload.model_matrix_id];
     //    MeshLetReference meshlet_array = MeshLetReference(model_pointer.meshlet_data);
     //    TriangleIndicesReference TriangleIndicesRef = TriangleIndicesReference(model_pointer.meshlet_triangle_data);
-
-
-    //    Meshlet m = meshlet_array.meshLetData[gl_WorkGroupID.x];
-
-    //    mat4 model_matrix = model_pointer.model_matrix;
+    
+    Meshlet m = model_pointer.meshlet_data.meshLetData[payload.MeshletIndices[gl_WorkGroupID.x]];
+    workGroup[gl_LocalInvocationID.x] = gl_WorkGroupID.x;
+    mat4 model_matrix = push_constants.model_matrix_pointer.model_matrix[payload.model_matrix_id];
 
     if (gl_LocalInvocationIndex == 0)
     {
-        //        SetMeshOutputsEXT(m.VertexCount, m.TriangleCount);
-        SetMeshOutputsEXT(3, 1);
+        SetMeshOutputsEXT(m.VertexCount, m.TriangleCount);
     }
 
-    //    if (gl_LocalInvocationID.x < m.TriangleCount) {
-    //        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(
-    //        TriangleIndicesRef.triangleIndicesData[m.TriangleOffset + (gl_LocalInvocationID.x * 3)],
-    //        TriangleIndicesRef.triangleIndicesData[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 1],
-    //        TriangleIndicesRef.triangleIndicesData[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 2]
-    //        );
-    //    }
-
-    gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(0, 0, 0);
 
 
-    gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = vec4(0, 0, 0, 1);
+    if (gl_LocalInvocationID.x < m.TriangleCount) {
+        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(
+        model_pointer.meshlet_triangle_data.triangleIndicesData[m.TriangleOffset + (gl_LocalInvocationID.x * 3)],
+        model_pointer.meshlet_triangle_data.triangleIndicesData[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 1],
+        model_pointer.meshlet_triangle_data.triangleIndicesData[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 2]
+        );
+    }
 
-    //    if (gl_LocalInvocationID.x < m.VertexCount) {
-    //        uint vertexIndex = VertexIndices[m.VertexOffset + gl_LocalInvocationID.x];
-    //
-    //        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(Vertices[vertexIndex].Position, 1.0);
-    //
-    //        gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
-    //
-    //        uint mhash = hash(gl_WorkGroupID.x);
-    //        vertexColor[gl_LocalInvocationID.x] = vec3(float(mhash & 255), float((mhash >> 8) & 255), float((mhash >> 16) & 255)) / 255.0;
-    //    }
+
+    if (gl_LocalInvocationID.x < m.VertexCount) {
+        uint vertexIndex = model_pointer.meshlet_vertices_data.MeshletVertexData[m.VertexOffset + gl_LocalInvocationID.x];
+
+        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(model_pointer.vertex_data.vetexData[vertexIndex].Position, 1.0);
+
+        gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
+
+
+        uint mhash = hash(gl_WorkGroupID.x);
+        vertexColor[gl_LocalInvocationID.x] = vec3(float(mhash & 255), float((mhash >> 8) & 255), float((mhash >> 16) & 255)) / 255.0;
+    }
 }

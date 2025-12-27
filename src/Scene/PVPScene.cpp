@@ -704,7 +704,7 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
     {
         BufferBuilder()
             .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
-            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
             .build(m_context.allocator->get_allocator(), m_gpu_matrix);
         m_scene_destructor_queue.add_to_queue([&] { m_gpu_matrix.destroy(); });
@@ -755,20 +755,17 @@ void pvp::PvpScene::build_draw_calls()
 
     auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
         VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = buffer };
-        VkDeviceAddress           address = vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
-
-        spdlog::info("{}", address);
-        return address;
+        return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
     };
 
     for (int i = 0; i < models.size(); ++i)
     {
         static_cast<MeshletsBuffers*>(m_pointers.get_allocation_info().pMappedData)[i] =
             MeshletsBuffers{
-                // .vertex_data = get_address(models[i].vertex_data.get_buffer()),
-                // .meshlet_data = get_address(models[i].meshlet_buffer.get_buffer()),
-                // .meshlet_vertices_data = get_address(models[i].meshlet_vertices_buffer.get_buffer()),
-                // .meshlet_triangle_data = get_address(models[i].meshlet_triangles_buffer.get_buffer()),
+                .vertex_data = get_address(models[i].vertex_data.get_buffer()),
+                .meshlet_data = get_address(models[i].meshlet_buffer.get_buffer()),
+                .meshlet_vertices_data = get_address(models[i].meshlet_vertices_buffer.get_buffer()),
+                .meshlet_triangle_data = get_address(models[i].meshlet_triangles_buffer.get_buffer()),
                 .meshlet_sphere_bounds_data = get_address(models[i].meshlet_sphere_bounds_buffer.get_buffer()),
             };
     }

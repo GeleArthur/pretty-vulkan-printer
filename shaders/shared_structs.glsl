@@ -77,13 +77,37 @@ struct SceneGlobals {
     FrustumCone camera_frustom;
 };
 
+layout (std430, buffer_reference, buffer_reference_align = 16) buffer VertexReference {
+    Vertex vetexData[];
+};
+
+layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetReference {
+    Meshlet meshLetData[];
+};
+
+layout (std430, buffer_reference, buffer_reference_align = 16) buffer TriangleIndicesReference {
+    uint8_t triangleIndicesData[];
+};
+
+layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetVertexReference {
+    uint MeshletVertexData[];
+};
+
+layout (std430, buffer_reference, buffer_reference_align = 32) buffer ConeDataReference {
+    ConeBounds coneData[];
+};
+
+layout (std430, buffer_reference, buffer_reference_align = 64) buffer MatrixReference {
+    mat4 model_matrix[];
+};
+
 struct MeshletsBuffers
 {
-    //    uint64_t vertex_data;
-    //    uint64_t meshlet_data;
-    //    uint64_t meshlet_vertices_data;
-    //    uint64_t meshlet_triangle_data;
-    uint64_t meshlet_sphere_bounds_data;
+    VertexReference vertex_data;
+    MeshLetReference meshlet_data;
+    MeshLetVertexReference meshlet_vertices_data;
+    TriangleIndicesReference meshlet_triangle_data;
+    ConeDataReference meshlet_sphere_bounds_data;
 };
 
 uint hash(uint a)

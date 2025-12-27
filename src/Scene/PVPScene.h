@@ -9,6 +9,7 @@
 #include <vector>
 #include <Buffer/Buffer.h>
 #include <Context/Context.h>
+#include <Context/Device.h>
 #include <DescriptorSets/DescriptorSets.h>
 #include <Image/Sampler.h>
 #include <Image/StaticImage.h>
@@ -29,10 +30,10 @@ namespace pvp
     };
     struct alignas(8) MeshletsBuffers
     {
-        // VkDeviceAddress vertex_data;
-        // VkDeviceAddress meshlet_data;
-        // VkDeviceAddress meshlet_vertices_data;
-        // VkDeviceAddress meshlet_triangle_data;
+        VkDeviceAddress vertex_data;
+        VkDeviceAddress meshlet_data;
+        VkDeviceAddress meshlet_vertices_data;
+        VkDeviceAddress meshlet_triangle_data;
         VkDeviceAddress meshlet_sphere_bounds_data;
     };
 
@@ -142,6 +143,11 @@ namespace pvp
         const Buffer& get_matrix_buffer() const
         {
             return m_gpu_matrix;
+        }
+        VkDeviceAddress get_matrix_buffer_address() const
+        {
+            VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = m_gpu_matrix.get_buffer() };
+            return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
         }
         const Buffer& get_meshlets_buffer() const
         {

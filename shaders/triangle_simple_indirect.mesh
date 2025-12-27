@@ -37,22 +37,22 @@ layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
     ConeBounds SphereBounds[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetReference {
-    Meshlet meshLetData[];
-};
-
 layout (std430, set = 1, binding = 7) readonly buffer PointersIn {
     MeshletsBuffers pointers[];
 };
 
 
 layout (location = 0) out vec3 vertexColor[];
+layout (location = 1) out uint workGroup[];
+
 
 taskPayloadSharedEXT Payload payload;
 
 void main()
 {
     uint meshletIndex = payload.MeshletIndices[gl_WorkGroupID.x];
+
+    workGroup[gl_LocalInvocationID.x] = gl_WorkGroupID.x;
 
     Meshlet m = Meshlets[meshletIndex];
     mat4 model_matrix = ModelMatrix[payload.model_matrix_id];

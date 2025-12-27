@@ -12,19 +12,21 @@
 
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
+
+
 taskPayloadSharedEXT Payload payload;
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
     DrawCommand Commands[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 32) buffer ConeDataReference {
-    ConeBounds coneData[];
-};
-
 layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
     MeshletsBuffers pointers[];
 };
+
+layout (push_constant) uniform PushConstant {
+    MatrixReference model_matrix_pointer;
+} push_constants;
 
 void main()
 {
@@ -32,46 +34,25 @@ void main()
         return;
     }
 
-    if (pointers[0].meshlet_sphere_bounds_data == 0) {
-        return;
+    mat4 model_matrix = push_constants.model_matrix_pointer.model_matrix[gl_DrawID];
+    payload.model_matrix_id = gl_DrawID;
+
+
+    ConeDataReference ref = pointers[gl_DrawID].meshlet_sphere_bounds_data;
+
+    ConeBounds cone = TransformCone(ref.coneData[gl_GlobalInvocationID.x], model_matrix);
+
+    bool visible = IsVisible(cone);
+
+    uvec4 ballot = subgroupBallot(visible);
+
+    if (visible) {
+        uint index = subgroupBallotExclusiveBitCount(ballot);
+        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
+        payload.visable[index] = visible;
     }
 
-    ConeDataReference ref = ConeDataReference(pointers[0].meshlet_sphere_bounds_data);
-    ConeBounds cone = ref.coneData[0];
+    uint visible_count = subgroupBallotBitCount(ballot);
 
-    int count = 0;
-
-    if (pointers[0].meshlet_sphere_bounds_data == 1) {
-        if (cone.sphereBounds.x > 0) {
-            count += 1;
-        }
-    }
-
-
-
-    //    mat4 model_matrix = ModelMatrix[gl_DrawID];
-    //    payload.model_matrix_id = gl_DrawID;
-
-    //    ConeBounds cone = TransformCone(ref.coneData[gl_GlobalInvocationID.x], pointers[gl_DrawID].model_matrix);
-    //
-    //    bool visible = IsVisible(cone);
-    //
-    //    uvec4 ballot = subgroupBallot(visible);
-    //
-    //    if (visible) {
-    //        uint index = subgroupBallotExclusiveBitCount(ballot);
-    //        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
-    //        payload.visable[index] = visible;
-    //    }
-    //
-    //    uint visible_count = subgroupBallotBitCount(ballot);
-
-    //int count = 0;
-    if (cone.sphereBounds.x > 0) {
-        count += 1;
-        payload.MeshletIndices[gl_LocalInvocationID.x] = gl_GlobalInvocationID.x;
-        payload.visable[gl_LocalInvocationID.x] = false;
-    }
-
-    EmitMeshTasksEXT(count, 1, 1);
+    EmitMeshTasksEXT(visible_count, 1, 1);
 }
