@@ -19,7 +19,7 @@ layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
     DrawCommand Commands[];
 };
 layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
-    mat4 ModelMatrix[];
+    ModelInfo ModelMatrix[];
 };
 layout (std430, set = 1, binding = 2) readonly buffer MeshletIn {
     Meshlet Meshlets[];
@@ -50,30 +50,30 @@ taskPayloadSharedEXT Payload payload;
 
 void main()
 {
-    uint meshletIndex = payload.MeshletIndices[gl_WorkGroupID.x];
+    uint meshletIndex = payload.meshlet_indices[gl_WorkGroupID.x];
 
     workGroup[gl_LocalInvocationID.x] = gl_WorkGroupID.x;
 
     Meshlet m = Meshlets[meshletIndex];
-    mat4 model_matrix = ModelMatrix[payload.model_matrix_id];
+    mat4 model_matrix = ModelMatrix[payload.model_index].model;
 
     if (gl_LocalInvocationIndex == 0)
     {
-        SetMeshOutputsEXT(m.VertexCount, m.TriangleCount);
+        SetMeshOutputsEXT(m.vertex_count, m.triangle_count);
     }
 
-    if (gl_LocalInvocationID.x < m.TriangleCount) {
+    if (gl_LocalInvocationID.x < m.triangle_count) {
         gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(
-        TriangleIndices[m.TriangleOffset + (gl_LocalInvocationID.x * 3)],
-        TriangleIndices[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 1],
-        TriangleIndices[m.TriangleOffset + (gl_LocalInvocationID.x * 3) + 2]
+        TriangleIndices[m.triangle_offset + (gl_LocalInvocationID.x * 3)],
+        TriangleIndices[m.triangle_offset + (gl_LocalInvocationID.x * 3) + 1],
+        TriangleIndices[m.triangle_offset + (gl_LocalInvocationID.x * 3) + 2]
         );
     }
 
-    if (gl_LocalInvocationID.x < m.VertexCount) {
-        uint vertexIndex = VertexIndices[m.VertexOffset + gl_LocalInvocationID.x];
+    if (gl_LocalInvocationID.x < m.vertex_count) {
+        uint vertexIndex = VertexIndices[m.vertex_offset + gl_LocalInvocationID.x];
 
-        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(Vertices[vertexIndex].Position, 1.0);
+        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(Vertices[vertexIndex].position, 1.0);
 
         gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
 

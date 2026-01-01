@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿
+#pragma once
 #include "BlitToSwapchain.h"
 #include "DepthPrePass.h"
 #include "FrameContext.h"

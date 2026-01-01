@@ -12,8 +12,6 @@
 
 layout (local_size_x = AS_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
-
-
 taskPayloadSharedEXT Payload payload;
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
@@ -25,7 +23,7 @@ layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
 };
 
 layout (push_constant) uniform PushConstant {
-    MatrixReference model_matrix_pointer;
+    ModelInfoReference model_data_pointer;
 } push_constants;
 
 void main()
@@ -34,25 +32,20 @@ void main()
         return;
     }
 
-    mat4 model_matrix = push_constants.model_matrix_pointer.model_matrix[gl_DrawID];
-    payload.model_matrix_id = gl_DrawID;
-
+    mat4 model_matrix = push_constants.model_data_pointer.model_data[gl_DrawID].model;
+    payload.model_index = gl_DrawID;
 
     ConeDataReference ref = pointers[gl_DrawID].meshlet_sphere_bounds_data;
-
-    ConeBounds cone = TransformCone(ref.coneData[gl_GlobalInvocationID.x], model_matrix);
+    ConeBounds cone = TransformCone(ref.cone_data[gl_GlobalInvocationID.x], model_matrix);
 
     bool visible = IsVisible(cone);
-
     uvec4 ballot = subgroupBallot(visible);
-
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
+        payload.meshlet_indices[index] = gl_GlobalInvocationID.x;
         payload.visable[index] = visible;
     }
 
     uint visible_count = subgroupBallotBitCount(ballot);
-
     EmitMeshTasksEXT(visible_count, 1, 1);
 }

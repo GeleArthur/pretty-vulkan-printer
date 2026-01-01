@@ -155,8 +155,7 @@ else()
     set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
 endif()
 
-#option(TRACY_ENABLE " " ON)
-#option(TRACY_ON_DEMAND " " ON)
+set(TRACY_ON_DEMAND ON CACHE BOOL "" FORCE)
 FetchContent_Declare(
         tracy
         URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.13.0.zip

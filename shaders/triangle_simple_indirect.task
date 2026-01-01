@@ -19,7 +19,7 @@ layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
 };
 
 layout (std430, set = 1, binding = 1) readonly buffer ModelMatrixIn {
-    mat4 ModelMatrix[];
+    ModelInfo ModelMatrix[];
 };
 
 layout (std430, set = 1, binding = 6) readonly buffer SphereBoundsIn {
@@ -32,8 +32,8 @@ void main()
         return;
     }
 
-    mat4 model_matrix = ModelMatrix[gl_DrawID];
-    payload.model_matrix_id = gl_DrawID;
+    mat4 model_matrix = ModelMatrix[gl_DrawID].model;
+    payload.model_index = gl_DrawID;
 
     uint offset = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
     ConeBounds cone = TransformCone(coneBoundsData[offset], model_matrix);
@@ -44,7 +44,7 @@ void main()
 
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
+        payload.meshlet_indices[index] = Commands[gl_DrawID].meshlet_offset + gl_GlobalInvocationID.x;
         payload.visable[index] = visible;
     }
 

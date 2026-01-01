@@ -98,17 +98,17 @@ namespace pvp
             {
                 throw std::runtime_error("Failed creating image view");
             }
-#if defined(_DEBUG)
+            if constexpr (enable_debug)
+            {
+                VkDebugUtilsObjectNameInfoEXT image_debug{
+                    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                    .objectType = VK_OBJECT_TYPE_IMAGE,
+                    .objectHandle = reinterpret_cast<uint64_t>(m_image[i]),
+                    .pObjectName = m_name.c_str()
+                };
 
-            VkDebugUtilsObjectNameInfoEXT image_debug{
-                .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                .objectType = VK_OBJECT_TYPE_IMAGE,
-                .objectHandle = reinterpret_cast<uint64_t>(m_image[i]),
-                .pObjectName = m_name.c_str()
-            };
-
-            VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(context.device->get_device(), &image_debug);
-#endif
+                VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(context.device->get_device(), &image_debug);
+            }
         }
     }
 

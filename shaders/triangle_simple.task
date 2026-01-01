@@ -35,7 +35,7 @@ void main()
     uvec4 ballot = subgroupBallot(visible);
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
-        payload.MeshletIndices[index] = gl_GlobalInvocationID.x;
+        payload.meshlet_indices[index] = gl_GlobalInvocationID.x;
         payload.visable[index] = visible;
     }
 

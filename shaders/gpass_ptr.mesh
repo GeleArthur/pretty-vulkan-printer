@@ -16,7 +16,7 @@ layout (triangles) out;
 layout (max_vertices = 64, max_primitives = 126) out;
 
 layout (std430, set = 1, binding = 0) readonly buffer DrawCommandIn {
-    DrawCommand Commands[];
+    DrawCommand commands[];
 };
 
 layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
@@ -27,7 +27,10 @@ layout (push_constant) uniform PushConstant {
     ModelInfoReference model_data_pointer;
 } push_constants;
 
-layout (location = 0) out vec3 vertexColor[];
+layout (location = 0) out vec2 vertex_uv[];
+layout (location = 1) out vec3 vertex_normal[];
+layout (location = 2) out vec3 vertex_tangent[];
+layout (location = 3) out flat uint model_id[];
 
 taskPayloadSharedEXT Payload payload;
 
@@ -57,8 +60,14 @@ void main()
         vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].position, 1.0);
 
         gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
+        vertex_uv[gl_LocalInvocationID.x] = model_pointer.vertex_data.vertex_data[vertexIndex].tex_coord;
 
-        uint mhash = hash(gl_WorkGroupID.x);
-        vertexColor[gl_LocalInvocationID.x] = vec3(float(mhash & 255), float((mhash >> 8) & 255), float((mhash >> 16) & 255)) / 255.0;
+        vertex_normal[gl_LocalInvocationID.x] = vec3(model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].normal, 0.0));
+        vertex_tangent[gl_LocalInvocationID.x] = vec3(model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].tangent, 0.0));
+        model_id[gl_LocalInvocationID.x] = payload.model_index;
+        
+
+        //        uint mhash = hash(gl_WorkGroupID.x);
+        //        vertexColor[gl_LocalInvocationID.x] = vec3(float(mhash & 255), float((mhash >> 8) & 255), float((mhash >> 16) & 255)) / 255.0;
     }
 }

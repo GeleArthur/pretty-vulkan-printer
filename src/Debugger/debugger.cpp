@@ -28,19 +28,21 @@ namespace pvp
     }
     void debugger::start_debug_label(VkCommandBuffer buffer, const std::string& name, glm::vec3 color)
     {
-#ifdef _DEBUG
-        VkDebugUtilsLabelEXT debugLabel{
-            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-            .pLabelName = name.c_str(),
-            .color = { color.x, color.y, color.z, 1.0f }
-        };
-        VulkanInstanceExtensions::vkCmdBeginDebugUtilsLabelEXT(buffer, &debugLabel);
-#endif
+        if constexpr (enable_debug)
+        {
+            VkDebugUtilsLabelEXT debugLabel{
+                .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+                .pLabelName = name.c_str(),
+                .color = { color.x, color.y, color.z, 1.0f }
+            };
+            VulkanInstanceExtensions::vkCmdBeginDebugUtilsLabelEXT(buffer, &debugLabel);
+        }
     }
     void debugger::end_debug_label(VkCommandBuffer buffer)
     {
-#ifdef _DEBUG
-        VulkanInstanceExtensions::vkCmdEndDebugUtilsLabelEXT(buffer);
-#endif
+        if constexpr (enable_debug)
+        {
+            VulkanInstanceExtensions::vkCmdEndDebugUtilsLabelEXT(buffer);
+        }
     }
 } // namespace pvp

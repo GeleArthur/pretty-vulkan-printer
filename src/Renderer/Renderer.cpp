@@ -171,14 +171,14 @@ void pvp::Renderer::draw()
 
     ZoneScoped;
     prepare_frame();
-    // m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    // m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
-    // m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    // m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    // m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+    m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
 
-    m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
-    m_gizmos_drawer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    // m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    // m_gizmos_drawer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     transfur_swapchain(m_context, m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     TracyVkCollect(m_context.tracy_ctx[m_double_buffer_frame], m_frame_contexts[m_double_buffer_frame].command_buffer);

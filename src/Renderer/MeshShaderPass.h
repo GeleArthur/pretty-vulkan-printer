@@ -39,6 +39,7 @@ namespace pvp
 
         Image           m_depth_image{};
         VkQueryPool     m_query_pool{};
+        bool            m_valid_query{};
         DestructorQueue m_destructor_queue{};
     };
 } // namespace pvp

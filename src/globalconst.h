@@ -1,11 +1,14 @@
 ﻿#pragma once
 #include <cstdint>
-#include <vulkan/vulkan.h>
 #include <unordered_map>
-#include <vector>
-#include <iostream>
 #include <spdlog/spdlog.h>
+#include <vulkan/vulkan.h>
 
+#ifndef NDEBUG
+constexpr bool enable_debug = true;
+#else
+constexpr bool enable_debug = false;
+#endif
 constexpr uint32_t max_frames_in_flight = 3u; // TODO: Would like this to be dynamic
 
 #define DISABLE_COPY(className)           \

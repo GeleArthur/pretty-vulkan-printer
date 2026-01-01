@@ -1,6 +1,7 @@
 #pragma once
 
 #include <VulkanExternalFunctions.h>
+#include <globalconst.h>
 #include <string>
 #include <Context/Device.h>
 #include <glm/vec3.hpp>
@@ -39,29 +40,32 @@ namespace pvp
         template<typename T>
         void add_object_name(Device* device, const T vulkan_object, const std::string& string)
         {
-            VkDebugUtilsObjectNameInfoEXT info{
-                .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                .objectHandle = reinterpret_cast<uint64_t>(vulkan_object),
-                .pObjectName = string.c_str()
-            };
+            if constexpr (enable_debug)
+            {
+                VkDebugUtilsObjectNameInfoEXT info{
+                    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                    .objectHandle = reinterpret_cast<uint64_t>(vulkan_object),
+                    .pObjectName = string.c_str()
+                };
 
-            if constexpr (std::is_same_v<T, VkInstance>)
-            {
-                info.objectType = VK_OBJECT_TYPE_INSTANCE;
+                if constexpr (std::is_same_v<T, VkInstance>)
+                {
+                    info.objectType = VK_OBJECT_TYPE_INSTANCE;
+                }
+                else if constexpr (std::is_same_v<T, VkSemaphore>)
+                {
+                    info.objectType = VK_OBJECT_TYPE_SEMAPHORE;
+                }
+                else if constexpr (std::is_same_v<T, VkBuffer>)
+                {
+                    info.objectType = VK_OBJECT_TYPE_BUFFER;
+                }
+                else
+                {
+                    info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+                }
+                VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(device->get_device(), &info);
             }
-            else if constexpr (std::is_same_v<T, VkSemaphore>)
-            {
-                info.objectType = VK_OBJECT_TYPE_SEMAPHORE;
-            }
-            else if constexpr (std::is_same_v<T, VkBuffer>)
-            {
-                info.objectType = VK_OBJECT_TYPE_BUFFER;
-            }
-            else
-            {
-                info.objectType = VK_OBJECT_TYPE_UNKNOWN;
-            }
-            VulkanInstanceExtensions::vkSetDebugUtilsObjectNameEXT(device->get_device(), &info);
         }
 
     }; // namespace debugger

@@ -51,6 +51,25 @@ void pvp::GBuffer::build_pipelines()
         .set_depth_access(VK_TRUE, VK_FALSE)
         .build(*m_context.device, m_albedo_pipeline);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_albedo_pipeline, nullptr); });
+
+    PipelineLayoutBuilder()
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::pointers).get())
+        .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::bindless_textures).get())
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress) })
+        .build(m_context.device->get_device(), m_meshlets_pipeline_layout);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_meshlets_pipeline_layout, nullptr); });
+
+    GraphicsPipelineBuilder()
+        .add_shader("shaders/triangle_simple_indirect_ptr.task", VK_SHADER_STAGE_TASK_BIT_EXT)
+        .add_shader("shaders/gpass_ptr.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
+        .add_shader("shaders/gpass_ptr.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
+        .set_color_format(std::array{ m_albedo_image.get_format(), m_normal_image.get_format(), m_metal_roughness_image.get_format() })
+        .set_depth_format(m_depth_pre_pass.get_depth_image().get_format())
+        .set_pipeline_layout(m_meshlets_pipeline_layout)
+        .set_depth_access(VK_TRUE, VK_FALSE)
+        .build(*m_context.device, m_meshlets_albedo_pipeline);
+    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_meshlets_albedo_pipeline, nullptr); });
 }
 
 void pvp::GBuffer::create_images()
@@ -110,10 +129,6 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
                                               VK_ACCESS_2_NONE,
                                               VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-    ZoneNamedN(bind_texture, "Bind Scene+Texture", true);
-    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-    vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_scene.get_textures_descriptor().get_descriptor_set(cmd), 0, nullptr);
-
     ZoneNamedN(render_info, "create render info", true);
     RenderInfoBuilderOut color_info;
     RenderInfoBuilder()
@@ -126,18 +141,42 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
 
     ZoneNamedN(begin_rendering, "begin rendering", true);
     vkCmdBeginRendering(cmd.command_buffer, &color_info.rendering_info);
+    switch (m_scene.get_render_mode())
     {
-        vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
-        for (const Model& model : m_scene.get_models())
-        {
-            ZoneScopedN("Draw");
-            VkDeviceSize offset{ 0 };
-            vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &model.vertex_data.get_buffer(), &offset);
-            vkCmdBindIndexBuffer(cmd.command_buffer, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(MaterialTransform), &model.material);
-            vkCmdDrawIndexed(cmd.command_buffer, model.index_count, 1, 0, 0, 0);
+        case RenderMode::cpu: {
+            vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_albedo_pipeline);
+
+            ZoneNamedN(bind_texture, "Bind Scene+Texture", true);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, m_scene.get_textures_descriptor().get_descriptor_set(cmd), 0, nullptr);
+
+            for (const Model& model : m_scene.get_models())
+            {
+                ZoneScopedN("Draw");
+                VkDeviceSize offset{ 0 };
+                vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &model.vertex_data.get_buffer(), &offset);
+                vkCmdBindIndexBuffer(cmd.command_buffer, model.index_data.get_buffer(), 0, VK_INDEX_TYPE_UINT32);
+                vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(MaterialTransform), &model.material);
+                vkCmdDrawIndexed(cmd.command_buffer, model.index_count, 1, 0, 0, 0);
+            }
         }
+        break;
+        case RenderMode::gpu_indirect:
+        case RenderMode::gpu_indirect_pointers: {
+            vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_albedo_pipeline);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_pipeline_layout, 1, 1, m_scene.get_indirect_ptr_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
+            vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_pipeline_layout, 2, 1, m_scene.get_textures_descriptor().get_descriptor_set(cmd), 0, nullptr);
+
+            VkDeviceAddress matrix_buffer_address = m_scene.get_matrix_buffer_address();
+            vkCmdPushConstants(cmd.command_buffer, m_meshlets_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress), &matrix_buffer_address);
+
+            VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
+        }
+
+        break;
     }
+
     ZoneNamedN(end_rendering, "end rendering", true);
     vkCmdEndRendering(cmd.command_buffer);
 

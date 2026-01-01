@@ -168,9 +168,13 @@ private:
 
 void ShaderLoader::init()
 {
-    options.SetGenerateDebugInfo();
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
     options.SetTargetSpirv(shaderc_spirv_version_1_6);
+    options.SetGenerateDebugInfo();
+    if constexpr (!enable_debug)
+    {
+        options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    }
 
     options.SetIncluder(std::make_unique<ShaderIncluder>());
 }
@@ -191,6 +195,7 @@ std::string get_shader_string(const std::filesystem::path& path)
 VkShaderModule ShaderLoader::load_shader_from_file(const VkDevice& device, const std::filesystem::path& path)
 {
     ZoneScoped;
+
     if (!std::filesystem::is_directory("cache"))
     {
         std::filesystem::create_directory("cache");

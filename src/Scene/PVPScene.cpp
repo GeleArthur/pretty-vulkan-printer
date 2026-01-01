@@ -187,6 +187,23 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         gpu_model.ptr_to_buffers.meshlet_sphere_bounds_data = get_address(gpu_model.meshlet_sphere_bounds_buffer.get_buffer());
     }
 
+    {
+        BufferBuilder()
+            .set_size(loaded_scene.models.size() * sizeof(MaterialTransform))
+            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+            .build(m_context.allocator->get_allocator(), m_gpu_matrix);
+        m_scene_destructor_queue.add_to_queue([&] { m_gpu_matrix.destroy(); });
+
+        std::vector<MaterialTransform> all_matricies;
+        all_matricies.reserve(loaded_scene.models.size());
+        for (const Model& model : m_gpu_models)
+        {
+            all_matricies.push_back(model.material);
+        }
+        m_gpu_matrix.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_matricies), transfer_deleter);
+    }
+
     cmd_pool_transfer_buffers.end_buffer(cmd);
     transfer_deleter.destroy_and_clear();
     cmd_pool_transfer_buffers.destroy();
@@ -218,6 +235,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
         .bind_buffer_ssbo(4, get_meshlets_vertices_buffer())
         .bind_buffer_ssbo(5, get_meshlets_triangles_buffer())
         .bind_buffer_ssbo(6, get_meshlets_sphere_bounds_buffer())
+        .bind_buffer_ssbo(7, get_pointers())
         .build(m_context, m_indirect_descriptor);
 
     DescriptorSetBuilder{}
@@ -342,6 +360,22 @@ void pvp::PvpScene::update()
     const float time = std::chrono::duration<float>(current_time - start_time).count();
     last_time = current_time;
 
+    m_counted_up_delta_time.push_back(delta_time);
+    m_result_timer -= delta_time;
+    if (m_result_timer < 0)
+    {
+        m_result_timer = 1;
+        if (m_counted_up_delta_time.size() > 2)
+        {
+            std::ranges::sort(m_counted_up_delta_time);
+            m_counted_up_delta_time.erase(m_counted_up_delta_time.begin());
+            m_counted_up_delta_time.erase(m_counted_up_delta_time.end() - 2);
+            float total = std::accumulate(m_counted_up_delta_time.begin(), m_counted_up_delta_time.end(), 0.0f, std::plus());
+            m_result_delta_time = total / m_counted_up_delta_time.size();
+            m_counted_up_delta_time.clear();
+        }
+    }
+
     gizmos::clear();
 
     m_camera.update(delta_time);
@@ -354,27 +388,13 @@ void pvp::PvpScene::update()
         frustum_cone,
     };
     gizmos::draw_cone(frustum_cone.tip, frustum_cone.height, frustum_cone.direction, frustum_cone.angle);
-    // gizmos::draw_line({ 0, 0, 0 }, { 0, 2, 0 }, { 1, 1, 1, 1 });
-
-    // PointLight light = { glm::vec4(std::sin(time), 1.0f, std::cos(time), 0.0), { 1.0f, 0.5f, 0, 1 }, 150 };
-    // change_point_light(0, light);
-
-    // static bool key_pressed_last{};
-    // bool        key_pressed = glfwGetKey(m_context.window_surface->get_window(), GLFW_KEY_SPACE) == GLFW_PRESS;
-
-    // if (key_pressed && !key_pressed_last)
-    // {
-    // m_direction_light.intensity = m_direction_light.intensity > 5.0f ? 0.0f : 10.0f;
-    // change_direction_light(0, m_direction_light);
-    // }
-    // key_pressed_last = key_pressed;
-
-    // ImGui::ShowDemoWindow();
 
     if (ImGui::Begin("Debug"))
     {
         ImGui::Text("fps: %f", 1.0f / delta_time);
         ImGui::Text("ms: %f", delta_time * 1000.0f);
+        ImGui::Text("avarage fps: %f", 1.0f / m_result_delta_time);
+        ImGui::Text("avarage ms: %f", m_result_delta_time * 1000.0f);
         ImGui::Text("Camera pos: x:%f, y:%f, z:%f", m_camera.get_position().x, m_camera.get_position().y, m_camera.get_position().z);
 
         ImGui::Separator();
@@ -699,23 +719,6 @@ void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, Destr
         }
 
         m_gpu_meshlets.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_data), transfer_deleter);
-    }
-
-    {
-        BufferBuilder()
-            .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
-            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
-            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-            .build(m_context.allocator->get_allocator(), m_gpu_matrix);
-        m_scene_destructor_queue.add_to_queue([&] { m_gpu_matrix.destroy(); });
-
-        std::vector<glm::mat4> all_matricies;
-        all_matricies.reserve(loaded_scene.models.size());
-        for (const ModelData& model : loaded_scene.models)
-        {
-            all_matricies.push_back(model.transform);
-        }
-        m_gpu_matrix.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_matricies), transfer_deleter);
     }
 }
 

@@ -21,7 +21,7 @@ namespace pvp
 {
     struct Sampler;
 
-    struct MaterialTransform
+    struct alignas(8) MaterialTransform
     {
         glm::mat4x4 transform;
         uint32_t    diffuse_texture_index;
@@ -232,6 +232,10 @@ namespace pvp
         RenderMode m_render_mode{ RenderMode::gpu_indirect };
 
         std::vector<std::string> m_scene_files;
+
+        float              m_result_timer{};
+        float              m_result_delta_time{};
+        std::vector<float> m_counted_up_delta_time;
 
         constexpr static uint32_t max_point_lights{ 10u };
         constexpr static uint32_t max_direction_lights{ 10u };

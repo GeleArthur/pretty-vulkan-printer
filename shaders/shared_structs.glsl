@@ -2,21 +2,24 @@
 #define SHARED
 
 #extension GL_EXT_shader_explicit_arithmetic_types_int64: require
+#extension GL_EXT_buffer_reference: require
+#extension GL_EXT_shader_8bit_storage: enable
+
 
 //bool VisibleFrustumCone(vec4 sphere)
 //{
 //    // Cone and sphere are within intersectable range
-//    vec3 v0 = sphere.xyz - sceneInfo.camera_frustom.Tip;
-//    //    float d0 = dot(v0, sceneInfo.camera_frustom.Direction);
-//    //    bool i0 = (d0 <= (sceneInfo.camera_frustom.Height + sphere.w));
+//    vec3 v0 = sphere.xyz - sceneInfo.camera_frustom.tip;
+//    //    float d0 = dot(v0, sceneInfo.camera_frustom.direction);
+//    //    bool i0 = (d0 <= (sceneInfo.camera_frustom.height + sphere.w));
 //
-//    float diff = dot(normalize(v0), normalize(sceneInfo.camera_frustom.Direction));
-//    bool inside = diff >= cos(sceneInfo.camera_frustom.Angle);
+//    float diff = dot(normalize(v0), normalize(sceneInfo.camera_frustom.direction));
+//    bool inside = diff >= cos(sceneInfo.camera_frustom.angle);
 //
 //    // TODO: Find source for this code.
-//    //    float cs = cos(sceneInfo.camera_frustom.Angle * 0.5);
-//    //    float sn = sin(sceneInfo.camera_frustom.Angle * 0.5);
-//    //    float a = dot(v0, sceneInfo.camera_frustom.Direction);
+//    //    float cs = cos(sceneInfo.camera_frustom.angle * 0.5);
+//    //    float sn = sin(sceneInfo.camera_frustom.angle * 0.5);
+//    //    float a = dot(v0, sceneInfo.camera_frustom.direction);
 //    //    float b = a * sn / cs;
 //    //    float c = sqrt(dot(v0, v0) - (a * a));
 //    //    float d = c - b;
@@ -28,46 +31,46 @@
 //}
 
 struct Vertex {
-    vec3 Position;
-    vec2 TexCoord;
-    vec3 Normal;
-    vec3 Tangent;
+    vec3 position;
+    vec2 tex_coord;
+    vec3 normal;
+    vec3 tangent;
 };
 
 struct Meshlet {
-    uint VertexOffset;
-    uint TriangleOffset;
-    uint VertexCount;
-    uint TriangleCount;
+    uint vertex_offset;
+    uint triangle_offset;
+    uint vertex_count;
+    uint triangle_count;
 };
 
 struct DrawCommand
 {
-    uint groupCountX;
-    uint groupCountY;
-    uint groupCountZ;
+    uint group_count_x;
+    uint group_count_y;
+    uint group_count_z;
     uint meshlet_offset;
     uint meshlet_count;
 };
 
 #define AS_GROUP_SIZE 32
 struct Payload {
-    uint MeshletIndices[AS_GROUP_SIZE];
+    uint meshlet_indices[AS_GROUP_SIZE];
     bool visable[AS_GROUP_SIZE];
-    uint model_matrix_id;
+    uint model_index;
 };
 
 struct FrustumCone
 {
-    vec3 Tip;
-    float Height;
-    vec3 Direction;
-    float Angle;
+    vec3 tip;
+    float height;
+    vec3 direction;
+    float angle;
 };
 
 struct ConeBounds {
-    vec4 sphereBounds;
-    vec4 coneAxis;
+    vec4 sphere_bounds;
+    vec4 cone_axis;
 };
 
 struct SceneGlobals {
@@ -77,28 +80,35 @@ struct SceneGlobals {
     FrustumCone camera_frustom;
 };
 
+struct ModelInfo {
+    mat4 model;
+    uint diffuse_texture_index;
+    uint normal_texture_index;
+    uint metalness_texture_index;
+};
+
 layout (std430, buffer_reference, buffer_reference_align = 16) buffer VertexReference {
-    Vertex vetexData[];
+    Vertex vertex_data[];
 };
 
 layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetReference {
-    Meshlet meshLetData[];
+    Meshlet meshlet_data[];
 };
 
 layout (std430, buffer_reference, buffer_reference_align = 16) buffer TriangleIndicesReference {
-    uint8_t triangleIndicesData[];
+    uint8_t triangle_indices_data[];
 };
 
 layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetVertexReference {
-    uint MeshletVertexData[];
+    uint meshlet_vertex_data[];
 };
 
 layout (std430, buffer_reference, buffer_reference_align = 32) buffer ConeDataReference {
-    ConeBounds coneData[];
+    ConeBounds cone_data[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 64) buffer MatrixReference {
-    mat4 model_matrix[];
+layout (std430, buffer_reference, buffer_reference_align = 64) buffer ModelInfoReference {
+    ModelInfo model_data[];
 };
 
 struct MeshletsBuffers

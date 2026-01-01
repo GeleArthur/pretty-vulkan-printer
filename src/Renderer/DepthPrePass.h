@@ -6,6 +6,7 @@
 #include <Scene/PVPScene.h>
 
 struct FrameContext;
+
 namespace pvp
 {
     class DepthPrePass
@@ -31,6 +32,9 @@ namespace pvp
 
         VkPipelineLayout m_pipeline_layout{};
         VkPipeline       m_pipeline{};
+
+        VkPipelineLayout m_pipeline_meshshader_layout{};
+        VkPipeline       m_pipeline_meshshader{};
 
         DestructorQueue m_destructor_queue{};
     };

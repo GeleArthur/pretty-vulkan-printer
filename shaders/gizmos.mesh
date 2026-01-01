@@ -34,7 +34,7 @@ void main()
 
     ConeBounds cone = TransformCone(coneBoundsData[gl_WorkGroupID.x], pc.model);
 
-    vec3 forward = normalize(sceneInfo.position - cone.sphereBounds.xyz);
+    vec3 forward = normalize(sceneInfo.position - cone.sphere_bounds.xyz);
     vec3 right = normalize(cross(vec3(0, 1, 0), forward));
     vec3 up = cross(forward, right);
 
@@ -43,18 +43,18 @@ void main()
     if (idx <= segments) {
         if (idx == 0) {
             // Center vertex
-            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(cone.sphereBounds.xyz, 1.0);
+            gl_MeshVerticesEXT[idx].gl_Position = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(cone.sphere_bounds.xyz, 1.0);
         }
         else
         {
             // Circle perimeter vertices
             float angle = 2.0 * PI * float(idx - 1) / float(segments);
 
-            float x = cone.sphereBounds.w * cos(angle);
-            float y = cone.sphereBounds.w * sin(angle);
+            float x = cone.sphere_bounds.w * cos(angle);
+            float y = cone.sphere_bounds.w * sin(angle);
 
             // Transform to world space using billboard basis
-            vec3 worldPos = cone.sphereBounds.xyz + right * x + up * y;
+            vec3 worldPos = cone.sphere_bounds.xyz + right * x + up * y;
 
             vec4 clipPos = sceneInfo.camera_projection * sceneInfo.camera_view * vec4(worldPos, 1.0);
 

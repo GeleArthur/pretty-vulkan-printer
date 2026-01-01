@@ -32,7 +32,9 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
         .pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT | VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT
     };
     vkCreateQueryPool(context.device->get_device(), &pool, nullptr, &m_query_pool);
-    m_destructor_queue.add_to_queue([&] { vkDestroyQueryPool(m_context.device->get_device(), m_query_pool, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyQueryPool(m_context.device->get_device(), m_query_pool, nullptr);
+    });
 }
 
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
@@ -59,7 +61,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
                             range);
 
     vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
-
+    m_valid_query = true;
     vkCmdBeginQuery(cmd.command_buffer, m_query_pool, 0, 0);
 
     RenderInfoBuilderOut render_color_info;
@@ -117,7 +119,10 @@ std::array<uint64_t, 2> pvp::MeshShaderPass::get_invocations_count() const
 {
     ZoneScoped;
     std::array<uint64_t, 2> data{};
-    vkGetQueryPoolResults(m_context.device->get_device(), m_query_pool, 0, 1, sizeof(uint64_t) * data.size(), data.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    if (m_valid_query)
+    {
+        vkGetQueryPoolResults(m_context.device->get_device(), m_query_pool, 0, 1, sizeof(uint64_t) * data.size(), data.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    }
     return data;
 }
 
@@ -129,7 +134,9 @@ void pvp::MeshShaderPass::build_pipelines()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::meshlets).get())
         .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(MaterialTransform) + sizeof(uint32_t) })
         .build(m_context.device->get_device(), m_pipeline_layout);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout, nullptr);
+    });
 
     GraphicsPipelineBuilder()
         .add_shader("shaders/triangle_simple.task", VK_SHADER_STAGE_TASK_BIT_EXT)
@@ -140,13 +147,17 @@ void pvp::MeshShaderPass::build_pipelines()
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout)
         .build(*m_context.device, m_pipeline);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipeline(m_context.device->get_device(), m_pipeline, nullptr);
+    });
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::big_buffers).get())
         .build(m_context.device->get_device(), m_pipeline_layout_indirect);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect, nullptr);
+    });
 
     GraphicsPipelineBuilder()
         .add_shader("shaders/triangle_simple_indirect.task", VK_SHADER_STAGE_TASK_BIT_EXT)
@@ -157,14 +168,18 @@ void pvp::MeshShaderPass::build_pipelines()
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout_indirect)
         .build(*m_context.device, m_pipeline_indirect);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect, nullptr);
+    });
 
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::pointers).get())
         .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(VkDeviceAddress) })
         .build(m_context.device->get_device(), m_pipeline_layout_indirect_ptr);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect_ptr, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect_ptr, nullptr);
+    });
 
     GraphicsPipelineBuilder()
         .add_shader("shaders/triangle_simple_indirect_ptr.task", VK_SHADER_STAGE_TASK_BIT_EXT)
@@ -175,7 +190,9 @@ void pvp::MeshShaderPass::build_pipelines()
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
         .set_pipeline_layout(m_pipeline_layout_indirect_ptr)
         .build(*m_context.device, m_pipeline_indirect_ptr);
-    m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect_ptr, nullptr); });
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyPipeline(m_context.device->get_device(), m_pipeline_indirect_ptr, nullptr);
+    });
 }
 
 void pvp::MeshShaderPass::create_images()
@@ -188,5 +205,7 @@ void pvp::MeshShaderPass::create_images()
         .set_screen_size_auto_update(true)
         .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
         .build(m_context, m_depth_image);
-    m_destructor_queue.add_to_queue([&] { m_depth_image.destroy(m_context); });
+    m_destructor_queue.add_to_queue([&] {
+        m_depth_image.destroy(m_context);
+    });
 }

@@ -11,6 +11,7 @@
 
 #include <VulkanExternalFunctions.h>
 #include <cstring>
+#include <globalconst.h>
 #include <tracy/Tracy.hpp>
 
 namespace pvp
@@ -35,7 +36,10 @@ namespace pvp
         ZoneScoped;
 
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+        if constexpr (enable_debug)
+        {
+            m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+        }
         m_extensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
         VkPhysicalDevice physical_device = get_best_device(instance, surface);
