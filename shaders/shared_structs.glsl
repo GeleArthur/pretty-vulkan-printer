@@ -1,11 +1,6 @@
 #ifndef SHARED
 #define SHARED
 
-#extension GL_EXT_shader_explicit_arithmetic_types_int64: require
-#extension GL_EXT_buffer_reference: require
-#extension GL_EXT_shader_8bit_storage: enable
-
-
 //bool VisibleFrustumCone(vec4 sphere)
 //{
 //    // Cone and sphere are within intersectable range
@@ -87,27 +82,27 @@ struct ModelInfo {
     uint metalness_texture_index;
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 16) buffer VertexReference {
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer VertexReference {
     Vertex vertex_data[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetReference {
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer MeshLetReference {
     Meshlet meshlet_data[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 16) buffer TriangleIndicesReference {
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer TriangleIndicesReference {
     uint8_t triangle_indices_data[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 16) buffer MeshLetVertexReference {
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer MeshLetVertexReference {
     uint meshlet_vertex_data[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 32) buffer ConeDataReference {
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer ConeDataReference {
     ConeBounds cone_data[];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 64) buffer ModelInfoReference {
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer ModelInfoReference {
     ModelInfo model_data[];
 };
 
