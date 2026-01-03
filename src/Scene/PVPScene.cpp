@@ -560,7 +560,7 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
 
         Buffer staging_buffer{};
         BufferBuilder()
-            .set_size(texture.pixels.size())
+            .set_size(texture.pixels.size() * sizeof(uint8_t))
             .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
             .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
             .build(m_context.allocator->get_allocator(), staging_buffer);

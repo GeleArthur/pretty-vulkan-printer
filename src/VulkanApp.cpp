@@ -19,7 +19,7 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     // TODO: Deiced to remove all the destructors and add destroy to all classes. I am feeling destroy
     Instance instance{};
     InstanceBuilder()
-        .enable_debugging(enable_debug)
+        .enable_debugging(true)
         .set_app_name("pretty vulkan printer")
         .build(instance);
 
@@ -60,8 +60,8 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     // scene.load_scene(std::filesystem::absolute("../intelsponza/main_sponza/NewSponza_Main_glTF_003.gltf"));
     // scene.load_scene(std::filesystem::absolute("../intelsponza/pkg_a_curtains/NewSponza_Curtains_glTF.gltf"));
     // scene.load_scene(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
-    scene.load_scene(std::filesystem::absolute("resources/test_triangle.glb"));
-    // scene.load_scene(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    // scene.load_scene(std::filesystem::absolute("resources/test_triangle.glb"));
+    scene.load_scene(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
 
     ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);
     Renderer      renderer = Renderer(context, scene, imgui_renderer);

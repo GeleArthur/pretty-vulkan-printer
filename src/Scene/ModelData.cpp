@@ -454,6 +454,7 @@ namespace
                     loaded_texture.height = tex_height;
                     loaded_texture.pixels = std::vector(pixel_span.begin(), pixel_span.end());
                     loaded_texture.generate_mip_maps = true;
+                    loaded_texture.name = texture_name;
                     switch (texture_type)
                     {
                         case aiTextureType_DIFFUSE:
