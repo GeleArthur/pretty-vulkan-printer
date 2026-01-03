@@ -35,6 +35,7 @@ namespace pvp
 
         [[nodiscard]] const std::vector<VkImage>&     get_images() const;
         [[nodiscard]] const std::vector<VkImageView>& get_views() const;
+        [[nodiscard]] const std::vector<VkImageView>& get_linear_views() const;
 
         [[nodiscard]] Event<Context&, int, int>& get_on_frame_buffer_size_changed();
         [[nodiscard]] VkPresentModeKHR           get_best_present_mode() const;
@@ -45,6 +46,7 @@ namespace pvp
 
         std::vector<VkImage>     m_swapchain_images;
         std::vector<VkImageView> m_swapchain_views;
+        std::vector<VkImageView> m_swapchain_linear_views;
         VkSwapchainKHR           m_swapchain{};
         VkExtent2D               m_swapchain_extent{};
 

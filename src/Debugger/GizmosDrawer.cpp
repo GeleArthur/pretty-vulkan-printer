@@ -85,6 +85,15 @@ void pvp::GizmosDrawer::build_pipelines()
         .add_shader("shaders/gizmos.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
         .add_shader("shaders/gizmos.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_blend_mode(std::array{ VkPipelineColorBlendAttachmentState{
+            .blendEnable = VK_TRUE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT } })
         .set_pipeline_layout(m_pipeline_layout_spheres)
         .build(*m_context.device, m_pipeline_spheres);
     m_destructor_queue.add_to_queue([&] { vkDestroyPipeline(m_context.device->get_device(), m_pipeline_spheres, nullptr); });

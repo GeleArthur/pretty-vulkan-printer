@@ -22,7 +22,7 @@ static VkSurfaceFormatKHR get_best_surface_format(const VkPhysicalDevice& physic
 
     for (auto const& format : surface_formats)
     {
-        if (format.format == VK_FORMAT_R8G8B8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
             return format;
         }
@@ -152,6 +152,10 @@ const std::vector<VkImageView>& pvp::Swapchain::get_views() const
 {
     return m_swapchain_views;
 }
+const std::vector<VkImageView>& pvp::Swapchain::get_linear_views() const
+{
+    return m_swapchain_linear_views;
+}
 
 Event<pvp::Context&, int, int>& pvp::Swapchain::get_on_frame_buffer_size_changed()
 {
@@ -207,6 +211,16 @@ void pvp::Swapchain::create_the_swapchain()
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
+    std::array                  usageFormats = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM };
+    VkImageFormatListCreateInfo formatListCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
+        .viewFormatCount = usageFormats.size(),
+        .pViewFormats = usageFormats.data()
+    };
+    formatListCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO;
+    create_info.pNext = &formatListCreateInfo;
+    create_info.flags = VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR;
+
     if (vkCreateSwapchainKHR(m_context.device->get_device(), &create_info, nullptr, &m_swapchain) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create swapchain");
@@ -236,6 +250,27 @@ void pvp::Swapchain::create_the_swapchain()
             throw std::runtime_error("failed to create texture image view!");
         }
         m_swap_chain_destructor.add_to_queue([&, view_ptr = m_swapchain_views[i]] { vkDestroyImageView(m_context.device->get_device(), view_ptr, nullptr); });
+    }
+
+    m_swapchain_linear_views.resize(m_imagecount);
+    for (size_t i = 0; i < m_swapchain_images.size(); ++i)
+    {
+        VkImageViewCreateInfo view_info{};
+        view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        view_info.image = m_swapchain_images[i];
+        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        view_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+        view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        view_info.subresourceRange.baseMipLevel = 0;
+        view_info.subresourceRange.levelCount = 1;
+        view_info.subresourceRange.baseArrayLayer = 0;
+        view_info.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(m_context.device->get_device(), &view_info, nullptr, &m_swapchain_linear_views[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create texture image view!");
+        }
+        m_swap_chain_destructor.add_to_queue([&, view_ptr = m_swapchain_linear_views[i]] { vkDestroyImageView(m_context.device->get_device(), view_ptr, nullptr); });
     }
 
     m_on_frame_buffer_size_changed.notify_listeners(m_context, m_swapchain_extent.width, m_swapchain_extent.height);

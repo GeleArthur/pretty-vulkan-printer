@@ -103,7 +103,7 @@ pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRe
 
 void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
 {
-    VkFormat format = m_context.swapchain->get_swapchain_surface_format().format;
+    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
 
     ImGui_ImplVulkan_InitInfo info{
         .ApiVersion = VK_API_VERSION_1_4,
@@ -214,7 +214,7 @@ void pvp::ImguiRenderer::draw(const FrameContext& cmd, uint32_t swapchain_index)
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder()
-        .add_color(m_context.swapchain->get_views()[swapchain_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_context.swapchain->get_linear_views()[swapchain_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
 

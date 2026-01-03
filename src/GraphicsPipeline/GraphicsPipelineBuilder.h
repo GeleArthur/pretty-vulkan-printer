@@ -20,6 +20,7 @@ namespace pvp
         GraphicsPipelineBuilder& set_topology(VkPrimitiveTopology topology);
         GraphicsPipelineBuilder& set_pipeline_layout(VkPipelineLayout pipeline_layout);
         GraphicsPipelineBuilder& set_color_format(const range_of<VkFormat> auto& formats);
+        GraphicsPipelineBuilder& set_blend_mode(const range_of<VkPipelineColorBlendAttachmentState> auto& blends);
         GraphicsPipelineBuilder& set_depth_format(VkFormat format);
         GraphicsPipelineBuilder& set_depth_access(VkBool32 read, VkBool32 write);
         GraphicsPipelineBuilder& set_cull_mode(VkCullModeFlags mode);
@@ -31,6 +32,7 @@ namespace pvp
         std::vector<VkVertexInputBindingDescription>                                          m_input_binding_descriptions;
         std::vector<VkVertexInputAttributeDescription>                                        m_input_attribute_descriptions;
         std::vector<VkFormat>                                                                 m_color_formats;
+        std::vector<VkPipelineColorBlendAttachmentState>                                      m_blends;
         VkFormat                                                                              m_depth_format{ VK_FORMAT_D32_SFLOAT_S8_UINT };
         VkPrimitiveTopology                                                                   m_topology{ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST };
         VkPipelineLayout                                                                      m_pipeline_layout{ nullptr };
@@ -54,6 +56,11 @@ namespace pvp
     GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_format(const range_of<VkFormat> auto& formats)
     {
         m_color_formats.assign(formats.begin(), formats.end());
+        return *this;
+    }
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_blend_mode(const range_of<VkPipelineColorBlendAttachmentState> auto& blends)
+    {
+        m_blends.assign(blends.begin(), blends.end());
         return *this;
     }
 } // namespace pvp

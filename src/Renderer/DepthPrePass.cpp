@@ -104,7 +104,7 @@ namespace pvp
 
         GraphicsPipelineBuilder()
             .add_shader("shaders/depthpass.vert", VK_SHADER_STAGE_VERTEX_BIT)
-            .add_shader("shaders/depthpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
+            // .add_shader("shaders/depthpass.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
             .set_depth_format(m_depth_image.get_format())
             .set_pipeline_layout(m_pipeline_layout)
             .set_input_attribute_description(Vertex::get_attribute_descriptions())
@@ -128,7 +128,7 @@ namespace pvp
         GraphicsPipelineBuilder()
             .add_shader("shaders/triangle_simple_indirect_ptr.task", VK_SHADER_STAGE_TASK_BIT_EXT)
             .add_shader("shaders/depthpass_ptr.mesh", VK_SHADER_STAGE_MESH_BIT_EXT)
-            .add_shader("shaders/depthpass_ptr.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
+            // .add_shader("shaders/depthpass_ptr.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
             .set_depth_format(m_depth_image.get_format())
             .set_pipeline_layout(m_pipeline_meshshader_layout)
             .set_depth_access(VK_TRUE, VK_TRUE)

@@ -10,6 +10,7 @@
 
 #include "ShaderLoader.h"
 
+#include <assert.h>
 #include <execution>
 #include <tracy/Tracy.hpp>
 
@@ -73,25 +74,26 @@ void pvp::GraphicsPipelineBuilder::build(const Device& device, VkPipeline& pipel
     multisampling.alphaToCoverageEnable = VK_FALSE;
     multisampling.alphaToOneEnable = VK_FALSE;
 
-    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment(m_color_formats.size());
-    for (auto& blend : color_blend_attachment)
+    if (m_blends.empty())
     {
-        blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        blend.blendEnable = VK_TRUE;
-        blend.alphaBlendOp = VK_BLEND_OP_ADD;
-        blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-
+        m_blends.resize(m_color_formats.size());
+        for (auto& blend : m_blends)
+        {
+            blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            blend.blendEnable = VK_FALSE;
+        }
+    }
+    else
+    {
+        assert(m_blends.size() == m_color_formats.size() && "amount of blends are different then the attached color formats");
     }
 
     VkPipelineColorBlendStateCreateInfo color_blending{};
     color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blending.logicOpEnable = VK_FALSE;
     color_blending.logicOp = VK_LOGIC_OP_COPY;
-    color_blending.attachmentCount = static_cast<uint32_t>(color_blend_attachment.size());
-    color_blending.pAttachments = color_blend_attachment.data();
+    color_blending.attachmentCount = static_cast<uint32_t>(m_blends.size());
+    color_blending.pAttachments = m_blends.data();
     color_blending.blendConstants[0] = 0.0f;
     color_blending.blendConstants[1] = 0.0f;
     color_blending.blendConstants[2] = 0.0f;
