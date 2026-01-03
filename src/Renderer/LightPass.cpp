@@ -95,10 +95,6 @@ namespace pvp
                                         VK_ACCESS_2_NONE,
                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, m_texture_binding.get_descriptor_set(cmd), 0, nullptr);
-        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 2, 1, m_scene.get_light_descriptor().get_descriptor_set(cmd), 0, nullptr);
-
         RenderInfoBuilderOut render_color_info;
 
         RenderInfoBuilder()
@@ -109,6 +105,9 @@ namespace pvp
         vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
         vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 1, 1, m_texture_binding.get_descriptor_set(cmd), 0, nullptr);
+        vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_light_pipeline_layout, 2, 1, m_scene.get_light_descriptor().get_descriptor_set(cmd), 0, nullptr);
         vkCmdDraw(cmd.command_buffer, 3, 1, 0, 0);
 
         vkCmdEndRendering(cmd.command_buffer);

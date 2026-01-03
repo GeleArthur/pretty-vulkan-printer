@@ -76,7 +76,7 @@ void pvp::GBuffer::create_images()
 {
     ZoneScoped;
     ImageBuilder()
-        .set_format(m_context.swapchain->get_swapchain_surface_format().format)
+        .set_format(VK_FORMAT_R8G8B8A8_SRGB)
         .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
         .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
         .set_screen_size_auto_update(true)

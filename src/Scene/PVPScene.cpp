@@ -74,9 +74,9 @@ pvp::PvpScene::PvpScene(Context& context)
 
     m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 100 };
 
-    add_point_light(PointLight{ { 3, 0, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
+    add_point_light(PointLight{ { 3, 0.1, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
-    add_direction_light(m_direction_light);
+    // add_direction_light(m_direction_light);
 
     scan_folder();
     ShaderLoader::init();
@@ -503,7 +503,7 @@ void pvp::PvpScene::generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image
                 .mipLevel = i - 1,
                 .baseArrayLayer = 0,
                 .layerCount = 1 },
-            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>((width >> i) - 1), static_cast<int32_t>((height >> i) - 1), 1 } },
+            .srcOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(width >> (i - 1)), static_cast<int32_t>(height >> (i - 1)), 1 } },
             .dstSubresource = VkImageSubresourceLayers{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = i, .baseArrayLayer = 0, .layerCount = 1 },
             .dstOffsets = { VkOffset3D{ 0, 0, 0 }, VkOffset3D{ static_cast<int32_t>(width >> i), static_cast<int32_t>(height >> i), 1 } },
         };
@@ -603,7 +603,6 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
                                     VK_ACCESS_2_SHADER_READ_BIT);
 
         m_gpu_textures.push_back(std::move(gpu_image));
-        // gpu_texture_names.push_back(texture.name);
     }
 }
 void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
