@@ -52,8 +52,6 @@ namespace pvp
         Buffer meshlet_vertices_buffer;
         Buffer meshlet_triangles_buffer;
         Buffer meshlet_sphere_bounds_buffer;
-
-        MeshletsBuffers ptr_to_buffers;
     };
 
     struct SceneGlobals
@@ -193,6 +191,7 @@ namespace pvp
     private:
         void generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height);
         void load_textures(const LoadedScene& scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
+        void load_default_textures(DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
         void big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd);
         void build_draw_calls();
         void scan_folder();

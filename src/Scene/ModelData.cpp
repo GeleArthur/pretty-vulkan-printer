@@ -375,10 +375,10 @@ namespace
 
         // Cubemap loading later
         {
-            int          width{};
-            int          height{};
-            int          channels{};
-            float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
+            int width{};
+            int height{};
+            int channels{};
+            // float* const pixels = stbi_loadf((path.parent_path() / "circus_arena_4k.hdr").string().c_str(), &width, &height, &channels, 4);
         }
 
         for (const auto& [texture_name, texture_type] : all_textures)
@@ -411,6 +411,7 @@ namespace
                 loaded_texture.height = tex_height;
                 loaded_texture.pixels = std::vector(pixel_span.begin(), pixel_span.end());
                 loaded_texture.generate_mip_maps = true;
+                loaded_texture.name = texture_name;
                 switch (texture_type)
                 {
                     case aiTextureType_DIFFUSE:
@@ -435,6 +436,7 @@ namespace
                     loaded_texture.width = image.width;
                     loaded_texture.height = image.height;
                     loaded_texture.generate_mip_maps = false;
+                    loaded_texture.name = texture_name;
                 }
                 else
                 {

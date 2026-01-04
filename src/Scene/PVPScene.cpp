@@ -72,11 +72,11 @@ pvp::PvpScene::PvpScene(Context& context)
         .set_tag(DiscriptorTag::bindless_textures)
         .get();
 
-    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 100 };
+    m_direction_light = DirectionLight{ { 0.557f, -0.557f, -0.557f, 0 }, { 1, 1, 1, 1.0f }, 10 };
 
     add_point_light(PointLight{ { 3, 0.1, 0, 0 }, { 1, 0, 0, 1.0f }, 100 });
     add_point_light(PointLight{ { 10, 2, -0.25f, 0 }, { 0, 1, 0, 1.0f }, 500 });
-    // add_direction_light(m_direction_light);
+    add_direction_light(m_direction_light);
 
     scan_folder();
     ShaderLoader::init();
@@ -102,6 +102,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
     const VkCommandBuffer cmd = cmd_pool_transfer_buffers.begin_buffer();
     DestructorQueue       transfer_deleter{};
 
+    load_default_textures(transfer_deleter, cmd);
     load_textures(loaded_scene, transfer_deleter, cmd);
 
     big_buffer_generation(loaded_scene, transfer_deleter, cmd);
@@ -170,21 +171,26 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 
         gpu_model.material.transform = cpu_model.transform;
 
-        // TODO: Better default selection
-        gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.diffuse_path == image.get_name(); }) - m_gpu_textures.begin();
-        gpu_model.material.normal_texture_index = cpu_model.normal_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.normal_path == image.get_name(); }) - m_gpu_textures.begin();
-        gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ? 0 : std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.metallic_path == image.get_name(); }) - m_gpu_textures.begin();
+        gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ?
+            1 :
+            std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.diffuse_path == image.get_name(); }) - m_gpu_textures.begin();
+        gpu_model.material.normal_texture_index = cpu_model.normal_path.empty() ?
+            2 :
+            std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.normal_path == image.get_name(); }) - m_gpu_textures.begin();
+        gpu_model.material.metalness_texture_index = cpu_model.metallic_path.empty() ?
+            0 :
+            std::ranges::find_if(m_gpu_textures, [&](StaticImage& image) { return cpu_model.metallic_path == image.get_name(); }) - m_gpu_textures.begin();
 
-        auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
-            VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = buffer };
-            return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
-        };
+        // auto get_address = [&](VkBuffer buffer) -> VkDeviceAddress {
+        //     VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = buffer };
+        //     return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
+        // };
 
         // gpu_model.ptr_to_buffers.vertex_data = get_address(gpu_model.vertex_data.get_buffer());
         // gpu_model.ptr_to_buffers.meshlet_data = get_address(gpu_model.meshlet_buffer.get_buffer());
         // gpu_model.ptr_to_buffers.meshlet_vertices_data = get_address(gpu_model.meshlet_vertices_buffer.get_buffer());
         // gpu_model.ptr_to_buffers.meshlet_triangle_data = get_address(gpu_model.meshlet_triangles_buffer.get_buffer());
-        gpu_model.ptr_to_buffers.meshlet_sphere_bounds_data = get_address(gpu_model.meshlet_sphere_bounds_buffer.get_buffer());
+        // gpu_model.ptr_to_buffers.meshlet_sphere_bounds_data = get_address(gpu_model.meshlet_sphere_bounds_buffer.get_buffer());
     }
 
     {
@@ -592,9 +598,7 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
                                     VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                                     VK_ACCESS_2_TRANSFER_WRITE_BIT,
                                     VK_ACCESS_2_TRANSFER_READ_BIT);
-
         generate_mipmaps(cmd, gpu_image, texture.width, texture.height);
-
         gpu_image.transition_layout(cmd,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                     VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -605,6 +609,53 @@ void pvp::PvpScene::load_textures(const LoadedScene& loaded_scene, DestructorQue
         m_gpu_textures.push_back(std::move(gpu_image));
     }
 }
+
+void pvp::PvpScene::load_default_textures(DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
+{
+    auto create_default_texture = [&](const std::array<uint8_t, 4>& data, const std::string& name) {
+        Buffer staging_buffer{};
+        BufferBuilder()
+            .set_size(4 * sizeof(uint8_t))
+            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
+            .build(m_context.allocator->get_allocator(), staging_buffer);
+
+        transfer_deleter.add_to_queue([=] { staging_buffer.destroy(); });
+        staging_buffer.copy_data_into_buffer(std::span(data.cbegin(), data.cend()));
+
+        StaticImage gpu_image;
+        ImageBuilder()
+            .set_name(name.c_str())
+            .set_format(VK_FORMAT_R8G8B8A8_UNORM)
+            .set_usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+            .set_size({ .width = 1, .height = 1 })
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
+            .set_aspect_flags(VK_IMAGE_ASPECT_COLOR_BIT)
+            .set_use_mipmap(false)
+            .build(m_context, gpu_image);
+
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_NONE,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_ACCESS_2_NONE,
+                                    VK_ACCESS_2_TRANSFER_WRITE_BIT);
+        gpu_image.copy_from_buffer(cmd, staging_buffer);
+        gpu_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                    VK_ACCESS_2_TRANSFER_READ_BIT,
+                                    VK_ACCESS_2_SHADER_READ_BIT);
+
+        m_gpu_textures.push_back(std::move(gpu_image));
+    };
+
+    create_default_texture({ 0u, 0u, 0u, 255u }, "Default: Black");
+    create_default_texture({ 255u, 255u, 255u, 255u }, "Default: White");
+    create_default_texture({ 128u, 128u, 255u, 255u }, "Default: normal");
+}
+
 void pvp::PvpScene::big_buffer_generation(const LoadedScene& loaded_scene, DestructorQueue& transfer_deleter, VkCommandBuffer cmd)
 {
     ZoneScoped;

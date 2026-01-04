@@ -67,6 +67,7 @@ static bool VulkanCheckErrorStatus(VkResult x, const char* file, int line)
     if (x != VK_SUCCESS)
     {
         spdlog::error("Vulkan Function Call Error: \"{}\" File: {} {}", ErrorDescriptions[x], file, line);
+        throw;
         return true;
     }
     else

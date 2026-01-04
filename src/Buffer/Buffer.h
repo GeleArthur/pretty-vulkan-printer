@@ -46,7 +46,7 @@ namespace pvp
             memcpy(m_allocation_info.pMappedData, input_data.data(), input_data.size_bytes());
         };
         template<typename T>
-        void copy_data_from_tmp_buffer(Context& context, VkCommandBuffer command_buffer, std::span<T> input_data, DestructorQueue& destructor_queue) const
+        void copy_data_from_tmp_buffer(Context& context, VkCommandBuffer command_buffer, const std::span<T> input_data, DestructorQueue& destructor_queue) const
         {
             Buffer tmp_buffer{};
             BufferBuilder()

@@ -12,7 +12,7 @@ pvp::Camera::Camera(const Context& context)
 }
 void pvp::Camera::update(float delta_time)
 {
-    m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(m_context.swapchain->get_swapchain_extent().width) / static_cast<float>(m_context.swapchain->get_swapchain_extent().height), 0.1f, 100.0f);
+    m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(m_context.swapchain->get_swapchain_extent().width) / static_cast<float>(m_context.swapchain->get_swapchain_extent().height), 0.1f, 200.0f);
     m_projection[1][1] *= -1;
 
     double xpos{};
@@ -69,7 +69,7 @@ pvp::FrustumCone pvp::Camera::get_cone()
     {
         m_frustum_cone.tip = m_position;
         m_frustum_cone.direction = m_front;
-        m_frustum_cone.height = 100.0f;             // far clip from perspective matrix
+        m_frustum_cone.height = 200.0f;             // far clip from perspective matrix
         m_frustum_cone.angle = glm::radians(45.0f); // Guessing fov
     }
 
