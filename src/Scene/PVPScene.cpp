@@ -392,6 +392,7 @@ void pvp::PvpScene::update()
         m_camera.get_projection_matrix(),
         m_camera.get_position(),
         frustum_cone,
+        m_camera.get_projection_matrix() * m_camera.get_view_matrix()
     };
     gizmos::draw_cone(frustum_cone.tip, frustum_cone.height, frustum_cone.direction, frustum_cone.angle);
 
@@ -788,7 +789,7 @@ void pvp::PvpScene::build_draw_calls()
     uint32_t             meshlet_offset{};
     for (int i = 0; i < models.size(); ++i)
     {
-        uint32_t thread_group_count_x = models[i].meshlet_count / 32 + 1;
+        uint32_t thread_group_count_x = models[i].meshlet_count / mesh_let_count + 1;
         buffer_array[i] = DrawCommandIndirect{
             thread_group_count_x,
             1,

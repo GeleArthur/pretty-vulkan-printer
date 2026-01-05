@@ -60,6 +60,7 @@ namespace pvp
         alignas(16) glm::mat4x4 camera_projection;
         alignas(16) glm::vec3 positon;
         alignas(16) FrustumCone cone;
+        alignas(16) glm::mat4x4 camera_projection_view;
     };
 
     struct alignas(16) PointLight

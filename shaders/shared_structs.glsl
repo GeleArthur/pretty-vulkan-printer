@@ -48,7 +48,7 @@ struct DrawCommand
     uint meshlet_count;
 };
 
-#define AS_GROUP_SIZE 32
+#define AS_GROUP_SIZE 16
 struct Payload {
     uint meshlet_indices[AS_GROUP_SIZE];
     bool visable[AS_GROUP_SIZE];
@@ -73,6 +73,7 @@ struct SceneGlobals {
     mat4x4 camera_projection;
     vec3 position;
     FrustumCone camera_frustom;
+    mat4x4 camera_projection_view;
 };
 
 struct ModelInfo {

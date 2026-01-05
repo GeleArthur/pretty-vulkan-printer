@@ -56,7 +56,7 @@ void main()
     if (gl_LocalInvocationID.x < m.vertex_count) {
         uint vertexIndex = model_pointer.meshlet_vertices_data.meshlet_vertex_data[m.vertex_offset + gl_LocalInvocationID.x];
 
-        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].position, 1.0);
+        vec4 locatiomyes = sceneInfo.camera_projection_view * model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].position, 1.0);
 
         gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
         vertex_uv[gl_LocalInvocationID.x] = model_pointer.vertex_data.vertex_data[vertexIndex].tex_coord;
