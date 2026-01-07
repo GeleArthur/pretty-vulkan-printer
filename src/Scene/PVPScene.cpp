@@ -91,6 +91,7 @@ pvp::PvpScene::~PvpScene()
 void pvp::PvpScene::load_scene(const std::filesystem::path& path)
 {
     ZoneScoped;
+
     const std::optional<LoadedScene> scene_optional = load_scene_cpu(path);
     if (!scene_optional.has_value())
         return;
@@ -477,6 +478,8 @@ void pvp::PvpScene::update()
 
         constexpr std::array<const char*, 3> render_modes{ "CPU", "GPU Indirect", "GPU Indirect ptr" };
         ImGui::Combo("RenderMode", reinterpret_cast<int*>(&m_render_mode), render_modes.data(), render_modes.size());
+
+        ImGui::Checkbox("Enable meshlets", &m_meshlets_enabled);
     }
 
     ImGui::End();

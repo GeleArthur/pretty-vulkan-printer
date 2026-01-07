@@ -180,6 +180,10 @@ namespace pvp
         {
             return m_render_mode;
         }
+        bool get_meshlets_enabeled() const
+        {
+            return m_meshlets_enabled;
+        }
         const Buffer& get_pointers() const
         {
             return m_pointers;
@@ -229,6 +233,7 @@ namespace pvp
         DirectionLight m_direction_light{};
 
         bool       m_spheres_enabled{};
+        bool       m_meshlets_enabled{};
         RenderMode m_render_mode{ RenderMode::gpu_indirect };
 
         std::vector<std::string> m_scene_files;

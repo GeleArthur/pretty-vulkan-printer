@@ -96,9 +96,12 @@ pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRe
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
     // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
+    // ImGui::PushFont(nullptr, 16);
 }
 
 void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
@@ -113,22 +116,24 @@ void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)
         .QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(m_context.physical_device->get_physical_device()),
         .Queue = m_context.queue_families->get_queue_family(VK_QUEUE_GRAPHICS_BIT, false)->queue,
         .DescriptorPool = m_context.descriptor_creator->get_pool(),
-        .RenderPass = nullptr,
+        .DescriptorPoolSize = 0,
         .MinImageCount = 2,
         .ImageCount = static_cast<uint32_t>(m_context.swapchain->get_images().size()),
-        .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
         .PipelineCache = nullptr,
-        .Subpass = 0,
-        .DescriptorPoolSize = 0,
+        .PipelineInfoMain = {
+            .RenderPass = nullptr,
+            .Subpass = 0,
+            .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+            .PipelineRenderingCreateInfo = {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+                .pNext = nullptr,
+                .viewMask = 0,
+                .colorAttachmentCount = 1,
+                .pColorAttachmentFormats = &format,
+                .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
+                .stencilAttachmentFormat = VK_FORMAT_UNDEFINED },
+            .SwapChainImageUsage = 0 },
         .UseDynamicRendering = true,
-        .PipelineRenderingCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-            .pNext = nullptr,
-            .viewMask = 0,
-            .colorAttachmentCount = 1,
-            .pColorAttachmentFormats = &format,
-            .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
-            .stencilAttachmentFormat = VK_FORMAT_UNDEFINED },
         .Allocator = nullptr,
         .CheckVkResultFn = nullptr,
         .MinAllocationSize = 0

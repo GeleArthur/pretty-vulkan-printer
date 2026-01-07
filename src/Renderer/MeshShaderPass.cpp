@@ -39,6 +39,11 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
 
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
+    if (!m_scene.get_meshlets_enabeled())
+    {
+        return;
+    }
+
     ZoneScoped;
     TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "MeshShaderPass");
 
@@ -50,15 +55,15 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
         .layerCount = VK_REMAINING_ARRAY_LAYERS
     };
 
-    image_layout_transition(cmd.command_buffer,
-                            m_context.swapchain->get_images()[swapchain_image_index],
-                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_2_NONE,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_IMAGE_LAYOUT_UNDEFINED,
-                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                            range);
+    // image_layout_transition(cmd.command_buffer,
+    //                         m_context.swapchain->get_images()[swapchain_image_index],
+    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //                         VK_ACCESS_2_NONE,
+    //                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+    //                         VK_IMAGE_LAYOUT_UNDEFINED,
+    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //                         range);
 
     vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
     m_valid_query = true;
@@ -66,7 +71,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
-        .add_color(m_context.swapchain->get_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_context.swapchain->get_linear_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_depth(m_depth_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
@@ -144,7 +149,7 @@ void pvp::MeshShaderPass::build_pipelines()
         .add_shader("shaders/triangle_simple.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_depth_format(m_depth_image.get_format())
         .set_depth_access(VK_TRUE, VK_TRUE)
-        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_color_format(std::array{ VK_FORMAT_B8G8R8A8_UNORM })
         .set_pipeline_layout(m_pipeline_layout)
         .build(*m_context.device, m_pipeline);
     m_destructor_queue.add_to_queue([&] {
@@ -165,7 +170,7 @@ void pvp::MeshShaderPass::build_pipelines()
         .add_shader("shaders/triangle_simple.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_depth_format(m_depth_image.get_format())
         .set_depth_access(VK_TRUE, VK_TRUE)
-        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_color_format(std::array{ VK_FORMAT_B8G8R8A8_UNORM })
         .set_pipeline_layout(m_pipeline_layout_indirect)
         .build(*m_context.device, m_pipeline_indirect);
     m_destructor_queue.add_to_queue([&] {
@@ -187,7 +192,7 @@ void pvp::MeshShaderPass::build_pipelines()
         .add_shader("shaders/triangle_simple.frag", VK_SHADER_STAGE_FRAGMENT_BIT)
         .set_depth_format(m_depth_image.get_format())
         .set_depth_access(VK_TRUE, VK_TRUE)
-        .set_color_format(std::array{ m_context.swapchain->get_swapchain_surface_format().format })
+        .set_color_format(std::array{ VK_FORMAT_B8G8R8A8_UNORM })
         .set_pipeline_layout(m_pipeline_layout_indirect_ptr)
         .build(*m_context.device, m_pipeline_indirect_ptr);
     m_destructor_queue.add_to_queue([&] {

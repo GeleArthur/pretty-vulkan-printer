@@ -24,9 +24,8 @@ void pvp::gizmos::draw_cone(const glm::vec3& tip, float height, const glm::vec3&
     {
         lines.push_back(DebugVertex{ tip, { 1, 1, 1, 1 } });
 
-        double rot_angle = (i / 36.0f) * std::numbers::pi * 2.0f;
+        const double rot_angle = (i / 36.0) * std::numbers::pi * 2.0;
         lines.push_back(DebugVertex{ tip + (dir1 * angle * static_cast<float>(std::cos(rot_angle)) + dir2 * angle * static_cast<float>(std::sin(rot_angle)) + direction) * height, { 1, 1, 1, 1 } });
-
         lines.push_back(DebugVertex{ tip + (dir1 * angle * static_cast<float>(std::cos(rot_angle)) + dir2 * angle * static_cast<float>(std::sin(rot_angle)) + direction) * height, { 1, 1, 1, 1 } });
         lines.push_back(DebugVertex{ tip + (dir1 * angle * static_cast<float>(std::cos(rot_angle + ((1 / 36.0f) * std::numbers::pi * 2.0f))) + dir2 * angle * static_cast<float>(std::sin(rot_angle + ((1 / 36.0f) * std::numbers::pi * 2.0f))) + direction) * height, { 1, 1, 1, 1 } });
     }

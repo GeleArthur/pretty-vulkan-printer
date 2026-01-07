@@ -106,11 +106,11 @@ namespace
     {
         constexpr size_t max_vertices = 64;
         constexpr size_t max_triangles = 126;
-        constexpr float  cone_weight = 0.0f;
+        constexpr float  cone_weight = 0.25f;
 
         // std::vector<uint8_t> meshlet_triangles_u8;
 
-        size_t max_mesh_lets = meshopt_buildMeshletsBound(model_out.indices.size(), max_vertices, max_triangles);
+        const size_t max_mesh_lets = meshopt_buildMeshletsBound(model_out.indices.size(), max_vertices, max_triangles);
         model_out.meshlets.resize(max_mesh_lets);
         model_out.meshlet_vertices.resize(max_mesh_lets * max_vertices);
         model_out.meshlet_triangles.resize(max_mesh_lets * max_triangles * 3);
@@ -124,7 +124,7 @@ namespace
             vertices.push_back(vertex.pos.z);
         }
 
-        size_t const meshlet_count = meshopt_buildMeshlets(
+        const size_t meshlet_count = meshopt_buildMeshlets(
             model_out.meshlets.data(),
             model_out.meshlet_vertices.data(),
             model_out.meshlet_triangles.data(),
@@ -137,7 +137,7 @@ namespace
             max_triangles,
             cone_weight);
 
-        auto& last = model_out.meshlets[meshlet_count - 1];
+        const meshopt_Meshlet& last = model_out.meshlets[meshlet_count - 1];
         model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
         model_out.meshlet_triangles.resize(last.triangle_offset + last.triangle_count * 3);
         model_out.meshlets.resize(meshlet_count);
