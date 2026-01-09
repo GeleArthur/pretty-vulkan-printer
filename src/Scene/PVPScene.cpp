@@ -171,6 +171,7 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
             .build(m_context, gpu_model.meshlet_descriptor_set);
 
         gpu_model.material.transform = cpu_model.transform;
+        gpu_model.material.normal_decompression = cpu_model.decompress_normals;
 
         gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ?
             1 :

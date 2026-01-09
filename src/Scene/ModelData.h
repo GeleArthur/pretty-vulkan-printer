@@ -42,6 +42,7 @@ namespace pvp
         std::string           diffuse_path;
         std::string           metallic_path;
         std::string           normal_path;
+        bool                  decompress_normals;
 
         // MESHLETS
         std::vector<meshopt_Meshlet> meshlets;

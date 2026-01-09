@@ -26,7 +26,7 @@ pvp::GizmosDrawer::GizmosDrawer(Context& context, const PvpScene& scene)
 void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
     const std::vector<DebugVertex>& lines = gizmos::get_lines();
-    std::ranges::copy(lines, static_cast<DebugVertex*>(m_debug_lines_buffer.get_allocation_info().pMappedData));
+    std::ranges::copy(lines, static_cast<DebugVertex*>(m_debug_lines_buffer.at(cmd.buffer_index).get_allocation_info().pMappedData));
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
@@ -53,7 +53,7 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
     vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_debug_lines, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
     VkDeviceSize offset{ 0 };
-    vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &m_debug_lines_buffer.get_buffer(), &offset);
+    vkCmdBindVertexBuffers(cmd.command_buffer, 0, 1, &m_debug_lines_buffer.at(cmd.buffer_index).get_buffer(), &offset);
     vkCmdDraw(cmd.command_buffer, lines.size(), 1, 0, 0);
 
     vkCmdEndRendering(cmd.command_buffer);
@@ -61,13 +61,16 @@ void pvp::GizmosDrawer::draw(const FrameContext& cmd, uint32_t swapchain_image_i
 
 void pvp::GizmosDrawer::build_buffers()
 {
-    BufferBuilder{}
-        .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
-        .set_size(sizeof(DebugVertex) * 1000)
-        .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
-        .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
-        .build(m_context.allocator->get_allocator(), m_debug_lines_buffer);
-    m_destructor_queue.add_to_queue([&] { m_debug_lines_buffer.destroy(); });
+    for (int i = 0; i < max_frames_in_flight; ++i)
+    {
+        BufferBuilder{}
+            .set_memory_usage(VMA_MEMORY_USAGE_AUTO)
+            .set_size(sizeof(DebugVertex) * 1000)
+            .set_flags(VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT)
+            .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
+            .build(m_context.allocator->get_allocator(), m_debug_lines_buffer[i]);
+        m_destructor_queue.add_to_queue([&, i] { m_debug_lines_buffer[i].destroy(); });
+    }
 }
 
 void pvp::GizmosDrawer::build_pipelines()

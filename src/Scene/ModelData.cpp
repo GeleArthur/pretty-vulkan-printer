@@ -231,6 +231,7 @@ namespace
             write_vector(out_stream, model.meshlet_vertices);
             write_vector(out_stream, model.meshlet_triangles);
             write_vector(out_stream, model.meshlet_sphere_bounds);
+            write_pod(out_stream, model.decompress_normals);
         }
 
         auto save_texture = [&](const pvp::TextureData& texture) {
@@ -272,6 +273,7 @@ namespace
             read_vector(in_stream, model.meshlet_vertices);
             read_vector(in_stream, model.meshlet_triangles);
             read_vector(in_stream, model.meshlet_sphere_bounds);
+            read_pod(in_stream, model.decompress_normals);
         }
 
         auto load_texture = [&](pvp::TextureData& texture) {
@@ -358,6 +360,11 @@ namespace
                     {
                         model.normal_path = tex_path.C_Str();
                         all_textures[model.normal_path] = aiTextureType_NORMALS;
+                        // TODO: REMOVE OMG THIS IS CRINGE
+                        if (std::filesystem::path(model.normal_path).extension() == ".dds")
+                        {
+                            model.decompress_normals = true;
+                        }
                     }
                 }
 

@@ -42,9 +42,9 @@ namespace pvp
         VkPipelineLayout m_pipeline_layout_spheres{};
         VkPipeline       m_pipeline_spheres{};
 
-        VkPipelineLayout m_pipeline_layout_debug_lines{};
-        VkPipeline       m_pipeline_debug_lines{};
-        Buffer           m_debug_lines_buffer;
+        VkPipelineLayout                         m_pipeline_layout_debug_lines{};
+        VkPipeline                               m_pipeline_debug_lines{};
+        std::array<Buffer, max_frames_in_flight> m_debug_lines_buffer;
         // Buffer           m_sphere_staging_buffer;
         // DescriptorSets   m_sphere_descriptor;
 

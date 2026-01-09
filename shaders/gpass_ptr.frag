@@ -42,6 +42,13 @@ vec2 EncodeNormalOcta(vec3 n) {
     return n.xy * 0.5 + 0.5;
 }
 
+vec3 DecodeBC5Normal(vec2 rg) {
+    vec3 normal;
+    normal.xy = rg * 2.0 - 1.0;  // Remap from [0,1] to [-1,1]
+    normal.z = sqrt(1.0 - clamp(dot(normal.xy, normal.xy), 0.0, 1.0));
+    return normalize(normal);
+}
+
 void main() {
     ModelInfo model_info = push_constants.model_data_pointer.model_data[model_id];
     vec4 color = texture(sampler2D(textures[model_info.diffuse_texture_index], shardedSampler), fragTexCoord).rgba;
@@ -55,8 +62,14 @@ void main() {
     outMetalRougness.rg = vec2(roughness_metal.g, roughness_metal.b);
 
 
-    vec3 normal_texture = texture(sampler2D(textures[model_info.normal_texture_index], shardedSampler), fragTexCoord).rgb;
-    normal_texture = (2.0f * normal_texture) - 1.0f;
+    vec3 normal_texture;
+    if (model_info.decompressed_normals) {
+        normal_texture = DecodeBC5Normal(texture(sampler2D(textures[model_info.normal_texture_index], shardedSampler), fragTexCoord).rg);
+    }
+    else {
+        normal_texture = texture(sampler2D(textures[model_info.normal_texture_index], shardedSampler), fragTexCoord).rgb;
+        normal_texture = (2.0f * normal_texture) - 1.0f;
+    }
 
     const vec3 binormal = cross(objectNormal, outTangent);
 

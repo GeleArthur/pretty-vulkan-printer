@@ -41,7 +41,6 @@ bool BackfaceCulling(ConeBounds cone) {
 bool IsVisible(ConeBounds cone) {
     if (!VisibleFrustumCone(cone.sphere_bounds)) {
         return false;
-
     }
     if (BackfaceCulling(cone)) {
         return false;

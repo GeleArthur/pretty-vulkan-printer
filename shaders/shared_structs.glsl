@@ -81,6 +81,7 @@ struct ModelInfo {
     uint diffuse_texture_index;
     uint normal_texture_index;
     uint metalness_texture_index;
+    bool decompressed_normals;
 };
 
 layout (std430, buffer_reference, buffer_reference_align = 8) buffer VertexReference {

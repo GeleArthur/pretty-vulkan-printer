@@ -18,6 +18,7 @@ layout (push_constant) uniform PushConstant {
     uint diffuse_texture_index;
     uint normal_texture_index;
     uint metalness_texture_index;
+    bool decompress_normals;
 } pc;
 
 // Helper: wrap across octahedron edges
@@ -38,6 +39,13 @@ vec2 EncodeNormalOcta(vec3 n) {
     return n.xy * 0.5 + 0.5;
 }
 
+vec3 DecodeBC5Normal(vec2 rg) {
+    vec3 normal;
+    normal.xy = rg * 2.0 - 1.0;  // Remap from [0,1] to [-1,1]
+    normal.z = sqrt(1.0 - clamp(dot(normal.xy, normal.xy), 0.0, 1.0));
+    return normalize(normal);
+}
+
 void main() {
     vec4 color = texture(sampler2D(textures[pc.diffuse_texture_index], shardedSampler), fragTexCoord).rgba;
 
@@ -49,9 +57,15 @@ void main() {
     vec4 roughness_metal = texture(sampler2D(textures[pc.metalness_texture_index], shardedSampler), fragTexCoord).rgba;
     outMetalRougness.rg = vec2(roughness_metal.g, roughness_metal.b);
 
+    vec3 normal_texture;
+    if (pc.decompress_normals) {
+        normal_texture = DecodeBC5Normal(texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rg);
+    }
+    else {
+        normal_texture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgb;
+        normal_texture = (2.0f * normal_texture) - 1.0f;
+    }
 
-    vec3 normal_texture = texture(sampler2D(textures[pc.normal_texture_index], shardedSampler), fragTexCoord).rgb;
-    normal_texture = (2.0f * normal_texture) - 1.0f;
 
     const vec3 binormal = cross(objectNormal, outTangent);
 

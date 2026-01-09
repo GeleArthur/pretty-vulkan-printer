@@ -27,6 +27,7 @@ namespace pvp
         uint32_t    diffuse_texture_index;
         uint32_t    normal_texture_index;
         uint32_t    metalness_texture_index;
+        bool        normal_decompression;
     };
     struct alignas(8) MeshletsBuffers
     {
