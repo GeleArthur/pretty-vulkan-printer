@@ -62,6 +62,7 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     // scene.load_scene(std::filesystem::absolute("resources/rossbandiger/Fixed mesh.glb"));
     // scene.load_scene(std::filesystem::absolute("resources/test_triangle.glb"));
     scene.load_scene(std::filesystem::absolute("resources/Sponza/Sponza.gltf"));
+    // scene.load_scene(std::filesystem::absolute("resources/test_cube.glb"));
     // scene.load_scene(std::filesystem::absolute("../intelsponza/Bistro_v5_2/BistroInterior.fbx"));
 
     ImguiRenderer imgui_renderer = ImguiRenderer(context, window, &gtfw_to_render);

@@ -1,6 +1,7 @@
 #version 450
 #pragma shader_stage(fragment)
 #extension GL_EXT_samplerless_texture_functions: enable
+#extension GL_EXT_spec_constant_composites: enable
 
 layout (set = 0, binding = 0) uniform SceneGlobals {
     mat4x4 camera_view;

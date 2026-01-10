@@ -19,8 +19,7 @@ namespace pvp
         DISABLE_COPY(MeshShaderPass);
         DISABLE_MOVE(MeshShaderPass);
 
-        void                    draw(const FrameContext& cmd, uint32_t swapchain_image_index);
-        std::array<uint64_t, 2> get_invocations_count() const;
+        void draw(const FrameContext& cmd, uint32_t swapchain_image_index);
 
     private:
         void            build_pipelines();
@@ -38,7 +37,6 @@ namespace pvp
         VkPipeline       m_pipeline_indirect_ptr{};
 
         Image           m_depth_image{};
-        VkQueryPool     m_query_pool{};
         bool            m_valid_query{};
         DestructorQueue m_destructor_queue{};
     };

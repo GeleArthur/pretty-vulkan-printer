@@ -1,5 +1,6 @@
 #version 450
 #pragma shader_stage(vertex)
+#extension GL_EXT_spec_constant_composites: require
 
 vec2 positions[3] = vec2[](
 vec2(-1.0, -3.0),

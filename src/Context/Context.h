@@ -24,17 +24,17 @@ namespace pvp
     class DescriptorLayoutCreator;
     struct Context
     {
-        Instance*                instance;
-        PhysicalDevice*          physical_device;
-        Device*                  device;
-        PvpVmaAllocator*         allocator;
-        QueueFamilies*           queue_families;
-        DescriptorLayoutCreator* descriptor_creator;
-        Swapchain*               swapchain;
-        VkSurfaceKHR             surface;
+        Instance*                instance{};
+        PhysicalDevice*          physical_device{};
+        Device*                  device{};
+        PvpVmaAllocator*         allocator{};
+        QueueFamilies*           queue_families{};
+        DescriptorLayoutCreator* descriptor_creator{};
+        Swapchain*               swapchain{};
+        VkSurfaceKHR             surface{};
         // WindowSurface*           window_surface;
-        GlfwToRender*           gtfw_to_render;
-        std::array<uint64_t, 2> invocation_count{};
+        GlfwToRender* gtfw_to_render{};
+        VkQueryPool   query_pool{};
 
 #ifdef TRACY_ENABLE
         std::vector<tracy::VkCtx*> tracy_ctx;

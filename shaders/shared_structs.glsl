@@ -1,3 +1,5 @@
+#extension GL_GOOGLE_cpp_style_line_directive: require
+
 #ifndef SHARED
 #define SHARED
 
@@ -63,6 +65,19 @@ struct FrustumCone
     float angle;
 };
 
+struct RadarCull
+{
+    vec3 camera_x;
+    float far_plane;
+    vec3 camera_y;
+    float near_plane;
+    vec3 camera_z;
+    float tang;
+    float ratio;
+    float sphere_factor_y;
+    float sphere_factor_x;
+};
+
 struct ConeBounds {
     vec4 sphere_bounds;
     vec4 cone_axis;
@@ -74,6 +89,8 @@ struct SceneGlobals {
     vec3 position;
     FrustumCone camera_frustom;
     mat4x4 camera_projection_view;
+    RadarCull rader_cull;
+    int cull_mode;
 };
 
 struct ModelInfo {

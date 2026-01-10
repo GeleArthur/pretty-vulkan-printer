@@ -163,6 +163,7 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
         break;
         case RenderMode::gpu_indirect:
         case RenderMode::gpu_indirect_pointers: {
+            // vkCmdBeginQuery(cmd.command_buffer, m_context.query_pool, 0, 0);
             vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_albedo_pipeline);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_pipeline_layout, 1, 1, m_scene.get_indirect_ptr_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
@@ -172,6 +173,7 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
             vkCmdPushConstants(cmd.command_buffer, m_meshlets_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress), &matrix_buffer_address);
 
             VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
+            // vkCmdEndQuery(cmd.command_buffer, m_context.query_pool, 0);
         }
 
         break;

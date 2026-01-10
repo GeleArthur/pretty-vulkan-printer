@@ -1,5 +1,7 @@
 #version 450
 #pragma shader_stage(vertex)
+#extension GL_EXT_spec_constant_composites: require
+
 
 layout (set = 0, binding = 0) uniform SceneGlobals {
     mat4x4 camera_view;

@@ -22,19 +22,6 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
     ZoneScoped;
     create_images();
     build_pipelines();
-
-    VkQueryPoolCreateInfo pool{
-        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .queryType = VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT,
-        .queryCount = 1,
-        .pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT | VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT
-    };
-    vkCreateQueryPool(context.device->get_device(), &pool, nullptr, &m_query_pool);
-    m_destructor_queue.add_to_queue([&] {
-        vkDestroyQueryPool(m_context.device->get_device(), m_query_pool, nullptr);
-    });
 }
 
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
@@ -47,13 +34,20 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     ZoneScoped;
     TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "MeshShaderPass");
 
-    VkImageSubresourceRange range{
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .baseMipLevel = 0,
-        .levelCount = VK_REMAINING_MIP_LEVELS,
-        .baseArrayLayer = 0,
-        .layerCount = VK_REMAINING_ARRAY_LAYERS
-    };
+    // VkImageSubresourceRange range{
+    //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    //     .baseMipLevel = 0,
+    //     .levelCount = VK_REMAINING_MIP_LEVELS,
+    //     .baseArrayLayer = 0,
+    //     .layerCount = VK_REMAINING_ARRAY_LAYERS
+    // };
+
+    m_depth_image.transition_layout(cmd,
+                                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                    VK_PIPELINE_STAGE_2_NONE,
+                                    VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+                                    VK_ACCESS_2_NONE,
+                                    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
     // image_layout_transition(cmd.command_buffer,
     //                         m_context.swapchain->get_images()[swapchain_image_index],
@@ -65,13 +59,9 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     //                         range);
 
-    vkCmdResetQueryPool(cmd.command_buffer, m_query_pool, 0, 1);
-    m_valid_query = true;
-    vkCmdBeginQuery(cmd.command_buffer, m_query_pool, 0, 0);
-
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
-        .add_color(m_context.swapchain->get_linear_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_context.swapchain->get_linear_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
         .set_depth(m_depth_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
@@ -116,19 +106,6 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
     }
 
     vkCmdEndRendering(cmd.command_buffer);
-    vkCmdEndQuery(cmd.command_buffer, m_query_pool, 0);
-}
-
-// TODO: replace
-std::array<uint64_t, 2> pvp::MeshShaderPass::get_invocations_count() const
-{
-    ZoneScoped;
-    std::array<uint64_t, 2> data{};
-    if (m_valid_query)
-    {
-        vkGetQueryPoolResults(m_context.device->get_device(), m_query_pool, 0, 1, sizeof(uint64_t) * data.size(), data.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-    }
-    return data;
 }
 
 void pvp::MeshShaderPass::build_pipelines()

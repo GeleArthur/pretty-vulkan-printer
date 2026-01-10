@@ -5,6 +5,8 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64: require
 #extension GL_EXT_shader_8bit_storage: require
 #extension GL_EXT_shader_explicit_arithmetic_types: require
+#extension GL_GOOGLE_include_directive: require
+#extension GL_EXT_spec_constant_composites: require
 
 #include "shared_structs.glsl"
 

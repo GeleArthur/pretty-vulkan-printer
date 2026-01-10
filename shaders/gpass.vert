@@ -1,5 +1,6 @@
 #version 450
 #pragma shader_stage(vertex)
+#extension GL_EXT_spec_constant_composites: enable
 
 
 layout (set = 0, binding = 0) uniform SceneGlobals {
@@ -8,7 +9,7 @@ layout (set = 0, binding = 0) uniform SceneGlobals {
     vec3 position;
 } sceneInfo;
 
-layout(push_constant) uniform PushConstant {
+layout (push_constant) uniform PushConstant {
     mat4 model;
     uint diffuse_texture_index;
     uint normal_texture_index;

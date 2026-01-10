@@ -62,6 +62,8 @@ namespace pvp
         alignas(16) glm::vec3 positon;
         alignas(16) FrustumCone cone;
         alignas(16) glm::mat4x4 camera_projection_view;
+        alignas(16) RadarCull radar_cull_data;
+        alignas(16) int32_t culling_mode{};
     };
 
     struct alignas(16) PointLight
@@ -92,6 +94,13 @@ namespace pvp
         cpu = 0,
         gpu_indirect,
         gpu_indirect_pointers
+    };
+    enum class CullMode : int
+    {
+        none = 0u,
+        backface = 1u,
+        backface_radar = 2u,
+        backface_cone = 3u
     };
 
     class PvpScene final
@@ -236,6 +245,7 @@ namespace pvp
         bool       m_spheres_enabled{};
         bool       m_meshlets_enabled{};
         RenderMode m_render_mode{ RenderMode::gpu_indirect };
+        CullMode   m_cull_mode{ CullMode::backface_radar };
 
         std::vector<std::string> m_scene_files;
 

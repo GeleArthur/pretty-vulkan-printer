@@ -88,6 +88,20 @@ pvp::Renderer::Renderer(Context& context, PvpScene& scene, ImguiRenderer& imgui_
 
     m_imgui_renderer.setup_vulkan_context(m_cmd_pool_graphics_present);
     m_destructor_queue.add_to_queue([&] { m_imgui_renderer.destroy_vulkan_context(); });
+
+    VkQueryPoolCreateInfo const pool{
+        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .queryType = VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT,
+        .queryCount = 1,
+        .pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT | VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT
+    };
+    vkCreateQueryPool(context.device->get_device(), &pool, nullptr, &m_context.query_pool);
+    m_destructor_queue.add_to_queue([&] {
+        vkDestroyQueryPool(m_context.device->get_device(), m_context.query_pool, nullptr);
+    });
+    vkResetQueryPool(m_context.device->get_device(), m_context.query_pool, 0, 1);
 }
 
 void pvp::Renderer::prepare_frame()
@@ -162,6 +176,8 @@ void pvp::Renderer::prepare_frame()
     scissor.extent = m_context.swapchain->get_swapchain_extent();
     vkCmdSetScissor(m_frame_contexts[m_double_buffer_frame].command_buffer, 0, 1, &scissor);
 
+    vkCmdResetQueryPool(m_frame_contexts[m_double_buffer_frame].command_buffer, m_context.query_pool, 0, 1);
+
     // std::printf("-----PREPARE FRAME DONE-----\n");
 }
 
@@ -171,13 +187,19 @@ void pvp::Renderer::draw()
 
     ZoneScoped;
     prepare_frame();
-    m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
-    m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    if (!m_scene.get_meshlets_enabeled())
+    {
+        m_depth_pre_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+        m_geometry_draw.draw(m_frame_contexts[m_double_buffer_frame]);
+        m_light_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+        m_tone_mapping_pass.draw(m_frame_contexts[m_double_buffer_frame]);
+        m_blit_to_swapchain.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    }
+    else
+    {
+        m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
+    }
 
-    m_mesh_shader_pass.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_gizmos_drawer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     m_imgui_renderer.draw(m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
     transfur_swapchain(m_context, m_frame_contexts[m_double_buffer_frame], m_current_swapchain_index);
@@ -188,7 +210,6 @@ void pvp::Renderer::draw()
 void pvp::Renderer::end_frame()
 {
     ZoneNamedN(end_command_buffer, "end command buffer", true);
-    // std::printf("-----END FRAME-----\n");
     VK_CALL(vkEndCommandBuffer(m_frame_contexts.at(m_double_buffer_frame).command_buffer));
 
     ZoneNamedN(submit_queue, "submit queue", true);
@@ -265,6 +286,4 @@ void pvp::Renderer::end_frame()
     }
 
     m_double_buffer_frame = (m_double_buffer_frame + 1) % max_frames_in_flight;
-    m_context.invocation_count = m_mesh_shader_pass.get_invocations_count();
-    // std::printf("-----END FRAME DONE-----\n");
 }

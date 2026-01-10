@@ -1,5 +1,7 @@
 #version 450
 #pragma shader_stage(vertex)
+#extension GL_EXT_spec_constant_composites: require
+
 
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec4 inColor;

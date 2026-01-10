@@ -388,13 +388,16 @@ void pvp::PvpScene::update()
 
     m_camera.update(delta_time);
 
-    const FrustumCone frustum_cone = m_camera.get_cone();
+    const FrustumCone& frustum_cone = m_camera.get_cone();
+
     m_scene_globals = SceneGlobals{
         m_camera.get_view_matrix(),
         m_camera.get_projection_matrix(),
         m_camera.get_position(),
         frustum_cone,
-        m_camera.get_projection_matrix() * m_camera.get_view_matrix()
+        m_camera.get_projection_matrix() * m_camera.get_view_matrix(),
+        m_camera.get_radar_cull(),
+        static_cast<int32_t>(m_cull_mode),
     };
     gizmos::draw_cone(frustum_cone.tip, frustum_cone.height, frustum_cone.direction, frustum_cone.angle);
 
@@ -471,14 +474,24 @@ void pvp::PvpScene::update()
             ImGui::PopID();
         }
 
-        ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", m_context.invocation_count[0]);
-        ImGui::Text("TASK_SHADER_INVOCATIONS: %llu", m_context.invocation_count[1]);
+        static bool first_time{};
+        uint64_t    invocation_count{};
+        if (first_time == true)
+        {
+            vkGetQueryPoolResults(m_context.device->get_device(), m_context.query_pool, 0, 1, sizeof(uint64_t), &invocation_count, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+        }
+        first_time = true;
+
+        ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", invocation_count);
 
         ImGui::Checkbox("Update frustom", &m_camera.update_frustum);
         ImGui::Checkbox("Enable spheres", &m_spheres_enabled);
 
         constexpr std::array<const char*, 3> render_modes{ "CPU", "GPU Indirect", "GPU Indirect ptr" };
         ImGui::Combo("RenderMode", reinterpret_cast<int*>(&m_render_mode), render_modes.data(), render_modes.size());
+
+        constexpr std::array<const char*, 4> cull_modes{ "none", "backface", "backface + radar", "backface + cone" };
+        ImGui::Combo("CullMode", reinterpret_cast<int*>(&m_cull_mode), cull_modes.data(), cull_modes.size());
 
         ImGui::Checkbox("Enable meshlets", &m_meshlets_enabled);
     }

@@ -36,12 +36,13 @@ namespace pvp
         ZoneScoped;
 
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        if constexpr (enable_debug)
-        {
-            m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-        }
+        // if constexpr (enable_debug)
+        // {
+        m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+        // }
         m_extensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
         m_extensions.push_back(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
+        m_extensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
 
         VkPhysicalDevice physical_device = get_best_device(instance, surface);
         if (physical_device == VK_NULL_HANDLE)
@@ -75,9 +76,15 @@ namespace pvp
         device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_extensions.size());
         device_create_info.ppEnabledExtensionNames = m_extensions.data();
 
+        VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR relaxed_shader_mode{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR,
+            .pNext = nullptr,
+            .shaderRelaxedExtendedInstruction = VK_TRUE
+        };
+
         VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
-            .pNext = nullptr,
+            .pNext = &relaxed_shader_mode,
             .taskShader = VK_TRUE,
             .meshShader = VK_TRUE,
             .meshShaderQueries = VK_TRUE,
@@ -116,6 +123,7 @@ namespace pvp
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
             .pNext = &features12,
             .shaderDrawParameters = VK_TRUE,
+
         };
 
         VkPhysicalDeviceFeatures device_features{

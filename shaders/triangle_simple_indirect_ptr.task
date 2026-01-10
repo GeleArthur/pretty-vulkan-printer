@@ -40,6 +40,7 @@ void main()
 
         visible = IsVisible(cone);
     }
+    
 
     uvec4 ballot = subgroupBallot(visible);
 

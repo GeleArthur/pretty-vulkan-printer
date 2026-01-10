@@ -12,7 +12,7 @@ pvp::Camera::Camera(const Context& context)
 }
 void pvp::Camera::update(float delta_time)
 {
-    m_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(m_context.swapchain->get_swapchain_extent().width) / static_cast<float>(m_context.swapchain->get_swapchain_extent().height), 0.1f, 200.0f);
+    m_projection = glm::perspective(glm::radians(fov_angle), get_screen_ratio(), near_plane, far_plane);
     m_projection[1][1] *= -1;
 
     double xpos{};
@@ -21,7 +21,7 @@ void pvp::Camera::update(float delta_time)
 
     std::array<int, GLFW_KEY_LAST> keys{};
     {
-        std::lock_guard lock{ m_context.gtfw_to_render->lock };
+        std::scoped_lock const lock{ m_context.gtfw_to_render->lock };
         xpos = m_context.gtfw_to_render->mouse_pos_x;
         ypos = m_context.gtfw_to_render->mouse_pos_y;
         pressed = m_context.gtfw_to_render->mouse_down[0];
@@ -63,7 +63,7 @@ void pvp::Camera::update(float delta_time)
         m_view = glm::lookAt(m_position, m_position + m_front, m_camera_up);
     }
 }
-pvp::FrustumCone pvp::Camera::get_cone()
+const pvp::FrustumCone& pvp::Camera::get_cone()
 {
     if (update_frustum)
     {
@@ -73,33 +73,24 @@ pvp::FrustumCone pvp::Camera::get_cone()
         m_frustum_cone.angle = glm::radians(45.0f); // Guessing fov
     }
 
-    // if (fitFarClip)
-    // {
-    //     // View projection matrix
-    //     auto& VP = this->GetViewProjectionMatrix();
-    //     // Inverse view projection matrix
-    //     auto invVP = glm::inverse(VP);
-    //     // Clip space coordinates
-    //     auto csFarTL = glm::vec3(-1, 1, 1);
-    //     auto csFarBL = glm::vec3(-1, -1, 1);
-    //     auto csFarBR = glm::vec3(1, -1, 1);
-    //     auto csFarTR = glm::vec3(1, 1, 1);
-    //     // Transform into view coordinates using inverse view projection matrix
-    //     auto farTL = invVP * glm::vec4(csFarTL, 1.0f);
-    //     auto farBL = invVP * glm::vec4(csFarBL, 1.0f);
-    //     auto farBR = invVP * glm::vec4(csFarBR, 1.0f);
-    //     auto farTR = invVP * glm::vec4(csFarTR, 1.0f);
-    //     // Divide to finalize unproject
-    //     farTL /= farTL.w;
-    //     farBL /= farBL.w;
-    //     farBR /= farBR.w;
-    //     farTR /= farTR.w;
-    //     // Find center of far clip plane
-    //     auto farCenter = (farTL + farBL + farBR + farTR) / 4.0f;
-    //     // Distance from far clip plane center to top left corner of far clip plane
-    //     float r = glm::distance(farCenter, farTL);
-    //     // Calculate angle using arctan
-    //     cone.Angle = 2.0f * atan(r / mFarClip);
-    // }
     return m_frustum_cone;
+}
+const pvp::RadarCull& pvp::Camera::get_radar_cull()
+{
+    float tangent = std::tanf(glm::radians(fov_angle));
+    m_radar_cull.far_plane = far_plane;
+    m_radar_cull.near_plane = near_plane;
+    m_radar_cull.tang = tangent;
+    m_radar_cull.ratio = get_screen_ratio();
+    m_radar_cull.sphere_factor_y = 1.0f / std::cosf(glm::radians(fov_angle));
+    m_radar_cull.sphere_factor_x = 1.0f / std::cosf(std::atan(m_radar_cull.tang * m_radar_cull.ratio));
+
+    m_radar_cull.camera_z = m_front;
+    m_radar_cull.camera_x = glm::cross(m_front, m_camera_up);
+    m_radar_cull.camera_y = glm::cross(m_radar_cull.camera_z, m_radar_cull.camera_x);
+    return m_radar_cull;
+}
+const float pvp::Camera::get_screen_ratio()
+{
+    return static_cast<float>(m_context.swapchain->get_swapchain_extent().width) / static_cast<float>(m_context.swapchain->get_swapchain_extent().height);
 }

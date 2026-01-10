@@ -1,6 +1,7 @@
 #version 450
 #pragma shader_stage(fragment)
 #extension GL_EXT_nonuniform_qualifier: enable
+#extension GL_EXT_spec_constant_composites: enable
 
 layout (set = 1, binding = 0) uniform sampler shardedSampler;
 layout (set = 1, binding = 1) uniform texture2D textures[];
