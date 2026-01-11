@@ -29,7 +29,7 @@ void pvp::App::run()
     while (!glfwWindowShouldClose(m_window))
     {
         ZoneScoped;
-        glfwPollEvents();
+        glfwWaitEvents();
     }
 
     m_shared_state.running.store(false);

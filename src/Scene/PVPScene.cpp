@@ -388,18 +388,19 @@ void pvp::PvpScene::update()
 
     m_camera.update(delta_time);
 
-    const FrustumCone& frustum_cone = m_camera.get_cone();
+    m_scene_globals.camera_view = m_camera.get_view_matrix();
+    m_scene_globals.camera_projection = m_camera.get_projection_matrix();
+    m_scene_globals.camera_projection_view = m_camera.get_projection_matrix() * m_camera.get_view_matrix();
 
-    m_scene_globals = SceneGlobals{
-        m_camera.get_view_matrix(),
-        m_camera.get_projection_matrix(),
-        m_camera.get_position(),
-        frustum_cone,
-        m_camera.get_projection_matrix() * m_camera.get_view_matrix(),
-        m_camera.get_radar_cull(),
-        static_cast<int32_t>(m_cull_mode),
-    };
-    gizmos::draw_cone(frustum_cone.tip, frustum_cone.height, frustum_cone.direction, frustum_cone.angle);
+    if (m_update_frustum)
+    {
+        m_scene_globals.positon = m_camera.get_position();
+        m_scene_globals.cone = m_camera.get_cone();
+        m_scene_globals.radar_cull_data = m_camera.get_radar_cull();
+    }
+    m_scene_globals.culling_mode = static_cast<int32_t>(m_cull_mode);
+
+    gizmos::draw_cone(m_scene_globals.cone.tip, m_scene_globals.cone.height, m_scene_globals.cone.direction, m_scene_globals.cone.angle);
 
     if (ImGui::Begin("Debug"))
     {
@@ -484,7 +485,7 @@ void pvp::PvpScene::update()
 
         ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", invocation_count);
 
-        ImGui::Checkbox("Update frustom", &m_camera.update_frustum);
+        ImGui::Checkbox("Update frustom", &m_update_frustum);
         ImGui::Checkbox("Enable spheres", &m_spheres_enabled);
 
         constexpr std::array<const char*, 3> render_modes{ "CPU", "GPU Indirect", "GPU Indirect ptr" };

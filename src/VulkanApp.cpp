@@ -19,7 +19,7 @@ void pvp::VulkanApp::run(GLFWwindow* window, GlfwToRender& gtfw_to_render)
     // TODO: Deiced to remove all the destructors and add destroy to all classes. I am feeling destroy
     Instance instance{};
     InstanceBuilder()
-        .enable_debugging(true)
+        .enable_validation_layers(enable_debug)
         .set_app_name("pretty vulkan printer")
         .build(instance);
 

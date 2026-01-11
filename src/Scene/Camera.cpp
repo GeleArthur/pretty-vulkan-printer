@@ -65,19 +65,16 @@ void pvp::Camera::update(float delta_time)
 }
 const pvp::FrustumCone& pvp::Camera::get_cone()
 {
-    if (update_frustum)
-    {
-        m_frustum_cone.tip = m_position;
-        m_frustum_cone.direction = m_front;
-        m_frustum_cone.height = 200.0f;             // far clip from perspective matrix
-        m_frustum_cone.angle = glm::radians(45.0f); // Guessing fov
-    }
+    m_frustum_cone.tip = m_position;
+    m_frustum_cone.direction = m_front;
+    m_frustum_cone.height = 200.0f;             // far clip from perspective matrix
+    m_frustum_cone.angle = glm::radians(45.0f); // Guessing fov
 
     return m_frustum_cone;
 }
 const pvp::RadarCull& pvp::Camera::get_radar_cull()
 {
-    float tangent = std::tanf(glm::radians(fov_angle));
+    float tangent = std::tanf(glm::radians(fov_angle / 2.0f));
     m_radar_cull.far_plane = far_plane;
     m_radar_cull.near_plane = near_plane;
     m_radar_cull.tang = tangent;

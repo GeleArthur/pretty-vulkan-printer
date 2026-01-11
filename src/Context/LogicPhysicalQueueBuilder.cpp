@@ -36,10 +36,6 @@ namespace pvp
         ZoneScoped;
 
         m_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        // if constexpr (enable_debug)
-        // {
-        m_extensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-        // }
         m_extensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
         m_extensions.push_back(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
         m_extensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);

@@ -36,9 +36,9 @@ pvp::InstanceBuilder& pvp::InstanceBuilder::set_app_name(const std::string& name
     return *this;
 }
 
-pvp::InstanceBuilder& pvp::InstanceBuilder::enable_debugging(bool enabled)
+pvp::InstanceBuilder& pvp::InstanceBuilder::enable_validation_layers(bool enabled)
 {
-    m_is_debugging = enabled;
+    m_enable_validation_layers = enabled;
     return *this;
 }
 
@@ -62,11 +62,11 @@ void pvp::InstanceBuilder::build(Instance& instance)
     {
         m_extensions.push_back(glfw_extensions[i]);
     }
+    m_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
-    if (m_is_debugging)
+    if (m_enable_validation_layers)
     {
-        m_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        m_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
         m_layers.push_back("VK_LAYER_KHRONOS_validation");
     }
 
@@ -80,10 +80,7 @@ void pvp::InstanceBuilder::build(Instance& instance)
     create_info.ppEnabledExtensionNames = m_extensions.data();
 
     // Setup debug
-    if (m_is_debugging)
-    {
-        create_info.pNext = debugger::get_debug_info();
-    }
+    create_info.pNext = debugger::get_debug_info();
 
     valid_extensions_check();
 
@@ -98,15 +95,12 @@ void pvp::InstanceBuilder::build(Instance& instance)
     VulkanInstanceExtensions::register_instance(instance.m_instance);
 
     // Setup debug part 2
-    if (m_is_debugging)
-    {
-        static VkDebugUtilsMessengerEXT debug_messenger{};
+    static VkDebugUtilsMessengerEXT debug_messenger{};
 
-        const VkDebugUtilsMessengerCreateInfoEXT* convertToLValue = debugger::get_debug_info();
-        if (VulkanInstanceExtensions::vkCreateDebugUtilsMessengerEXT(instance.m_instance, convertToLValue, nullptr, &debug_messenger) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create DebugUtilsMessengerEXT");
-        }
- instance.m_destructor_queue.add_to_queue([&] { VulkanInstanceExtensions::vkDestroyDebugUtilsMessengerEXT(instance.m_instance, debug_messenger, nullptr); });
+    const VkDebugUtilsMessengerCreateInfoEXT* convertToLValue = debugger::get_debug_info();
+    if (VulkanInstanceExtensions::vkCreateDebugUtilsMessengerEXT(instance.m_instance, convertToLValue, nullptr, &debug_messenger) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create DebugUtilsMessengerEXT");
     }
+    instance.m_destructor_queue.add_to_queue([&] { VulkanInstanceExtensions::vkDestroyDebugUtilsMessengerEXT(instance.m_instance, debug_messenger, nullptr); });
 }

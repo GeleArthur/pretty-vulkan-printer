@@ -49,8 +49,6 @@ namespace pvp
 
         const float get_screen_ratio();
 
-        bool update_frustum{ true };
-
     private:
         const Context& m_context;
         glm::mat4x4    m_projection{};

@@ -11,7 +11,7 @@ constexpr bool enable_debug = false;
 #endif
 constexpr uint32_t max_frames_in_flight = 3u; // TODO: Would like this to be dynamic
 
-constexpr uint32_t mesh_let_count = 16;
+constexpr uint32_t mesh_let_count = 32;
 
 #define DISABLE_COPY(className)           \
     className(const className&) = delete; \

@@ -10,7 +10,7 @@ namespace pvp
     {
     public:
         InstanceBuilder& set_app_name(const std::string& name);
-        InstanceBuilder& enable_debugging(bool enabled);
+        InstanceBuilder& enable_validation_layers(bool enabled);
 
         void build(Instance& context);
 
@@ -19,7 +19,7 @@ namespace pvp
 
         std::string m_app_name{ "pretty vulkan printer" };
 
-        bool                     m_is_debugging{ false };
+        bool                     m_enable_validation_layers{ false };
         std::vector<const char*> m_extensions;
         std::vector<const char*> m_layers;
     };

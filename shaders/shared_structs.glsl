@@ -50,7 +50,7 @@ struct DrawCommand
     uint meshlet_count;
 };
 
-#define AS_GROUP_SIZE 16
+#define AS_GROUP_SIZE 32
 struct Payload {
     uint meshlet_indices[AS_GROUP_SIZE];
     bool visable[AS_GROUP_SIZE];

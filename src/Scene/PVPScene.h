@@ -246,6 +246,7 @@ namespace pvp
         bool       m_meshlets_enabled{};
         RenderMode m_render_mode{ RenderMode::gpu_indirect };
         CullMode   m_cull_mode{ CullMode::backface_radar };
+        bool       m_update_frustum{ true };
 
         std::vector<std::string> m_scene_files;
 

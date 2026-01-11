@@ -26,21 +26,16 @@ pvp::MeshShaderPass::MeshShaderPass(const Context& context, const PvpScene& scen
 
 void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image_index)
 {
-    if (!m_scene.get_meshlets_enabeled())
-    {
-        return;
-    }
-
     ZoneScoped;
     TracyVkZone(m_context.tracy_ctx[cmd.buffer_index], cmd.command_buffer, "MeshShaderPass");
 
-    // VkImageSubresourceRange range{
-    //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-    //     .baseMipLevel = 0,
-    //     .levelCount = VK_REMAINING_MIP_LEVELS,
-    //     .baseArrayLayer = 0,
-    //     .layerCount = VK_REMAINING_ARRAY_LAYERS
-    // };
+    VkImageSubresourceRange range{
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS
+    };
 
     m_depth_image.transition_layout(cmd,
                                     VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
@@ -48,6 +43,16 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
                                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
                                     VK_ACCESS_2_NONE,
                                     VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+
+    image_layout_transition(cmd.command_buffer,
+                            m_context.swapchain->get_images()[swapchain_image_index],
+                            VK_PIPELINE_STAGE_2_NONE,
+                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                            VK_ACCESS_2_NONE,
+                            VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
+                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                            range);
 
     // image_layout_transition(cmd.command_buffer,
     //                         m_context.swapchain->get_images()[swapchain_image_index],
@@ -61,7 +66,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
-        .add_color(m_context.swapchain->get_linear_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE)
+        .add_color(m_context.swapchain->get_linear_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_depth(m_depth_image.get_view(cmd), VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
         .set_size(m_context.swapchain->get_swapchain_extent())
         .build(render_color_info);
