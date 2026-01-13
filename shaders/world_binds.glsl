@@ -39,16 +39,12 @@ bool BackfaceCulling(ConeBounds cone) {
 }
 
 bool RaderCulling(ConeBounds cone) {
-    bool result = true;
     vec3 ray = cone.sphere_bounds.xyz - sceneInfo.position;
     float z_projections = dot(ray, sceneInfo.rader_cull.camera_z);
 
     if (z_projections > sceneInfo.rader_cull.far_plane + cone.sphere_bounds.w || z_projections < sceneInfo.rader_cull.near_plane - cone.sphere_bounds.w) {
         return false;
     }
-    //    if (z_projections > sceneInfo.rader_cull.far_plane - cone.sphere_bounds.w || z_projections < sceneInfo.rader_cull.near_plane + cone.sphere_bounds.w) {
-    //        result = true;
-    //    }
 
     float y_projections = dot(ray, sceneInfo.rader_cull.camera_y);
     float sphere_size_y = sceneInfo.rader_cull.sphere_factor_y * cone.sphere_bounds.w;
@@ -56,10 +52,6 @@ bool RaderCulling(ConeBounds cone) {
     if (y_projections > y_height + sphere_size_y || y_projections < -y_height - sphere_size_y) {
         return false;
     }
-    //    if (y_projections > x_height - sphere_size_y || y_projections < -x_height + sphere_size_y) {
-    //        result = true;
-    //    }
-
 
     float x_projection = dot(ray, sceneInfo.rader_cull.camera_x);
     float x_height = y_height * sceneInfo.rader_cull.ratio;
@@ -68,11 +60,7 @@ bool RaderCulling(ConeBounds cone) {
         return false;
     }
 
-    //    if (x_projection > y_height - sphere_size_x || x_projection < -y_height + sphere_size_x) {
-    //        result = true;
-    //    }
-
-    return result;
+    return true;
 }
 
 bool IsVisible(ConeBounds cone) {

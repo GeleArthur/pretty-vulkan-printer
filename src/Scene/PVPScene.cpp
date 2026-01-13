@@ -476,14 +476,17 @@ void pvp::PvpScene::update()
         }
 
         static bool first_time{};
-        uint64_t    invocation_count{};
         if (first_time == true)
         {
-            vkGetQueryPoolResults(m_context.device->get_device(), m_context.query_pool, 0, 1, sizeof(uint64_t), &invocation_count, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+            uint64_t result;
+            if (vkGetQueryPoolResults(m_context.device->get_device(), m_context.query_pool, 0, 1, sizeof(uint64_t), &result, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT) == VK_SUCCESS)
+            {
+                m_invocation_count = result;
+            }
         }
         first_time = true;
 
-        ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", invocation_count);
+        ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", m_invocation_count);
 
         ImGui::Checkbox("Update frustom", &m_update_frustum);
         ImGui::Checkbox("Enable spheres", &m_spheres_enabled);

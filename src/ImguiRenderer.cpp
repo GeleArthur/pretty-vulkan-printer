@@ -101,7 +101,8 @@ pvp::ImguiRenderer::ImguiRenderer(Context& context, GLFWwindow* window, GlfwToRe
     // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
-    // ImGui::PushFont(nullptr, 16);
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FontSizeBase = 20.0f;
 }
 
 void pvp::ImguiRenderer::setup_vulkan_context(const CommandPool& command_pool)

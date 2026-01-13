@@ -41,7 +41,6 @@ void main()
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
         payload.meshlet_indices[index] = gl_GlobalInvocationID.x;
-        payload.visable[index] = visible;
     }
 
     uint visible_count = subgroupBallotBitCount(ballot);

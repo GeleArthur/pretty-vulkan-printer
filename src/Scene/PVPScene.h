@@ -247,6 +247,7 @@ namespace pvp
         RenderMode m_render_mode{ RenderMode::gpu_indirect };
         CullMode   m_cull_mode{ CullMode::backface_radar };
         bool       m_update_frustum{ true };
+        uint64_t   m_invocation_count{};
 
         std::vector<std::string> m_scene_files;
 
