@@ -54,16 +54,6 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             range);
 
-    // image_layout_transition(cmd.command_buffer,
-    //                         m_context.swapchain->get_images()[swapchain_image_index],
-    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //                         VK_ACCESS_2_NONE,
-    //                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-    //                         VK_IMAGE_LAYOUT_UNDEFINED,
-    //                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //                         range);
-
     RenderInfoBuilderOut render_color_info;
     RenderInfoBuilder{}
         .add_color(m_context.swapchain->get_linear_views()[swapchain_image_index], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
@@ -73,9 +63,9 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
 
     vkCmdBeginRendering(cmd.command_buffer, &render_color_info.rendering_info);
 
-    switch (m_scene.get_render_mode())
+    switch (m_scene.get_mesh_lets_render_mode())
     {
-        case RenderMode::cpu: {
+        case RenderModeMeshLets::cpu: {
             vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
 
@@ -89,7 +79,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
             }
         }
         break;
-        case RenderMode::gpu_indirect: {
+        case RenderModeMeshLets::gpu_indirect: {
             vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_indirect);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect, 1, 1, m_scene.get_indirect_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
@@ -97,7 +87,7 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
             VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
         }
         break;
-        case RenderMode::gpu_indirect_pointers: {
+        case RenderModeMeshLets::gpu_indirect_pointers: {
             vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_indirect_ptr);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect_ptr, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect_ptr, 1, 1, m_scene.get_indirect_ptr_descriptor_set().get_descriptor_set(cmd), 0, nullptr);

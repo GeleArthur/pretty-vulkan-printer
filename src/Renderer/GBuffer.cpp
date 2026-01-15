@@ -161,7 +161,6 @@ void pvp::GBuffer::draw(const FrameContext& cmd)
             }
         }
         break;
-        case RenderMode::gpu_indirect:
         case RenderMode::gpu_indirect_pointers: {
             // vkCmdBeginQuery(cmd.command_buffer, m_context.query_pool, 0, 0);
             vkCmdBindPipeline(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_meshlets_albedo_pipeline);

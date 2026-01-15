@@ -486,18 +486,28 @@ void pvp::PvpScene::update()
         }
         first_time = true;
 
+        ImGui::Separator();
+
         ImGui::Text("MESH_SHADER_INVOCATIONS: %llu", m_invocation_count);
 
-        ImGui::Checkbox("Update frustom", &m_update_frustum);
+        ImGui::Separator();
+        ImGui::Text("Debug rendering");
+        ImGui::Checkbox("Update frustum", &m_update_frustum);
         ImGui::Checkbox("Enable spheres", &m_spheres_enabled);
 
-        constexpr std::array<const char*, 3> render_modes{ "CPU", "GPU Indirect", "GPU Indirect ptr" };
+        ImGui::Separator();
+        ImGui::Text("Deferred render settings:");
+        constexpr std::array<const char*, 2> render_modes{ "CPU", "GPU Indirect ptr" };
         ImGui::Combo("RenderMode", reinterpret_cast<int*>(&m_render_mode), render_modes.data(), render_modes.size());
 
         constexpr std::array<const char*, 4> cull_modes{ "none", "backface", "backface + radar", "backface + cone" };
         ImGui::Combo("CullMode", reinterpret_cast<int*>(&m_cull_mode), cull_modes.data(), cull_modes.size());
 
-        ImGui::Checkbox("Enable meshlets", &m_meshlets_enabled);
+        ImGui::Separator();
+        ImGui::Text("Meshlet render settings:");
+        ImGui::Checkbox("Enable meshlet rendering", &m_meshlets_enabled);
+        constexpr std::array<const char*, 3> render_modes_meshlet{ "CPU", "GPU Indirect", "GPU Indirect ptr" };
+        ImGui::Combo("RenderModeMeshlets", reinterpret_cast<int*>(&m_render_mesh_lets_mode), render_modes_meshlet.data(), render_modes_meshlet.size());
     }
 
     ImGui::End();

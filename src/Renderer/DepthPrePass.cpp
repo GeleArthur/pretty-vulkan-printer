@@ -64,7 +64,6 @@ namespace pvp
                 }
             }
             break;
-            case RenderMode::gpu_indirect:
             case RenderMode::gpu_indirect_pointers: {
                 vkCmdBeginQuery(cmd.command_buffer, m_context.query_pool, 0, 0);
 

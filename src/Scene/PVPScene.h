@@ -92,6 +92,11 @@ namespace pvp
     enum class RenderMode : int
     {
         cpu = 0,
+        gpu_indirect_pointers
+    };
+    enum class RenderModeMeshLets : int
+    {
+        cpu = 0,
         gpu_indirect,
         gpu_indirect_pointers
     };
@@ -190,6 +195,10 @@ namespace pvp
         {
             return m_render_mode;
         }
+        RenderModeMeshLets get_mesh_lets_render_mode() const
+        {
+            return m_render_mesh_lets_mode;
+        }
         bool get_meshlets_enabeled() const
         {
             return m_meshlets_enabled;
@@ -242,12 +251,13 @@ namespace pvp
         Camera         m_camera;
         DirectionLight m_direction_light{};
 
-        bool       m_spheres_enabled{};
-        bool       m_meshlets_enabled{};
-        RenderMode m_render_mode{ RenderMode::gpu_indirect };
-        CullMode   m_cull_mode{ CullMode::backface_radar };
-        bool       m_update_frustum{ true };
-        uint64_t   m_invocation_count{};
+        bool               m_spheres_enabled{};
+        bool               m_meshlets_enabled{};
+        RenderMode         m_render_mode{ RenderMode::gpu_indirect_pointers };
+        RenderModeMeshLets m_render_mesh_lets_mode{ RenderModeMeshLets::gpu_indirect_pointers };
+        CullMode           m_cull_mode{ CullMode::backface_radar };
+        bool               m_update_frustum{ true };
+        uint64_t           m_invocation_count{};
 
         std::vector<std::string> m_scene_files;
 
