@@ -25,6 +25,7 @@ layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
 
 layout (push_constant) uniform PushConstant {
     ModelInfoReference model_data_pointer;
+    MatrixFullReference matrix_full;
 } push_constants;
 
 void main()
@@ -46,6 +47,7 @@ void main()
     if (visible) {
         uint index = subgroupBallotExclusiveBitCount(ballot);
         payload.meshlet_indices[index] = gl_GlobalInvocationID.x;
+        payload.full_matrix = push_constants.matrix_full.model_data[gl_DrawID];
     }
 
     uint visible_count = subgroupBallotBitCount(ballot);

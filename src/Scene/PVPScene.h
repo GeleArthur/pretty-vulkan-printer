@@ -24,6 +24,7 @@ namespace pvp
     struct alignas(8) MaterialTransform
     {
         glm::mat4x4 transform;
+        glm::mat4x4 model_view_projection;
         uint32_t    diffuse_texture_index;
         uint32_t    normal_texture_index;
         uint32_t    metalness_texture_index;
@@ -163,6 +164,11 @@ namespace pvp
             VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = m_gpu_matrix.get_buffer() };
             return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
         }
+        VkDeviceAddress get_full_matrix_buffer_address(const FrameContext& cmd) const
+        {
+            VkBufferDeviceAddressInfo address_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, .pNext = nullptr, .buffer = m_gpu_full_matrix[cmd.buffer_index].get_buffer() };
+            return vkGetBufferDeviceAddress(m_context.device->get_device(), &address_info);
+        }
         const Buffer& get_meshlets_buffer() const
         {
             return m_gpu_meshlets;
@@ -211,6 +217,7 @@ namespace pvp
         {
             return m_indirect_descriptor_ptr;
         }
+        void compute_matrix(const FrameContext& cmd);
 
     private:
         void generate_mipmaps(VkCommandBuffer cmd, StaticImage& gpu_image, uint32_t width, uint32_t height);
@@ -232,8 +239,10 @@ namespace pvp
         UniformBuffer            m_directonal_lights_gpu;
         UniformBuffer            m_scene_globals_gpu;
 
-        Buffer m_gpu_vertices;
-        Buffer m_gpu_matrix;
+        Buffer                                   m_gpu_vertices;
+        Buffer                                   m_gpu_matrix;
+        std::array<Buffer, max_frames_in_flight> m_gpu_full_matrix;
+        Buffer                                   m_transfer_to_full_matrix;
 
         Buffer m_gpu_meshlets;
         Buffer m_gpu_meshlets_vertices;

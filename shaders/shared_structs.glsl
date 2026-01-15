@@ -54,6 +54,7 @@ struct DrawCommand
 struct Payload {
     uint meshlet_indices[AS_GROUP_SIZE];
     uint model_index;
+    mat4 full_matrix;
 };
 
 struct FrustumCone
@@ -94,6 +95,7 @@ struct SceneGlobals {
 
 struct ModelInfo {
     mat4 model;
+    mat4 model_view_projection;
     uint diffuse_texture_index;
     uint normal_texture_index;
     uint metalness_texture_index;
@@ -122,6 +124,10 @@ layout (std430, buffer_reference, buffer_reference_align = 8) buffer ConeDataRef
 
 layout (std430, buffer_reference, buffer_reference_align = 8) buffer ModelInfoReference {
     ModelInfo model_data[];
+};
+
+layout (std430, buffer_reference, buffer_reference_align = 8) buffer MatrixFullReference {
+    mat4 model_data[];
 };
 
 struct MeshletsBuffers
