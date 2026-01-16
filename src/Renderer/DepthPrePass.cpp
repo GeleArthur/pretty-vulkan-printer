@@ -121,7 +121,7 @@ namespace pvp
             .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
             .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::pointers).get())
             .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::bindless_textures).get())
-            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress) * 2 })
+            .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress) })
             .build(m_context.device->get_device(), m_pipeline_meshshader_layout);
         m_destructor_queue.add_to_queue([&] {
             vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_meshshader_layout, nullptr);

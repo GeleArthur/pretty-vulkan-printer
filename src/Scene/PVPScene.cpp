@@ -171,7 +171,6 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
             .build(m_context, gpu_model.meshlet_descriptor_set);
 
         gpu_model.material.transform = cpu_model.transform;
-        gpu_model.material.model_view_projection = cpu_model.transform;
         gpu_model.material.normal_decompression = cpu_model.decompress_normals;
 
         gpu_model.material.diffuse_texture_index = cpu_model.diffuse_path.empty() ?
@@ -211,25 +210,6 @@ void pvp::PvpScene::load_scene(const std::filesystem::path& path)
             all_matricies.push_back(model.material);
         }
         m_gpu_matrix.copy_data_from_tmp_buffer(m_context, cmd, std::span(all_matricies), transfer_deleter);
-    }
-    {
-        for (int i = 0; i < max_frames_in_flight; ++i)
-        {
-            BufferBuilder()
-                .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
-                .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
-                .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE)
-                .build(m_context.allocator->get_allocator(), m_gpu_full_matrix[i]);
-            m_scene_destructor_queue.add_to_queue([&, i] { m_gpu_full_matrix[i].destroy(); });
-        }
-
-        BufferBuilder()
-            .set_size(loaded_scene.models.size() * sizeof(glm::mat4))
-            .set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-            .set_memory_usage(VMA_MEMORY_USAGE_AUTO_PREFER_HOST)
-            .set_flags(VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT)
-            .build(m_context.allocator->get_allocator(), m_transfer_to_full_matrix);
-        m_scene_destructor_queue.add_to_queue([&] { m_transfer_to_full_matrix.destroy(); });
     }
 
     cmd_pool_transfer_buffers.end_buffer(cmd);
@@ -378,17 +358,6 @@ void pvp::PvpScene::scan_folder()
     scan("resources");
     scan("../intelsponza");
 }
-
-void pvp::PvpScene::compute_matrix(const FrameContext& cmd)
-{
-    for (int i = 0; i < m_gpu_models.size(); ++i)
-    {
-        glm::mat4* matrix = static_cast<glm::mat4*>(m_transfer_to_full_matrix.get_allocation_info().pMappedData);
-        matrix[i] = m_camera.get_projection_matrix() * m_camera.get_view_matrix() * m_gpu_models[i].material.transform;
-    }
-    m_gpu_full_matrix[cmd.buffer_index].copy_from_buffer(cmd.command_buffer, m_transfer_to_full_matrix);
-}
-
 void pvp::PvpScene::update()
 {
     ZoneScoped;

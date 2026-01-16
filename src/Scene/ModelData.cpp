@@ -107,25 +107,35 @@ namespace
         constexpr size_t max_vertices = 64;
         constexpr size_t max_triangles = 126;
         constexpr float  cone_weight = 0.25f;
-        const size_t     max_mesh_lets = meshopt_buildMeshletsBound(model_out.indices.size(), max_vertices, max_triangles);
+
+        // std::vector<uint8_t> meshlet_triangles_u8;
+
+        const size_t max_mesh_lets = meshopt_buildMeshletsBound(model_out.indices.size(), max_vertices, max_triangles);
         model_out.meshlets.resize(max_mesh_lets);
         model_out.meshlet_vertices.resize(max_mesh_lets * max_vertices);
         model_out.meshlet_triangles.resize(max_mesh_lets * max_triangles * 3);
 
-        const size_t meshlet_count = meshopt_buildMeshletsFlex(
+        std::vector<float> vertices;
+        vertices.reserve(model_out.vertices.size() * 3);
+        for (pvp::Vertex& vertex : model_out.vertices)
+        {
+            vertices.push_back(vertex.pos.x);
+            vertices.push_back(vertex.pos.y);
+            vertices.push_back(vertex.pos.z);
+        }
+
+        const size_t meshlet_count = meshopt_buildMeshlets(
             model_out.meshlets.data(),
             model_out.meshlet_vertices.data(),
             model_out.meshlet_triangles.data(),
             model_out.indices.data(),
             model_out.indices.size(),
-            reinterpret_cast<float*>(model_out.vertices.data()),
-            model_out.vertices.size(),
-            sizeof(pvp::Vertex),
+            vertices.data(),
+            vertices.size(),
+            sizeof(float) * 3,
             max_vertices,
-            32,
             max_triangles,
-            cone_weight,
-            2.0f);
+            cone_weight);
 
         const meshopt_Meshlet& last = model_out.meshlets[meshlet_count - 1];
         model_out.meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
@@ -137,6 +147,34 @@ namespace
             meshopt_optimizeMeshlet(&model_out.meshlet_vertices[meshlet.vertex_offset], &model_out.meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
         }
 
+        // writeOBJMeshLets("Meshlets.obj", model_out.meshlets, model_out.meshlet_vertices, meshlet_triangles_u8, vertices, meshlet_count);
+
+        // for (auto& meshlet : model_out.meshlets)
+        // {
+        // Save triangle offset for current meshlet
+        // uint32_t triangle_offset = static_cast<uint32_t>(model_out.meshlet_triangles.size());
+
+        // Repack to uint32_t
+        // for (uint32_t i = 0; i < meshlet.triangle_count; ++i)
+        // {
+        // uint32_t i0 = 3 * i + 0 + meshlet.triangle_offset;
+        // uint32_t i1 = 3 * i + 1 + meshlet.triangle_offset;
+        // uint32_t i2 = 3 * i + 2 + meshlet.triangle_offset;
+        //
+        // uint8_t  vertex_id0 = meshlet_triangles_u8[i0];
+        // uint8_t  vertex_id1 = meshlet_triangles_u8[i1];
+        // uint8_t  vertex_id2 = meshlet_triangles_u8[i2];
+        // uint32_t packed = ((static_cast<uint32_t>(vertex_id0) & 0xFF) << 0) |
+        //     ((static_cast<uint32_t>(vertex_id1) & 0xFF) << 8) |
+        //     ((static_cast<uint32_t>(vertex_id2) & 0xFF) << 16);
+        // model_out.meshlet_triangles.push_back(packed);
+        // model_out.meshlet_triangles
+        // }
+
+        // Update triangle offset for current meshlet
+        // meshlet.triangle_offset = triangle_offset;
+        // }
+
         model_out.meshlet_sphere_bounds.reserve(model_out.meshlets.size());
         for (const auto& meshlet : model_out.meshlets)
         {
@@ -144,9 +182,9 @@ namespace
                 &model_out.meshlet_vertices[meshlet.vertex_offset],
                 &model_out.meshlet_triangles[meshlet.triangle_offset],
                 meshlet.triangle_count,
-                reinterpret_cast<float*>(model_out.vertices.data()),
-                model_out.vertices.size(),
-                sizeof(pvp::Vertex));
+                vertices.data(),
+                vertices.size(),
+                sizeof(float) * 3);
             model_out.meshlet_sphere_bounds.emplace_back(
                 glm::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius),
                 glm::vec4(bounds.cone_axis[0],

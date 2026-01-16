@@ -26,7 +26,6 @@ layout (std430, set = 1, binding = 1) readonly buffer PointersIn {
 
 layout (push_constant) uniform PushConstant {
     ModelInfoReference model_data_pointer;
-    MatrixFullReference matrix_full;
 } push_constants;
 
 layout (location = 0) out vec3 vertexColor[];
@@ -38,7 +37,7 @@ void main()
     MeshletsBuffers model_pointer = pointers[payload.model_index];
 
     Meshlet m = model_pointer.meshlet_data.meshlet_data[payload.meshlet_indices[gl_WorkGroupID.x]];
-    mat4 model_matrix = payload.full_matrix;
+    mat4 model_matrix = push_constants.model_data_pointer.model_data[payload.model_index].model;
 
     if (gl_LocalInvocationIndex == 0)
     {
@@ -56,7 +55,7 @@ void main()
     if (gl_LocalInvocationID.x < m.vertex_count) {
         uint vertexIndex = model_pointer.meshlet_vertices_data.meshlet_vertex_data[m.vertex_offset + gl_LocalInvocationID.x];
 
-        vec4 locatiomyes = model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].position, 1.0);
+        vec4 locatiomyes = sceneInfo.camera_projection * sceneInfo.camera_view * model_matrix * vec4(model_pointer.vertex_data.vertex_data[vertexIndex].position, 1.0);
 
         gl_MeshVerticesEXT[gl_LocalInvocationID.x].gl_Position = locatiomyes;
 

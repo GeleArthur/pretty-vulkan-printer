@@ -92,8 +92,8 @@ void pvp::MeshShaderPass::draw(const FrameContext& cmd, uint32_t swapchain_image
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect_ptr, 0, 1, m_scene.get_scene_descriptor().get_descriptor_set(cmd), 0, nullptr);
             vkCmdBindDescriptorSets(cmd.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout_indirect_ptr, 1, 1, m_scene.get_indirect_ptr_descriptor_set().get_descriptor_set(cmd), 0, nullptr);
 
-            std::array matrix_buffer_address{ m_scene.get_matrix_buffer_address(), m_scene.get_full_matrix_buffer_address(cmd) };
-            vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout_indirect_ptr, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(VkDeviceAddress) * 2, &matrix_buffer_address);
+            VkDeviceAddress matrix_buffer_address = m_scene.get_matrix_buffer_address();
+            vkCmdPushConstants(cmd.command_buffer, m_pipeline_layout_indirect_ptr, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(VkDeviceAddress), &matrix_buffer_address);
 
             VulkanInstanceExtensions::vkCmdDrawMeshTasksIndirectEXT(cmd.command_buffer, m_scene.get_indirect_draw_calls().get_buffer(), 0, m_scene.get_models().size(), sizeof(DrawCommandIndirect));
         }
@@ -152,7 +152,7 @@ void pvp::MeshShaderPass::build_pipelines()
     PipelineLayoutBuilder()
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::scene_globals).get())
         .add_descriptor_layout(m_context.descriptor_creator->get_layout().from_tag(DiscriptorTag::pointers).get())
-        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(VkDeviceAddress) * 2 })
+        .add_push_constant_range(VkPushConstantRange{ VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT, 0, sizeof(VkDeviceAddress) })
         .build(m_context.device->get_device(), m_pipeline_layout_indirect_ptr);
     m_destructor_queue.add_to_queue([&] {
         vkDestroyPipelineLayout(m_context.device->get_device(), m_pipeline_layout_indirect_ptr, nullptr);

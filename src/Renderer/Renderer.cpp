@@ -178,7 +178,6 @@ void pvp::Renderer::prepare_frame()
 
     vkCmdResetQueryPool(m_frame_contexts[m_double_buffer_frame].command_buffer, m_context.query_pool, 0, 1);
 
-    m_scene.compute_matrix(m_frame_contexts[m_double_buffer_frame]);
     // std::printf("-----PREPARE FRAME DONE-----\n");
 }
 
